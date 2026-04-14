@@ -1,20 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 body {
   background: black;
   color: white;
   font-family: Arial;
   text-align: center;
+  margin: 0;
 }
 
-/* Container for grid */
+/* GRID CONTAINER */
 .container {
   display: grid;
-  grid-template-columns: 1fr 1fr;  /* two columns */
+  grid-template-columns: 1fr 1fr;
   gap: 40px;
   padding: 40px;
 }
 
-/* Buttons */
+/* BUTTONS */
 a {
   display: block;
   padding: 40px;
@@ -25,17 +30,21 @@ a {
   border-radius: 12px;
 }
 
-/* Focus highlight for remote navigation */
+/* FOCUS (remote highlight) */
 a:focus {
   outline: 4px solid yellow;
   background: #444;
 }
 </style>
+</head>
+<body>
 
-<a href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">DAK MAIN PHOTOS</a>
-<a href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">DAK LATEST PHOTOS</a>
-<a href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">DAK VIDEOS</a>
-<a href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">YOUTUBE WRESTLING VIDEOS</a>
+<div class="container">
+  <a href="#">Lyrics</a>
+  <a href="#">Photos</a>
+  <a href="#">Videos</a>
+  <a href="#">Music</a>
+</div>
 
 </body>
 </html>
