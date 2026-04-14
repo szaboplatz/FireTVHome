@@ -120,7 +120,7 @@ textarea::placeholder {
   opacity: 0.6;
 }
 
-/* STATUS (BIG CONFIRMATION) */
+/* STATUS */
 #status {
   text-align: center;
   font-size: 40px;
@@ -178,7 +178,6 @@ function handleSubmit(event) {
   const form = event.target;
   const data = new FormData(form);
   const submitButton = form.querySelector(".submit-button");
-  const textarea = form.querySelector("textarea");
 
   clearTimeout(statusTimeout);
   submitButton.disabled = true;
@@ -195,7 +194,6 @@ function handleSubmit(event) {
     form.reset();
     showStatus("MESSAGE SENT ✓", "#00ff00");
     submitButton.disabled = false;
-    textarea.focus();
 
     statusTimeout = setTimeout(fadeStatus, 5000);
   })
@@ -226,7 +224,6 @@ function clearStatus() {
 document.addEventListener("DOMContentLoaded", function() {
   const textarea = document.querySelector("textarea");
   if (textarea) {
-    textarea.addEventListener("focus", clearStatus);
     textarea.addEventListener("click", clearStatus);
     textarea.addEventListener("input", clearStatus);
   }
