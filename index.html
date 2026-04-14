@@ -70,7 +70,7 @@ a.button {
   margin-bottom: 25px;
 }
 
-/* TEXT AREA (UPDATED) */
+/* TEXT AREA */
 textarea {
   width: 100%;
   box-sizing: border-box;
@@ -82,13 +82,25 @@ textarea {
   min-height: 240px;
   resize: vertical;
   font-family: Arial, sans-serif;
+
+  background: #111;
+  color: white;
+  font-weight: 500;   /* normal-ish */
 }
 
-/* BIGGER WHEN ACTIVE */
+/* BIGGER + THICKER WHEN ACTIVE */
 textarea:focus {
   font-size: 56px;
   min-height: 300px;
   background: #222;
+  color: white;
+  font-weight: 900;   /* very bold */
+}
+
+/* PLACEHOLDER */
+textarea::placeholder {
+  color: #bbb;
+  font-weight: 400;
 }
 
 /* SEND BUTTON */
