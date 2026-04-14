@@ -80,6 +80,7 @@ textarea {
   border: none;
   min-height: 220px;
   resize: vertical;
+  font-family: Arial, sans-serif;
 }
 
 /* SEND BUTTON */
@@ -93,6 +94,11 @@ textarea {
   border-radius: 12px;
   background: #00bcd4;
   color: black;
+  cursor: pointer;
+}
+
+.submit-button:disabled {
+  opacity: 0.6;
 }
 
 /* STATUS MESSAGE */
@@ -100,6 +106,7 @@ textarea {
   text-align: center;
   font-size: 30px;
   margin-top: 20px;
+  min-height: 36px;
 }
 
 /* FOCUS / HOVER */
@@ -125,7 +132,6 @@ textarea:focus,
   <a class="button" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">DAK VIDEOS</a>
   <a class="button" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">DAK WRESTLING VIDEOS</a>
 
-  <!-- MESSAGE PANEL -->
   <div class="message-panel">
     <div class="message-title">SEND MESSAGE</div>
     <div class="message-help">Click the box, then hold the mic button and speak.</div>
@@ -143,11 +149,19 @@ textarea:focus,
 </div>
 
 <script>
+let statusTimeout;
+
 function handleSubmit(event) {
   event.preventDefault();
 
   const form = event.target;
   const data = new FormData(form);
+  const submitButton = form.querySelector(".submit-button");
+  const textarea = form.querySelector("textarea");
+
+  clearTimeout(statusTimeout);
+  submitButton.disabled = true;
+  showStatus("Sending...", "#ffff66");
 
   fetch(form.action, {
     method: form.method,
@@ -159,9 +173,14 @@ function handleSubmit(event) {
   .then(() => {
     form.reset();
     showStatus("Message sent!", "#00ff00");
+    submitButton.disabled = false;
+    textarea.focus();
+
+    statusTimeout = setTimeout(clearStatus, 5000);
   })
   .catch(() => {
     showStatus("Error sending message", "red");
+    submitButton.disabled = false;
   });
 }
 
@@ -170,6 +189,20 @@ function showStatus(text, color) {
   msg.innerText = text;
   msg.style.color = color;
 }
+
+function clearStatus() {
+  const msg = document.getElementById("status");
+  msg.innerText = "";
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  const textarea = document.querySelector("textarea");
+  if (textarea) {
+    textarea.addEventListener("focus", clearStatus);
+    textarea.addEventListener("click", clearStatus);
+    textarea.addEventListener("input", clearStatus);
+  }
+});
 </script>
 
 </body>
