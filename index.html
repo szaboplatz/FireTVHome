@@ -11,7 +11,7 @@ body {
   margin: 0;
 }
 
-/* GRID CONTAINER */
+/* GRID LAYOUT */
 .container {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -23,27 +23,37 @@ body {
 a {
   display: block;
   padding: 40px;
-  font-size: 60px;
-  background: #222;
+  font-size: 50px;
   color: white;
   text-decoration: none;
   border-radius: 12px;
 }
 
-/* FOCUS (remote highlight) */
+/* DIFFERENT COLORS (high contrast) */
+a:nth-child(1) { background: #1f77b4; } /* blue */
+a:nth-child(2) { background: #2ca02c; } /* green */
+a:nth-child(3) { background: #d62728; } /* red */
+a:nth-child(4) { background: #9467bd; } /* purple */
+a:nth-child(5) { background: #ff7f0e; } /* orange */
+
+/* HOVER / FOCUS */
+a:hover,
 a:focus {
   outline: 4px solid yellow;
-  background: #444;
+  filter: brightness(1.2);
 }
 </style>
 </head>
 <body>
 
+<h1 style="margin-top: 30px;">Home</h1>
+
 <div class="container">
-  <a href="#">Lyrics</a>
-  <a href="#">Photos</a>
-  <a href="#">Videos</a>
-  <a href="#">Music</a>
+  <a href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">DAK MAIN PHOTOS LOOP</a>
+  <a href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">DAK MAIN PHOTOS</a>
+  <a href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">DAK LATEST PHOTOS</a>
+  <a href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">DAK VIDEOS</a>
+  <a href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">DAK WRESTLING VIDEOS</a>
 </div>
 
 </body>
