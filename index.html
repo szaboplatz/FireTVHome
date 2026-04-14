@@ -70,7 +70,7 @@ a.button {
   margin-bottom: 25px;
 }
 
-/* TEXT AREA (VISIBLE BORDER ADDED) */
+/* TEXT AREA */
 textarea {
   width: 100%;
   box-sizing: border-box;
@@ -78,32 +78,28 @@ textarea {
   line-height: 1.3;
   padding: 25px;
   border-radius: 12px;
-
-  border: 4px solid #555;   /* NEW: visible border */
+  border: 4px solid #555;
   background: #111;
   color: white;
-
   min-height: 240px;
   resize: vertical;
   font-family: Arial, sans-serif;
   font-weight: 500;
 }
 
-/* STRONGER WHEN ACTIVE */
+/* BIGGER + THICKER WHEN ACTIVE */
 textarea:focus {
   font-size: 56px;
   min-height: 300px;
   background: #222;
   color: white;
   font-weight: 900;
-
-  border: 4px solid #00bcd4; /* highlight border */
+  border: 4px solid #00bcd4;
 }
 
 /* PLACEHOLDER */
 textarea::placeholder {
   color: #bbb;
-  font-weight: 400;
 }
 
 /* SEND BUTTON */
@@ -124,12 +120,14 @@ textarea::placeholder {
   opacity: 0.6;
 }
 
-/* STATUS */
+/* STATUS (BIG CONFIRMATION) */
 #status {
   text-align: center;
-  font-size: 30px;
+  font-size: 40px;
   margin-top: 20px;
-  min-height: 36px;
+  min-height: 50px;
+  font-weight: bold;
+  transition: opacity 0.5s ease;
 }
 
 /* FOCUS / HOVER */
@@ -195,14 +193,14 @@ function handleSubmit(event) {
   })
   .then(() => {
     form.reset();
-    showStatus("Message sent!", "#00ff00");
+    showStatus("MESSAGE SENT ✓", "#00ff00");
     submitButton.disabled = false;
     textarea.focus();
 
-    statusTimeout = setTimeout(clearStatus, 5000);
+    statusTimeout = setTimeout(fadeStatus, 5000);
   })
   .catch(() => {
-    showStatus("Error sending message", "red");
+    showStatus("ERROR SENDING", "red");
     submitButton.disabled = false;
   });
 }
@@ -211,11 +209,18 @@ function showStatus(text, color) {
   const msg = document.getElementById("status");
   msg.innerText = text;
   msg.style.color = color;
+  msg.style.opacity = "1";
+}
+
+function fadeStatus() {
+  const msg = document.getElementById("status");
+  msg.style.opacity = "0";
 }
 
 function clearStatus() {
   const msg = document.getElementById("status");
   msg.innerText = "";
+  msg.style.opacity = "1";
 }
 
 document.addEventListener("DOMContentLoaded", function() {
