@@ -53,6 +53,22 @@ a.button {
   border-radius: 12px;
   padding: 30px;
   text-align: left;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.message-panel.active {
+  border-color: yellow;
+  box-shadow: 0 0 0 4px rgba(255,255,0,0.25);
+}
+
+.message-panel.sending {
+  border-color: #ffff66;
+  box-shadow: 0 0 0 4px rgba(255,255,102,0.25);
+}
+
+.message-panel.sent {
+  border-color: #00ff66;
+  box-shadow: 0 0 0 4px rgba(0,255,102,0.25);
 }
 
 .message-title {
@@ -85,10 +101,13 @@ textarea {
   resize: vertical;
   font-family: Arial, sans-serif;
   font-weight: 500;
+  outline: none;
+  transition: font-size 0.15s ease, min-height 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
-/* BIGGER + THICKER WHEN ACTIVE */
-textarea:focus {
+/* Active typing state */
+textarea:focus,
+.message-panel.keep-textarea-active textarea {
   font-size: 56px;
   min-height: 300px;
   background: #222;
@@ -97,7 +116,6 @@ textarea:focus {
   border: 4px solid #00bcd4;
 }
 
-/* PLACEHOLDER */
 textarea::placeholder {
   color: #bbb;
 }
@@ -114,10 +132,21 @@ textarea::placeholder {
   background: #00bcd4;
   color: black;
   cursor: pointer;
+  outline: none;
 }
 
 .submit-button:disabled {
   opacity: 0.6;
+}
+
+/* Only buttons/links get the yellow focus ring */
+a.button:hover,
+a.button:focus,
+.submit-button:hover,
+.submit-button:focus {
+  outline: 4px solid yellow;
+  outline-offset: 2px;
+  filter: brightness(1.1);
 }
 
 /* STATUS */
@@ -125,20 +154,31 @@ textarea::placeholder {
   text-align: center;
   font-size: 40px;
   margin-top: 20px;
-  min-height: 50px;
+  min-height: 56px;
   font-weight: bold;
-  transition: opacity 0.5s ease;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  border-radius: 12px;
+  padding: 12px 16px;
 }
 
-/* FOCUS / HOVER */
-a.button:hover,
-a.button:focus,
-textarea:focus,
-.submit-button:hover,
-.submit-button:focus {
-  outline: 4px solid yellow;
-  outline-offset: 2px;
-  filter: brightness(1.1);
+#status.show {
+  opacity: 1;
+}
+
+#status.sending {
+  background: #4a4300;
+  color: #ffff66;
+}
+
+#status.sent {
+  background: #003d1f;
+  color: #00ff66;
+}
+
+#status.error {
+  background: #4a0000;
+  color: #ff6666;
 }
 </style>
 </head>
@@ -153,16 +193,16 @@ textarea:focus,
   <a class="button" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">DAK VIDEOS</a>
   <a class="button" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">YOUTUBE WRESTLING VIDEOS</a>
 
-  <div class="message-panel">
+  <div class="message-panel" id="messagePanel">
     <div class="message-title">SEND MESSAGE</div>
     <div class="message-help">Click the box, then hold the mic button and speak. When finished, press SEND.</div>
 
     <form action="https://formspree.io/f/mzdyzybe" method="POST" onsubmit="handleSubmit(event)">
-      <textarea name="message" placeholder="Type or speak your message here" required></textarea>
+      <textarea name="message" id="messageBox" placeholder="Type or speak your message here" required></textarea>
 
       <input type="hidden" name="_subject" value="Message from Dad's Fire TV">
 
-      <button class="submit-button" type="submit">SEND</button>
+      <button class="submit-button" id="sendButton" type="submit">SEND</button>
 
       <div id="status"></div>
     </form>
@@ -170,27 +210,66 @@ textarea:focus,
 </div>
 
 <script>
-const TEST_MODE = true; // IMPORTANT: set to false when ready for real emails
+const TEST_MODE = true; // change to false later for real sending
 
 let statusTimeout;
+const panel = document.getElementById("messagePanel");
+const textarea = document.getElementById("messageBox");
+const statusBox = document.getElementById("status");
+const sendButton = document.getElementById("sendButton");
+
+function clearPanelState() {
+  panel.classList.remove("active", "sending", "sent", "keep-textarea-active");
+}
+
+function showStatus(text, mode) {
+  statusBox.textContent = text;
+  statusBox.className = "";
+  statusBox.id = "status";
+  statusBox.classList.add("show", mode);
+}
+
+function clearStatus() {
+  statusBox.textContent = "";
+  statusBox.className = "";
+  statusBox.id = "status";
+}
+
+function resetMessageArea() {
+  clearTimeout(statusTimeout);
+  clearStatus();
+  clearPanelState();
+}
 
 function handleSubmit(event) {
   event.preventDefault();
 
   const form = event.target;
-  const submitButton = form.querySelector(".submit-button");
 
   clearTimeout(statusTimeout);
-  submitButton.disabled = true;
-  showStatus("Sending...", "#ffff66");
+
+  // Keep message area visually active during send
+  panel.classList.remove("active", "sent");
+  panel.classList.add("sending", "keep-textarea-active");
+
+  sendButton.disabled = true;
+  sendButton.blur(); // prevents sticky yellow focus on SEND
+
+  showStatus("SENDING...", "sending");
 
   if (TEST_MODE) {
     setTimeout(() => {
       form.reset();
-      showStatus("MESSAGE SENT ✓", "#00ff00");
-      submitButton.disabled = false;
-      statusTimeout = setTimeout(fadeStatus, 5000);
-    }, 800);
+      panel.classList.remove("sending");
+      panel.classList.add("sent", "keep-textarea-active");
+      showStatus("MESSAGE SENT ✓", "sent");
+      sendButton.disabled = false;
+
+      statusTimeout = setTimeout(() => {
+        clearStatus();
+        clearPanelState();
+      }, 5000);
+    }, 900);
     return;
   }
 
@@ -204,40 +283,45 @@ function handleSubmit(event) {
   .then((response) => {
     if (!response.ok) throw new Error("Send failed");
     form.reset();
-    showStatus("MESSAGE SENT ✓", "#00ff00");
-    submitButton.disabled = false;
-    statusTimeout = setTimeout(fadeStatus, 5000);
+    panel.classList.remove("sending");
+    panel.classList.add("sent", "keep-textarea-active");
+    showStatus("MESSAGE SENT ✓", "sent");
+    sendButton.disabled = false;
+
+    statusTimeout = setTimeout(() => {
+      clearStatus();
+      clearPanelState();
+    }, 5000);
   })
   .catch(() => {
-    showStatus("ERROR SENDING", "red");
-    submitButton.disabled = false;
+    panel.classList.remove("sending");
+    panel.classList.add("active", "keep-textarea-active");
+    showStatus("ERROR SENDING", "error");
+    sendButton.disabled = false;
   });
 }
 
-function showStatus(text, color) {
-  const msg = document.getElementById("status");
-  msg.innerText = text;
-  msg.style.color = color;
-  msg.style.opacity = "1";
-}
-
-function fadeStatus() {
-  const msg = document.getElementById("status");
-  msg.style.opacity = "0";
-}
-
-function clearStatus() {
-  const msg = document.getElementById("status");
-  msg.innerText = "";
-  msg.style.opacity = "1";
-}
-
 document.addEventListener("DOMContentLoaded", function() {
-  const textarea = document.querySelector("textarea");
-  if (textarea) {
-    textarea.addEventListener("click", clearStatus);
-    textarea.addEventListener("input", clearStatus);
-  }
+  textarea.addEventListener("focus", () => {
+    clearTimeout(statusTimeout);
+    clearStatus();
+    panel.classList.remove("sending", "sent", "keep-textarea-active");
+    panel.classList.add("active");
+  });
+
+  textarea.addEventListener("click", () => {
+    clearTimeout(statusTimeout);
+    clearStatus();
+    panel.classList.remove("sending", "sent", "keep-textarea-active");
+    panel.classList.add("active");
+  });
+
+  textarea.addEventListener("input", () => {
+    clearTimeout(statusTimeout);
+    clearStatus();
+    panel.classList.remove("sending", "sent");
+    panel.classList.add("active");
+  });
 });
 </script>
 
