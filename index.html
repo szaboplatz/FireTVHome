@@ -70,17 +70,25 @@ a.button {
   margin-bottom: 25px;
 }
 
-/* TEXT AREA */
+/* TEXT AREA (UPDATED) */
 textarea {
   width: 100%;
   box-sizing: border-box;
-  font-size: 36px;
-  padding: 20px;
+  font-size: 42px;
+  line-height: 1.3;
+  padding: 25px;
   border-radius: 12px;
   border: none;
-  min-height: 220px;
+  min-height: 240px;
   resize: vertical;
   font-family: Arial, sans-serif;
+}
+
+/* BIGGER WHEN ACTIVE */
+textarea:focus {
+  font-size: 56px;
+  min-height: 300px;
+  background: #222;
 }
 
 /* SEND BUTTON */
@@ -101,7 +109,7 @@ textarea {
   opacity: 0.6;
 }
 
-/* STATUS MESSAGE */
+/* STATUS */
 #status {
   text-align: center;
   font-size: 30px;
