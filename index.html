@@ -3,17 +3,16 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: black;
   color: white;
   font-family: Arial, sans-serif;
   text-align: center;
   margin: 0;
-}
-
-h1 {
-  margin: 30px 0 10px 0;
-  font-size: 42px;
 }
 
 /* GRID */
@@ -25,7 +24,8 @@ h1 {
 }
 
 /* BUTTONS */
-a.button {
+a.button,
+a.jump-button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -36,6 +36,7 @@ a.button {
   border-radius: 12px;
   min-height: 120px;
   text-align: center;
+  box-sizing: border-box;
 }
 
 /* COLORS */
@@ -44,6 +45,15 @@ a.button {
 .container a.button:nth-child(3) { background: #d62728; }
 .container a.button:nth-child(4) { background: #9467bd; }
 .container a.button:nth-child(5) { background: #ff7f0e; }
+
+.jump-button {
+  background: #444444;
+}
+
+.jump-top {
+  grid-column: span 2;
+  margin-top: 10px;
+}
 
 /* YOUTUBE PLAYLIST PANEL */
 .youtube-playlist-panel {
@@ -63,8 +73,7 @@ a.button {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: 34vh;
-  overflow-y: auto;
+  width: 100%;
 }
 
 .youtube-video-button {
@@ -91,6 +100,7 @@ a.button {
   border-radius: 12px;
   padding: 30px;
   text-align: left;
+  scroll-margin-top: 20px;
 }
 
 .message-title {
@@ -102,6 +112,7 @@ a.button {
 }
 
 .message-help {
+  color: white;
   font-size: 28px;
   text-align: center;
   margin-bottom: 25px;
@@ -133,6 +144,7 @@ textarea.active-box,
   font-size: 56px;
   min-height: 300px;
   background: #222;
+  color: white;
   font-weight: 900;
   border: 4px solid yellow;
 }
@@ -149,6 +161,7 @@ textarea.active-box,
   background: #00bcd4;
   color: black;
   cursor: pointer;
+  outline: none;
 }
 
 .submit-button:disabled {
@@ -158,6 +171,8 @@ textarea.active-box,
 /* HIGHLIGHTS */
 a.button:hover,
 a.button:focus,
+a.jump-button:hover,
+a.jump-button:focus,
 .submit-button:hover,
 .submit-button:focus {
   outline: 4px solid yellow;
@@ -165,7 +180,6 @@ a.button:focus,
   filter: brightness(1.1);
 }
 
-/* Playlist highlight fix */
 .youtube-video-button:hover,
 .youtube-video-button:focus {
   border-color: yellow;
@@ -187,69 +201,215 @@ a.button:focus,
   padding: 12px 16px;
 }
 
-#status.show { opacity: 1; }
-#status.sending { background: #4a4300; color: #ffff66; }
-#status.sent { background: #003d1f; color: #00ff66; }
-#status.error { background: #4a0000; color: #ff6666; }
+#status.show {
+  opacity: 1;
+}
+
+#status.sending {
+  background: #4a4300;
+  color: #ffff66;
+}
+
+#status.sent {
+  background: #003d1f;
+  color: #00ff66;
+}
+
+#status.error {
+  background: #4a0000;
+  color: #ff6666;
+}
 </style>
 </head>
-<body>
-
-<h1>Home</h1>
+<body id="topOfPage">
 
 <div class="container">
+  <a class="jump-button" href="#messagePanel">JUMP TO SEND MESSAGE</a>
 
-<a class="button" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">DAK MAIN PHOTOS LOOP</a>
-<a class="button" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">DAK MAIN PHOTOS</a>
-<a class="button" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">DAK LATEST PHOTOS</a>
-<a class="button" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">DAK VIDEOS</a>
-<a class="button" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">YOUTUBE WRESTLING VIDEOS</a>
+  <a class="button" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">DAK MAIN PHOTOS LOOP</a>
+  <a class="button" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">DAK MAIN PHOTOS</a>
+  <a class="button" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">DAK LATEST PHOTOS</a>
+  <a class="button" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">DAK VIDEOS</a>
+  <a class="button" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">YOUTUBE WRESTLING VIDEOS</a>
 
-<!-- PLAYLIST -->
-<section class="youtube-playlist-panel">
-  <div id="ytStatus" class="youtube-playlist-status">Loading videos…</div>
-  <div id="ytList" class="youtube-playlist-list"></div>
-</section>
+  <section class="youtube-playlist-panel">
+    <div id="ytStatus" class="youtube-playlist-status">Loading videos…</div>
+    <div id="ytList" class="youtube-playlist-list"></div>
+  </section>
 
-<!-- MESSAGE PANEL -->
-<div class="message-panel" id="messagePanel">
-  <div class="message-title">SEND MESSAGE</div>
-  <div class="message-help">Click the box, then hold the mic button and speak. When finished, press SEND.</div>
+  <div class="message-panel" id="messagePanel">
+    <div class="message-title">SEND MESSAGE</div>
+    <div class="message-help">Click the box, then hold the mic button and speak. When finished, press SEND.</div>
 
-  <textarea id="messageBox" placeholder="Type or speak your message here"></textarea>
+    <form action="https://formspree.io/f/mzdyzybe" method="POST" onsubmit="handleSubmit(event)">
+      <textarea name="message" id="messageBox" placeholder="Type or speak your message here" required></textarea>
 
-  <div id="status"></div>
+      <input type="hidden" name="_subject" value="Message from Dad's Fire TV">
 
-  <button class="submit-button" id="sendButton">SEND</button>
-</div>
+      <div id="status"></div>
 
+      <button class="submit-button" id="sendButton" type="submit">SEND</button>
+    </form>
+  </div>
+
+  <a class="jump-button jump-top" href="#topOfPage">JUMP TO TOP</a>
 </div>
 
 <script>
+const TEST_MODE = true; // set to false later for real sending
+
 const API_KEY = "AIzaSyDz4YYsovruiRP8TgFTAZkpRbnIowELHd8";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
+
+let statusTimeout;
+const panel = document.getElementById("messagePanel");
+const textarea = document.getElementById("messageBox");
+const statusBox = document.getElementById("status");
+const sendButton = document.getElementById("sendButton");
+
+function clearTextareaVisual() {
+  textarea.classList.remove("active-box");
+  panel.classList.remove("keep-textarea-active");
+}
+
+function setTextareaVisual() {
+  textarea.classList.add("active-box");
+  panel.classList.remove("keep-textarea-active");
+}
+
+function showStatus(text, mode) {
+  statusBox.textContent = text;
+  statusBox.className = "";
+  statusBox.id = "status";
+  statusBox.classList.add("show", mode);
+}
+
+function clearStatus() {
+  statusBox.textContent = "";
+  statusBox.className = "";
+  statusBox.id = "status";
+}
+
+function handleSubmit(event) {
+  event.preventDefault();
+
+  const form = event.target;
+
+  clearTimeout(statusTimeout);
+
+  textarea.classList.remove("active-box");
+  panel.classList.add("keep-textarea-active");
+
+  sendButton.disabled = true;
+  sendButton.blur();
+
+  showStatus("SENDING...", "sending");
+
+  if (TEST_MODE) {
+    setTimeout(() => {
+      form.reset();
+      panel.classList.add("keep-textarea-active");
+      showStatus("MESSAGE SENT ✓", "sent");
+      sendButton.disabled = false;
+
+      statusTimeout = setTimeout(() => {
+        clearStatus();
+        clearTextareaVisual();
+      }, 5000);
+    }, 900);
+    return;
+  }
+
+  const data = new FormData(form);
+
+  fetch(form.action, {
+    method: form.method,
+    body: data,
+    headers: { 'Accept': 'application/json' }
+  })
+  .then((response) => {
+    if (!response.ok) throw new Error("Send failed");
+    form.reset();
+    panel.classList.add("keep-textarea-active");
+    showStatus("MESSAGE SENT ✓", "sent");
+    sendButton.disabled = false;
+
+    statusTimeout = setTimeout(() => {
+      clearStatus();
+      clearTextareaVisual();
+    }, 5000);
+  })
+  .catch(() => {
+    panel.classList.remove("keep-textarea-active");
+    textarea.classList.add("active-box");
+    showStatus("ERROR SENDING", "error");
+    sendButton.disabled = false;
+  });
+}
+
+async function fetchPlaylistVideos(playlistId, apiKey) {
+  let nextPageToken = "";
+  const videos = [];
+
+  do {
+    const url = new URL("https://www.googleapis.com/youtube/v3/playlistItems");
+    url.searchParams.set("part", "snippet");
+    url.searchParams.set("playlistId", playlistId);
+    url.searchParams.set("maxResults", "50");
+    url.searchParams.set("key", apiKey);
+
+    if (nextPageToken) {
+      url.searchParams.set("pageToken", nextPageToken);
+    }
+
+    const response = await fetch(url.toString());
+
+    if (!response.ok) {
+      throw new Error(`YouTube API request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    for (const item of data.items || []) {
+      const title = item?.snippet?.title;
+      const videoId = item?.snippet?.resourceId?.videoId;
+
+      if (!title || !videoId) continue;
+
+      videos.push({
+        title,
+        videoId,
+        url: `https://www.youtube.com/watch?v=${videoId}`
+      });
+    }
+
+    nextPageToken = data.nextPageToken || "";
+  } while (nextPageToken);
+
+  return videos;
+}
 
 async function loadVideos() {
   const status = document.getElementById("ytStatus");
   const list = document.getElementById("ytList");
 
   try {
-    const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${PLAYLIST_ID}&maxResults=12&key=${API_KEY}`;
-    const res = await fetch(url);
-    const data = await res.json();
+    const videos = await fetchPlaylistVideos(PLAYLIST_ID, API_KEY);
 
     list.innerHTML = "";
 
-    data.items.forEach(item => {
-      const title = item.snippet.title;
-      const id = item.snippet.resourceId.videoId;
+    if (!videos.length) {
+      status.textContent = "No videos found.";
+      return;
+    }
 
+    videos.forEach((video) => {
       const btn = document.createElement("button");
       btn.className = "youtube-video-button";
-      btn.textContent = title;
+      btn.textContent = video.title;
 
       btn.onclick = () => {
-        window.location.href = `https://www.youtube.com/watch?v=${id}`;
+        window.location.href = video.url;
       };
 
       list.appendChild(btn);
@@ -257,11 +417,40 @@ async function loadVideos() {
 
     status.style.display = "none";
   } catch (e) {
+    console.error(e);
     status.textContent = "Error loading videos";
   }
 }
 
-document.addEventListener("DOMContentLoaded", loadVideos);
+document.addEventListener("DOMContentLoaded", function() {
+  textarea.addEventListener("focus", () => {
+    clearTimeout(statusTimeout);
+    clearStatus();
+    setTextareaVisual();
+  });
+
+  textarea.addEventListener("click", () => {
+    clearTimeout(statusTimeout);
+    clearStatus();
+    setTextareaVisual();
+  });
+
+  textarea.addEventListener("input", () => {
+    clearTimeout(statusTimeout);
+    clearStatus();
+    setTextareaVisual();
+  });
+
+  sendButton.addEventListener("focus", () => {
+    clearTextareaVisual();
+  });
+
+  sendButton.addEventListener("mouseover", () => {
+    clearTextareaVisual();
+  });
+
+  loadVideos();
+});
 </script>
 
 </body>
