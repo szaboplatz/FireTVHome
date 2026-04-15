@@ -49,13 +49,14 @@ a.button {
 .youtube-playlist-panel {
   grid-column: span 2;
   width: 100%;
-  margin: 0;
+  text-align: left;
 }
 
 .youtube-playlist-status {
   font-size: 30px;
   padding: 10px;
   text-align: center;
+  min-height: 52px;
 }
 
 .youtube-playlist-list {
@@ -68,14 +69,18 @@ a.button {
 
 .youtube-video-button {
   width: 100%;
+  box-sizing: border-box;
   padding: 22px;
   font-size: 34px;
+  line-height: 1.2;
   background: #1f1f1f;
   color: white;
   border: 3px solid #666;
   border-radius: 12px;
   text-align: left;
   cursor: pointer;
+  white-space: normal;
+  word-break: break-word;
 }
 
 /* MESSAGE PANEL */
@@ -91,6 +96,7 @@ a.button {
 .message-title {
   color: #00bcd4;
   font-size: 42px;
+  font-weight: bold;
   text-align: center;
   margin-bottom: 20px;
 }
@@ -104,14 +110,20 @@ a.button {
 /* TEXT AREA */
 textarea {
   width: 100%;
+  box-sizing: border-box;
   font-size: 42px;
+  line-height: 1.3;
   padding: 25px;
   border-radius: 12px;
   border: 4px solid #555;
   background: #111;
   color: white;
   min-height: 240px;
+  resize: vertical;
+  font-family: Arial, sans-serif;
+  font-weight: 500;
   outline: none;
+  transition: font-size 0.15s ease, min-height 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
 /* ACTIVE TEXTBOX */
@@ -119,6 +131,9 @@ textarea:focus,
 textarea.active-box,
 .message-panel.keep-textarea-active textarea {
   font-size: 56px;
+  min-height: 300px;
+  background: #222;
+  font-weight: 900;
   border: 4px solid yellow;
 }
 
@@ -128,21 +143,54 @@ textarea.active-box,
   width: 100%;
   padding: 30px;
   font-size: 44px;
-  background: #00bcd4;
+  font-weight: bold;
   border: none;
   border-radius: 12px;
+  background: #00bcd4;
+  color: black;
   cursor: pointer;
 }
 
-/* HIGHLIGHT */
+.submit-button:disabled {
+  opacity: 0.6;
+}
+
+/* HIGHLIGHTS */
 a.button:hover,
-.youtube-video-button:hover,
-.submit-button:hover,
 a.button:focus,
-.youtube-video-button:focus,
+.submit-button:hover,
 .submit-button:focus {
   outline: 4px solid yellow;
+  outline-offset: 2px;
+  filter: brightness(1.1);
 }
+
+/* Playlist highlight fix */
+.youtube-video-button:hover,
+.youtube-video-button:focus {
+  border-color: yellow;
+  box-shadow: inset 0 0 0 4px yellow;
+  outline: none;
+}
+
+/* STATUS */
+#status {
+  text-align: center;
+  font-size: 40px;
+  margin-top: 10px;
+  margin-bottom: 20px;
+  min-height: 56px;
+  font-weight: bold;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+
+#status.show { opacity: 1; }
+#status.sending { background: #4a4300; color: #ffff66; }
+#status.sent { background: #003d1f; color: #00ff66; }
+#status.error { background: #4a0000; color: #ff6666; }
 </style>
 </head>
 <body>
@@ -151,25 +199,28 @@ a.button:focus,
 
 <div class="container">
 
-<a class="button" href="#">DAK MAIN PHOTOS LOOP</a>
-<a class="button" href="#">DAK MAIN PHOTOS</a>
-<a class="button" href="#">DAK LATEST PHOTOS</a>
-<a class="button" href="#">DAK VIDEOS</a>
+<a class="button" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">DAK MAIN PHOTOS LOOP</a>
+<a class="button" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">DAK MAIN PHOTOS</a>
+<a class="button" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">DAK LATEST PHOTOS</a>
+<a class="button" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">DAK VIDEOS</a>
 <a class="button" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">YOUTUBE WRESTLING VIDEOS</a>
 
-<!-- PLAYLIST SECTION -->
+<!-- PLAYLIST -->
 <section class="youtube-playlist-panel">
   <div id="ytStatus" class="youtube-playlist-status">Loading videos…</div>
   <div id="ytList" class="youtube-playlist-list"></div>
 </section>
 
 <!-- MESSAGE PANEL -->
-<div class="message-panel">
+<div class="message-panel" id="messagePanel">
   <div class="message-title">SEND MESSAGE</div>
-  <div class="message-help">Click the box, then speak, then press SEND</div>
+  <div class="message-help">Click the box, then hold the mic button and speak. When finished, press SEND.</div>
 
-  <textarea placeholder="Type or speak here"></textarea>
-  <button class="submit-button">SEND</button>
+  <textarea id="messageBox" placeholder="Type or speak your message here"></textarea>
+
+  <div id="status"></div>
+
+  <button class="submit-button" id="sendButton">SEND</button>
 </div>
 
 </div>
@@ -210,7 +261,7 @@ async function loadVideos() {
   }
 }
 
-loadVideos();
+document.addEventListener("DOMContentLoaded", loadVideos);
 </script>
 
 </body>
