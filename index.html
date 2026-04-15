@@ -59,7 +59,35 @@ a.jump-button {
 .button-videos           { background: #9467bd; }
 .button-youtube          { background: #ff7f0e; }
 
-#familyMessagesButton { background: #00a6c7; }
+#familyMessagesButton {
+  background: #00a6c7;
+  position: relative;
+}
+
+/* UNREAD BADGE */
+.unread-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  min-width: 56px;
+  height: 56px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #c40000;
+  color: white;
+  border: 4px solid #ff8a8a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: bold;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+.unread-badge.hidden {
+  display: none;
+}
 
 /* PLAYER OVERLAY */
 .player-panel {
@@ -124,7 +152,7 @@ a.jump-button {
   letter-spacing: 4px;
 }
 
-/* FAMILY MESSAGES SECTION - normal page flow */
+/* FAMILY MESSAGES SECTION */
 .messages-panel {
   display: none;
   grid-column: span 2;
@@ -211,6 +239,10 @@ a.jump-button {
   border-color: #777777;
 }
 
+.message-card.collapsed .message-body {
+  display: none;
+}
+
 .message-from,
 .message-subject {
   font-size: 42px;
@@ -232,7 +264,14 @@ a.jump-button {
   margin-bottom: 20px;
 }
 
-.message-action-button {
+.message-button-row {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.message-action-button,
+.message-secondary-button {
   width: 100%;
   box-sizing: border-box;
   padding: 26px;
@@ -240,9 +279,17 @@ a.jump-button {
   font-weight: bold;
   border: none;
   border-radius: 12px;
+  cursor: pointer;
+}
+
+.message-action-button {
   background: #00bcd4;
   color: black;
-  cursor: pointer;
+}
+
+.message-secondary-button {
+  background: #666;
+  color: white;
 }
 
 .message-read-badge {
@@ -256,6 +303,10 @@ a.jump-button {
   background: #1a1a1a;
   color: #cccccc;
   text-align: center;
+}
+
+.message-card.collapsed .message-read-badge {
+  margin-top: 10px;
 }
 
 /* YOUTUBE PLAYLIST PANEL */
@@ -395,7 +446,9 @@ a.jump-button:focus,
 .submit-button:hover,
 .submit-button:focus,
 .message-action-button:hover,
-.message-action-button:focus {
+.message-action-button:focus,
+.message-secondary-button:hover,
+.message-secondary-button:focus {
   outline: 4px solid yellow;
   outline-offset: 2px;
   filter: brightness(1.1);
@@ -461,7 +514,10 @@ a.jump-button:focus,
 <body id="topOfPage">
 
 <div class="container">
-  <button class="button-tile" id="familyMessagesButton" type="button">FAMILY MESSAGES</button>
+  <button class="button-tile" id="familyMessagesButton" type="button">
+    FAMILY MESSAGES
+    <span id="unreadBadge" class="unread-badge hidden">0</span>
+  </button>
   <a class="jump-button" href="#messagePanel">JUMP TO SEND MESSAGE</a>
 
   <a class="button button-main-photos-loop" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">MAIN PHOTOS LOOP</a>
@@ -520,6 +576,8 @@ const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
 
 let statusTimeout;
+let cachedMessages = [];
+
 const panel = document.getElementById("messagePanel");
 const textarea = document.getElementById("messageBox");
 const statusBox = document.getElementById("status");
@@ -530,10 +588,22 @@ const closeVideoButton = document.getElementById("closeVideoButton");
 const playerHost = document.getElementById("youtube-player-host");
 
 const familyMessagesButton = document.getElementById("familyMessagesButton");
+const unreadBadge = document.getElementById("unreadBadge");
 const messagesPanel = document.getElementById("messagesPanel");
 const closeMessagesButton = document.getElementById("closeMessagesButton");
 const messagesStatus = document.getElementById("messagesStatus");
 const messagesList = document.getElementById("messagesList");
+
+function updateUnreadBadge(messages) {
+  const unreadCount = (messages || []).filter(msg => !msg.read_at).length;
+  unreadBadge.textContent = String(unreadCount);
+
+  if (unreadCount > 0) {
+    unreadBadge.classList.remove("hidden");
+  } else {
+    unreadBadge.classList.add("hidden");
+  }
+}
 
 function getWatchedVideos() {
   try {
@@ -776,11 +846,21 @@ function openMessagesPanel() {
   messagesPanel.classList.add("show");
   closeMessagesButton.focus();
   messagesPanel.scrollIntoView({ behavior: "auto", block: "start" });
-  loadMessages();
+
+  if (cachedMessages.length) {
+    renderMessages({ ok: true, messages: cachedMessages });
+    refreshMessages();
+  } else {
+    loadMessages();
+  }
 }
 
 function closeMessagesPanelFn() {
   messagesPanel.classList.remove("show");
+}
+
+async function runMessageAction(action, id) {
+  return loadJsonp(MESSAGES_API_URL, { action, id });
 }
 
 function renderMessages(data) {
@@ -791,16 +871,19 @@ function renderMessages(data) {
     return;
   }
 
-  if (!data.messages || !data.messages.length) {
+  cachedMessages = data.messages || [];
+  updateUnreadBadge(cachedMessages);
+
+  if (!cachedMessages.length) {
     messagesStatus.textContent = "No messages right now.";
     return;
   }
 
   messagesStatus.textContent = "";
 
-  data.messages.forEach((msg) => {
+  cachedMessages.forEach((msg) => {
     const card = document.createElement("div");
-    card.className = "message-card" + (msg.read_at ? " read" : "");
+    card.className = "message-card" + (msg.read_at ? " read" : "") + (msg.collapsed_at ? " collapsed" : "");
 
     const from = document.createElement("div");
     from.className = "message-from";
@@ -814,21 +897,21 @@ function renderMessages(data) {
     sent.className = "message-date";
     sent.textContent = "SENT: " + formatDisplayDate(msg.created_at);
 
-    const body = document.createElement("div");
-    body.className = "message-body";
-    body.textContent = msg.body;
-
     card.appendChild(from);
     card.appendChild(subject);
     card.appendChild(sent);
-    card.appendChild(body);
 
-    if (msg.read_at) {
-      const badge = document.createElement("div");
-      badge.className = "message-read-badge";
-      badge.textContent = "READ ✓ " + formatDisplayDate(msg.read_at);
-      card.appendChild(badge);
-    } else {
+    if (!msg.collapsed_at) {
+      const body = document.createElement("div");
+      body.className = "message-body";
+      body.textContent = msg.body;
+      card.appendChild(body);
+    }
+
+    const buttonRow = document.createElement("div");
+    buttonRow.className = "message-button-row";
+
+    if (!msg.read_at) {
       const markButton = document.createElement("button");
       markButton.className = "message-action-button";
       markButton.type = "button";
@@ -836,16 +919,11 @@ function renderMessages(data) {
       markButton.addEventListener("click", async () => {
         messagesStatus.textContent = "Marking as read…";
         try {
-          const result = await loadJsonp(MESSAGES_API_URL, {
-            action: "mark_read",
-            id: msg.id
-          });
-
+          const result = await runMessageAction("mark_read", msg.id);
           if (!result.ok) {
             messagesStatus.textContent = "Could not mark message as read.";
             return;
           }
-
           messagesStatus.textContent = "Marked as read ✓";
           loadMessages();
         } catch (e) {
@@ -853,9 +931,59 @@ function renderMessages(data) {
           messagesStatus.textContent = "Could not mark message as read.";
         }
       });
-      card.appendChild(markButton);
+      buttonRow.appendChild(markButton);
+    } else {
+      const badge = document.createElement("div");
+      badge.className = "message-read-badge";
+      badge.textContent = "READ ✓ " + formatDisplayDate(msg.read_at);
+      buttonRow.appendChild(badge);
     }
 
+    if (msg.collapsed_at) {
+      const showButton = document.createElement("button");
+      showButton.className = "message-secondary-button";
+      showButton.type = "button";
+      showButton.textContent = "SHOW MESSAGE";
+      showButton.addEventListener("click", async () => {
+        messagesStatus.textContent = "Opening message…";
+        try {
+          const result = await runMessageAction("expand_message", msg.id);
+          if (!result.ok) {
+            messagesStatus.textContent = "Could not open message.";
+            return;
+          }
+          messagesStatus.textContent = "";
+          loadMessages();
+        } catch (e) {
+          console.error(e);
+          messagesStatus.textContent = "Could not open message.";
+        }
+      });
+      buttonRow.appendChild(showButton);
+    } else {
+      const collapseButton = document.createElement("button");
+      collapseButton.className = "message-secondary-button";
+      collapseButton.type = "button";
+      collapseButton.textContent = "COLLAPSE";
+      collapseButton.addEventListener("click", async () => {
+        messagesStatus.textContent = "Collapsing message…";
+        try {
+          const result = await runMessageAction("collapse_message", msg.id);
+          if (!result.ok) {
+            messagesStatus.textContent = "Could not collapse message.";
+            return;
+          }
+          messagesStatus.textContent = "";
+          loadMessages();
+        } catch (e) {
+          console.error(e);
+          messagesStatus.textContent = "Could not collapse message.";
+        }
+      });
+      buttonRow.appendChild(collapseButton);
+    }
+
+    card.appendChild(buttonRow);
     messagesList.appendChild(card);
   });
 }
@@ -870,6 +998,31 @@ async function loadMessages() {
   } catch (e) {
     console.error(e);
     messagesStatus.textContent = "Could not load messages.";
+  }
+}
+
+async function refreshMessages() {
+  try {
+    const data = await loadJsonp(MESSAGES_API_URL, { action: "list" });
+    renderMessages(data);
+  } catch (e) {
+    console.error(e);
+    updateUnreadBadge(cachedMessages);
+  }
+}
+
+async function preloadMessagesForBadge() {
+  try {
+    const data = await loadJsonp(MESSAGES_API_URL, { action: "list" });
+    if (data && data.ok) {
+      cachedMessages = data.messages || [];
+      updateUnreadBadge(cachedMessages);
+    } else {
+      updateUnreadBadge([]);
+    }
+  } catch (e) {
+    console.error(e);
+    updateUnreadBadge([]);
   }
 }
 
@@ -953,6 +1106,7 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 
   loadVideos();
+  preloadMessagesForBadge();
 });
 </script>
 
