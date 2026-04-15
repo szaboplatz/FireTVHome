@@ -72,7 +72,7 @@ a.button {
   inset: 0;
   z-index: 9999;
   background: rgba(0, 0, 0, 0.97);
-  padding: 18px;
+  padding: 0;
   box-sizing: border-box;
   overflow-y: auto;
 }
@@ -81,49 +81,11 @@ a.button {
   display: block;
 }
 
-.player-top-bar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 12px;
-}
-
-.player-close-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px 28px;
-  font-size: 34px;
-  color: white;
-  background: #444444;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  box-sizing: border-box;
-}
-
-.player-overlay-inner {
-  width: min(92vw, 1400px);
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.player-title {
-  font-size: 34px;
-  line-height: 1.2;
-  margin-bottom: 18px;
-  text-align: center;
-  max-width: 100%;
-}
-
+/* VIDEO AT VERY TOP */
 .player-frame-wrap {
   width: 100%;
   aspect-ratio: 16 / 9;
   background: #000;
-  border: 4px solid #666;
-  border-radius: 12px;
-  overflow: hidden;
 }
 
 #youtube-player-host,
@@ -137,18 +99,25 @@ a.button {
   display: block;
 }
 
+/* CONTENT BELOW VIDEO */
+.player-content {
+  padding: 20px;
+}
+
+.player-title {
+  font-size: 34px;
+  margin: 20px 0;
+  text-align: center;
+}
+
 .player-controls {
-  margin-top: 18px;
   display: flex;
   justify-content: center;
   gap: 18px;
   flex-wrap: wrap;
 }
 
-.player-back-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.player-close-button {
   padding: 24px 36px;
   font-size: 36px;
   color: white;
@@ -156,44 +125,29 @@ a.button {
   border: none;
   border-radius: 12px;
   cursor: pointer;
-  box-sizing: border-box;
 }
 
-/* YOUTUBE PLAYLIST PANEL */
+/* YOUTUBE LIST */
 .youtube-playlist-panel {
   grid-column: span 2;
   width: 100%;
   text-align: left;
 }
 
-.youtube-playlist-status {
-  font-size: 30px;
-  padding: 10px;
-  text-align: center;
-  min-height: 52px;
-}
-
 .youtube-playlist-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  width: 100%;
 }
 
 .youtube-video-button {
-  width: 100%;
-  box-sizing: border-box;
   padding: 22px;
   font-size: 34px;
-  line-height: 1.2;
   background: #1f1f1f;
   color: white;
   border: 3px solid #666;
   border-radius: 12px;
   text-align: left;
-  cursor: pointer;
-  white-space: normal;
-  word-break: break-word;
 }
 
 /* MESSAGE PANEL */
@@ -203,439 +157,73 @@ a.button {
   border: 4px solid #00bcd4;
   border-radius: 12px;
   padding: 30px;
-  text-align: left;
-  scroll-margin-top: 20px;
-}
-
-.message-title {
-  color: #00bcd4;
-  font-size: 42px;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.message-help {
-  color: white;
-  font-size: 28px;
-  text-align: center;
-  margin-bottom: 25px;
-}
-
-/* TEXT AREA */
-textarea {
-  width: 100%;
-  box-sizing: border-box;
-  font-size: 42px;
-  line-height: 1.3;
-  padding: 25px;
-  border-radius: 12px;
-  border: 4px solid #555;
-  background: #111;
-  color: white;
-  min-height: 240px;
-  resize: vertical;
-  font-family: Arial, sans-serif;
-  font-weight: 500;
-  outline: none;
-  transition: font-size 0.15s ease, min-height 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-}
-
-/* ACTIVE TEXTBOX */
-textarea:focus,
-textarea.active-box,
-.message-panel.keep-textarea-active textarea {
-  font-size: 56px;
-  min-height: 300px;
-  background: #222;
-  color: white;
-  font-weight: 900;
-  border: 4px solid yellow;
-}
-
-/* SEND BUTTON */
-.submit-button {
-  margin-top: 25px;
-  width: 100%;
-  padding: 30px;
-  font-size: 44px;
-  font-weight: bold;
-  border: none;
-  border-radius: 12px;
-  background: #00bcd4;
-  color: black;
-  cursor: pointer;
-  outline: none;
-}
-
-.submit-button:disabled {
-  opacity: 0.6;
-}
-
-/* BOTTOM JUMP */
-.jump-top {
-  grid-column: span 2;
-  justify-self: center;
-  margin-top: 10px;
 }
 
 /* HIGHLIGHTS */
 a.button:hover,
-a.button:focus,
-a.jump-button:hover,
-a.jump-button:focus,
-.submit-button:hover,
-.submit-button:focus,
-.player-back-button:hover,
-.player-back-button:focus,
-.player-close-button:hover,
-.player-close-button:focus {
+.player-close-button:hover {
   outline: 4px solid yellow;
-  outline-offset: 2px;
-  filter: brightness(1.1);
-}
-
-.youtube-video-button:hover,
-.youtube-video-button:focus {
-  border-color: yellow;
-  box-shadow: inset 0 0 0 4px yellow;
-  outline: none;
-}
-
-/* STATUS */
-#status {
-  text-align: center;
-  font-size: 40px;
-  margin-top: 10px;
-  margin-bottom: 20px;
-  min-height: 56px;
-  font-weight: bold;
-  opacity: 0;
-  transition: opacity 0.35s ease;
-  border-radius: 12px;
-  padding: 12px 16px;
-}
-
-#status.show {
-  opacity: 1;
-}
-
-#status.sending {
-  background: #4a4300;
-  color: #ffff66;
-}
-
-#status.sent {
-  background: #003d1f;
-  color: #00ff66;
-}
-
-#status.error {
-  background: #4a0000;
-  color: #ff6666;
 }
 </style>
 </head>
-<body id="topOfPage">
+<body>
 
 <div class="top-jump-wrap">
   <a class="jump-button" href="#messagePanel">JUMP TO SEND MESSAGE</a>
 </div>
 
 <div class="container">
-  <a class="button" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">MAIN PHOTOS LOOP</a>
-  <a class="button" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">MAIN PHOTOS</a>
-  <a class="button" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">LATEST PHOTOS</a>
-  <a class="button" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">VIDEOS</a>
-  <a class="button" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">YOUTUBE WRESTLING VIDEOS</a>
+  <a class="button" href="#">MAIN PHOTOS LOOP</a>
+  <a class="button" href="#">MAIN PHOTOS</a>
+  <a class="button" href="#">LATEST PHOTOS</a>
+  <a class="button" href="#">VIDEOS</a>
+  <a class="button" href="#">YOUTUBE WRESTLING VIDEOS</a>
 
   <section id="playerPanel" class="player-panel">
-    <div class="player-top-bar">
-      <button id="closeVideoButton" class="player-close-button" type="button">X CLOSE VIDEO</button>
+    <div class="player-frame-wrap">
+      <div id="youtube-player-host"></div>
     </div>
 
-    <div class="player-overlay-inner">
+    <div class="player-content">
       <div id="playerTitle" class="player-title"></div>
-      <div class="player-frame-wrap">
-        <div id="youtube-player-host"></div>
-      </div>
+
       <div class="player-controls">
-        <button id="backToListButton" class="player-back-button" type="button">BACK TO VIDEO LIST</button>
+        <button id="closeVideoButton" class="player-close-button">CLOSE VIDEO</button>
       </div>
     </div>
   </section>
 
   <section id="playlistPanel" class="youtube-playlist-panel">
-    <div id="ytStatus" class="youtube-playlist-status">Loading videos…</div>
     <div id="ytList" class="youtube-playlist-list"></div>
   </section>
 
   <div class="message-panel" id="messagePanel">
-    <div class="message-title">SEND MESSAGE</div>
-    <div class="message-help">Click the box, then hold the mic button and speak. When finished, press SEND.</div>
-
-    <form action="https://formspree.io/f/mzdyzybe" method="POST" onsubmit="handleSubmit(event)">
-      <textarea name="message" id="messageBox" placeholder="Type or speak your message here" required></textarea>
-
-      <input type="hidden" name="_subject" value="Message from Dad's Fire TV">
-
-      <div id="status"></div>
-
-      <button class="submit-button" id="sendButton" type="submit">SEND</button>
-    </form>
+    <textarea placeholder="Type or speak your message here"></textarea>
   </div>
-
-  <a class="jump-button jump-top" href="#topOfPage">JUMP TO TOP</a>
 </div>
 
 <script>
-const TEST_MODE = true; // set to false later for real sending
-
-const API_KEY = "AIzaSyDz4YYsovruiRP8TgFTAZkpRbnIowELHd8";
-const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
-
-let statusTimeout;
-const panel = document.getElementById("messagePanel");
-const textarea = document.getElementById("messageBox");
-const statusBox = document.getElementById("status");
-const sendButton = document.getElementById("sendButton");
-
 const playerPanel = document.getElementById("playerPanel");
-const playerTitle = document.getElementById("playerTitle");
-const backToListButton = document.getElementById("backToListButton");
-const closeVideoButton = document.getElementById("closeVideoButton");
 const playerHost = document.getElementById("youtube-player-host");
+const playerTitle = document.getElementById("playerTitle");
 
-function clearTextareaVisual() {
-  textarea.classList.remove("active-box");
-  panel.classList.remove("keep-textarea-active");
-}
-
-function setTextareaVisual() {
-  textarea.classList.add("active-box");
-  panel.classList.remove("keep-textarea-active");
-}
-
-function showStatus(text, mode) {
-  statusBox.textContent = text;
-  statusBox.className = "";
-  statusBox.id = "status";
-  statusBox.classList.add("show", mode);
-}
-
-function clearStatus() {
-  statusBox.textContent = "";
-  statusBox.className = "";
-  statusBox.id = "status";
-}
-
-function handleSubmit(event) {
-  event.preventDefault();
-
-  const form = event.target;
-
-  clearTimeout(statusTimeout);
-
-  textarea.classList.remove("active-box");
-  panel.classList.add("keep-textarea-active");
-
-  sendButton.disabled = true;
-  sendButton.blur();
-
-  showStatus("SENDING...", "sending");
-
-  if (TEST_MODE) {
-    setTimeout(() => {
-      form.reset();
-      panel.classList.add("keep-textarea-active");
-      showStatus("MESSAGE SENT ✓", "sent");
-      sendButton.disabled = false;
-
-      statusTimeout = setTimeout(() => {
-        clearStatus();
-        clearTextareaVisual();
-      }, 5000);
-    }, 900);
-    return;
-  }
-
-  const data = new FormData(form);
-
-  fetch(form.action, {
-    method: form.method,
-    body: data,
-    headers: { 'Accept': 'application/json' }
-  })
-  .then((response) => {
-    if (!response.ok) throw new Error("Send failed");
-    form.reset();
-    panel.classList.add("keep-textarea-active");
-    showStatus("MESSAGE SENT ✓", "sent");
-    sendButton.disabled = false;
-
-    statusTimeout = setTimeout(() => {
-      clearStatus();
-      clearTextareaVisual();
-    }, 5000);
-  })
-  .catch(() => {
-    panel.classList.remove("keep-textarea-active");
-    textarea.classList.add("active-box");
-    showStatus("ERROR SENDING", "error");
-    sendButton.disabled = false;
-  });
-}
-
-async function fetchPlaylistVideos(playlistId, apiKey) {
-  let nextPageToken = "";
-  const videos = [];
-
-  do {
-    const url = new URL("https://www.googleapis.com/youtube/v3/playlistItems");
-    url.searchParams.set("part", "snippet,status");
-    url.searchParams.set("playlistId", playlistId);
-    url.searchParams.set("maxResults", "50");
-    url.searchParams.set("key", apiKey);
-
-    if (nextPageToken) {
-      url.searchParams.set("pageToken", nextPageToken);
-    }
-
-    const response = await fetch(url.toString());
-
-    if (!response.ok) {
-      throw new Error(`YouTube API request failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    for (const item of data.items || []) {
-      const title = item?.snippet?.title;
-      const videoId = item?.snippet?.resourceId?.videoId;
-      const privacyStatus = item?.status?.privacyStatus;
-
-      if (!videoId) continue;
-      if (privacyStatus === "private") continue;
-      if (!title) continue;
-      if (title.trim().toLowerCase() === "private video") continue;
-
-      videos.push({
-        title,
-        videoId
-      });
-    }
-
-    nextPageToken = data.nextPageToken || "";
-  } while (nextPageToken);
-
-  return videos;
-}
-
-function destroyEmbeddedPlayer() {
-  playerHost.innerHTML = "";
-}
-
-function showPlayerPanel(videoTitle) {
-  playerTitle.textContent = videoTitle;
+function playEmbeddedVideo(id, title) {
   playerPanel.classList.add("show");
-  closeVideoButton.focus();
+  playerTitle.textContent = title;
+
+  playerHost.innerHTML = `
+    <iframe
+      src="https://www.youtube.com/embed/${id}?autoplay=1&playsinline=1"
+      allow="autoplay; encrypted-media"
+      allowfullscreen>
+    </iframe>
+  `;
 }
 
-function showPlaylistPanel() {
-  destroyEmbeddedPlayer();
+document.getElementById("closeVideoButton").onclick = () => {
   playerPanel.classList.remove("show");
-}
-
-function playEmbeddedVideo(videoId, videoTitle) {
-  showPlayerPanel(videoTitle);
-  destroyEmbeddedPlayer();
-
-  const iframe = document.createElement("iframe");
-  iframe.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
-  iframe.allowFullscreen = true;
-  iframe.referrerPolicy = "strict-origin-when-cross-origin";
-
-  const embedUrl = new URL(`https://www.youtube.com/embed/${videoId}`);
-  embedUrl.searchParams.set("autoplay", "1");
-  embedUrl.searchParams.set("playsinline", "1");
-  embedUrl.searchParams.set("rel", "0");
-
-  iframe.src = embedUrl.toString();
-
-  playerHost.appendChild(iframe);
-}
-
-async function loadVideos() {
-  const status = document.getElementById("ytStatus");
-  const list = document.getElementById("ytList");
-
-  try {
-    const videos = await fetchPlaylistVideos(PLAYLIST_ID, API_KEY);
-
-    list.innerHTML = "";
-
-    if (!videos.length) {
-      status.textContent = "No videos found.";
-      return;
-    }
-
-    videos.forEach((video) => {
-      const btn = document.createElement("button");
-      btn.className = "youtube-video-button";
-      btn.textContent = video.title;
-      btn.type = "button";
-
-      btn.addEventListener("click", () => {
-        playEmbeddedVideo(video.videoId, video.title);
-      });
-
-      list.appendChild(btn);
-    });
-
-    status.style.display = "none";
-  } catch (e) {
-    console.error(e);
-    status.textContent = "Error loading videos";
-  }
-}
-
-document.addEventListener("DOMContentLoaded", function() {
-  textarea.addEventListener("focus", () => {
-    clearTimeout(statusTimeout);
-    clearStatus();
-    setTextareaVisual();
-  });
-
-  textarea.addEventListener("click", () => {
-    clearTimeout(statusTimeout);
-    clearStatus();
-    setTextareaVisual();
-  });
-
-  textarea.addEventListener("input", () => {
-    clearTimeout(statusTimeout);
-    clearStatus();
-    setTextareaVisual();
-  });
-
-  sendButton.addEventListener("focus", () => {
-    clearTextareaVisual();
-  });
-
-  sendButton.addEventListener("mouseover", () => {
-    clearTextareaVisual();
-  });
-
-  backToListButton.addEventListener("click", () => {
-    showPlaylistPanel();
-  });
-
-  closeVideoButton.addEventListener("click", () => {
-    showPlaylistPanel();
-  });
-
-  loadVideos();
-});
+  playerHost.innerHTML = "";
+};
 </script>
 
 </body>
