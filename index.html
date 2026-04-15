@@ -52,12 +52,13 @@ a.jump-button {
   background: #444444;
 }
 
-/* MAIN BUTTON COLORS */
-.container > .button:nth-of-type(1) { background: #1f77b4; }
-.container > .button:nth-of-type(2) { background: #2ca02c; }
-.container > .button:nth-of-type(3) { background: #d62728; }
-.container > .button:nth-of-type(4) { background: #9467bd; }
-.container > .button:nth-of-type(5) { background: #ff7f0e; }
+/* EXPLICIT TILE COLORS */
+.button-main-photos-loop { background: #1f77b4; }
+.button-main-photos      { background: #2ca02c; }
+.button-latest-photos    { background: #d62728; }
+.button-videos           { background: #9467bd; }
+.button-youtube          { background: #ff7f0e; }
+
 #familyMessagesButton { background: #00a6c7; }
 
 /* PLAYER OVERLAY */
@@ -112,9 +113,9 @@ a.jump-button {
   font-size: 34px;
   font-weight: bold;
   color: white;
-  background: rgba(120, 0, 0, 0.95);
+  background: rgba(120, 0, 0, 0.72);
   border: none;
-  border-left: 4px solid #ff6666;
+  border-left: 4px solid rgba(255, 102, 102, 0.9);
   cursor: pointer;
   box-sizing: border-box;
   z-index: 2;
@@ -123,7 +124,7 @@ a.jump-button {
   letter-spacing: 4px;
 }
 
-/* FAMILY MESSAGES SECTION - now in normal page flow */
+/* FAMILY MESSAGES SECTION - normal page flow */
 .messages-panel {
   display: none;
   grid-column: span 2;
@@ -131,9 +132,10 @@ a.jump-button {
   background: rgba(0, 0, 0, 0.99);
   border: 4px solid #555;
   border-radius: 16px;
-  padding: 18px;
+  padding: 0;
   box-sizing: border-box;
   text-align: left;
+  overflow: hidden;
 }
 
 .messages-panel.show {
@@ -144,58 +146,63 @@ a.jump-button {
   width: 100%;
   margin: 0 auto;
   position: relative;
+  padding-right: 108px;
+  box-sizing: border-box;
 }
 
-.messages-close-row {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  display: flex;
-  justify-content: flex-end;
-  background: rgba(0, 0, 0, 0.99);
-  padding-bottom: 10px;
-}
-
+/* RIGHT-SIDE BACK BAR FOR MESSAGES */
 .messages-close-button {
-  width: 96px;
-  height: 96px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 92px;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 56px;
+  font-size: 34px;
   font-weight: bold;
   color: white;
-  background: rgba(180, 0, 0, 0.92);
-  border: 4px solid #ff6666;
-  border-radius: 999px;
+  background: rgba(120, 0, 0, 0.72);
+  border: none;
+  border-left: 4px solid rgba(255, 102, 102, 0.9);
   cursor: pointer;
+  box-sizing: border-box;
+  z-index: 3;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 4px;
+}
+
+.messages-content {
+  padding: 24px;
 }
 
 .messages-title {
-  font-size: 52px;
+  font-size: 58px;
   font-weight: bold;
   text-align: center;
-  margin: 12px 0 24px 0;
+  margin: 0 0 28px 0;
 }
 
 .messages-status {
-  font-size: 30px;
+  font-size: 34px;
   text-align: center;
-  margin-bottom: 20px;
-  min-height: 40px;
+  margin-bottom: 24px;
+  min-height: 44px;
 }
 
 .messages-list {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 24px;
 }
 
 .message-card {
   background: #1f6f2a;
   border: 4px solid #4fc46a;
   border-radius: 16px;
-  padding: 24px;
+  padding: 28px;
   text-align: left;
 }
 
@@ -206,30 +213,30 @@ a.jump-button {
 
 .message-from,
 .message-subject {
-  font-size: 34px;
+  font-size: 42px;
   font-weight: bold;
   line-height: 1.2;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
 }
 
 .message-date {
-  font-size: 24px;
-  margin-bottom: 16px;
+  font-size: 30px;
+  margin-bottom: 18px;
   opacity: 0.9;
 }
 
 .message-body {
-  font-size: 34px;
-  line-height: 1.3;
+  font-size: 42px;
+  line-height: 1.35;
   white-space: pre-wrap;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .message-action-button {
   width: 100%;
   box-sizing: border-box;
-  padding: 24px;
-  font-size: 38px;
+  padding: 26px;
+  font-size: 42px;
   font-weight: bold;
   border: none;
   border-radius: 12px;
@@ -241,8 +248,8 @@ a.jump-button {
 .message-read-badge {
   width: 100%;
   box-sizing: border-box;
-  padding: 24px;
-  font-size: 32px;
+  padding: 26px;
+  font-size: 36px;
   font-weight: bold;
   border: 3px solid #555555;
   border-radius: 12px;
@@ -457,11 +464,11 @@ a.jump-button:focus,
   <button class="button-tile" id="familyMessagesButton" type="button">FAMILY MESSAGES</button>
   <a class="jump-button" href="#messagePanel">JUMP TO SEND MESSAGE</a>
 
-  <a class="button" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">MAIN PHOTOS LOOP</a>
-  <a class="button" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">MAIN PHOTOS</a>
-  <a class="button" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">LATEST PHOTOS</a>
-  <a class="button" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">VIDEOS</a>
-  <a class="button" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">YOUTUBE WRESTLING VIDEOS</a>
+  <a class="button button-main-photos-loop" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">MAIN PHOTOS LOOP</a>
+  <a class="button button-main-photos" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">MAIN PHOTOS</a>
+  <a class="button button-latest-photos" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">LATEST PHOTOS</a>
+  <a class="button button-videos" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">VIDEOS</a>
+  <a class="button button-youtube" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">YOUTUBE WRESTLING VIDEOS</a>
 
   <section id="playerPanel" class="player-panel">
     <div class="player-frame-wrap">
@@ -472,12 +479,12 @@ a.jump-button:focus,
 
   <section id="messagesPanel" class="messages-panel">
     <div class="messages-inner">
-      <div class="messages-close-row">
-        <button id="closeMessagesButton" class="messages-close-button" type="button" aria-label="Close messages">×</button>
+      <button id="closeMessagesButton" class="messages-close-button" type="button" aria-label="Back">BACK</button>
+      <div class="messages-content">
+        <div class="messages-title">FAMILY MESSAGES</div>
+        <div id="messagesStatus" class="messages-status">Loading messages…</div>
+        <div id="messagesList" class="messages-list"></div>
       </div>
-      <div class="messages-title">FAMILY MESSAGES</div>
-      <div id="messagesStatus" class="messages-status">Loading messages…</div>
-      <div id="messagesList" class="messages-list"></div>
     </div>
   </section>
 
