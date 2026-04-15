@@ -15,17 +15,36 @@ body {
   margin: 0;
 }
 
+/* TOP JUMP */
+.top-jump-wrap {
+  padding: 24px 40px 0 40px;
+}
+
+a.jump-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 40px;
+  font-size: 42px;
+  color: white;
+  text-decoration: none;
+  border-radius: 12px;
+  min-height: 96px;
+  text-align: center;
+  box-sizing: border-box;
+  background: #444444;
+}
+
 /* GRID */
 .container {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 40px;
-  padding: 40px;
+  padding: 24px 40px 40px 40px;
 }
 
-/* BUTTONS */
-a.button,
-a.jump-button {
+/* MAIN BUTTONS */
+a.button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -39,21 +58,12 @@ a.jump-button {
   box-sizing: border-box;
 }
 
-/* COLORS */
-.container a.button:nth-child(1) { background: #1f77b4; }
-.container a.button:nth-child(2) { background: #2ca02c; }
-.container a.button:nth-child(3) { background: #d62728; }
-.container a.button:nth-child(4) { background: #9467bd; }
-.container a.button:nth-child(5) { background: #ff7f0e; }
-
-.jump-button {
-  background: #444444;
-}
-
-.jump-top {
-  grid-column: span 2;
-  margin-top: 10px;
-}
+/* RESTORED COLORS / ORDER */
+.container a.button:nth-of-type(1) { background: #1f77b4; }
+.container a.button:nth-of-type(2) { background: #2ca02c; }
+.container a.button:nth-of-type(3) { background: #d62728; }
+.container a.button:nth-of-type(4) { background: #9467bd; }
+.container a.button:nth-of-type(5) { background: #ff7f0e; }
 
 /* YOUTUBE PLAYLIST PANEL */
 .youtube-playlist-panel {
@@ -168,6 +178,13 @@ textarea.active-box,
   opacity: 0.6;
 }
 
+/* BOTTOM JUMP */
+.jump-top {
+  grid-column: span 2;
+  justify-self: center;
+  margin-top: 10px;
+}
+
 /* HIGHLIGHTS */
 a.button:hover,
 a.button:focus,
@@ -223,9 +240,11 @@ a.jump-button:focus,
 </head>
 <body id="topOfPage">
 
-<div class="container">
+<div class="top-jump-wrap">
   <a class="jump-button" href="#messagePanel">JUMP TO SEND MESSAGE</a>
+</div>
 
+<div class="container">
   <a class="button" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">DAK MAIN PHOTOS LOOP</a>
   <a class="button" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">DAK MAIN PHOTOS</a>
   <a class="button" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">DAK LATEST PHOTOS</a>
@@ -353,7 +372,7 @@ async function fetchPlaylistVideos(playlistId, apiKey) {
 
   do {
     const url = new URL("https://www.googleapis.com/youtube/v3/playlistItems");
-    url.searchParams.set("part", "snippet");
+    url.searchParams.set("part", "snippet,status");
     url.searchParams.set("playlistId", playlistId);
     url.searchParams.set("maxResults", "50");
     url.searchParams.set("key", apiKey);
@@ -373,8 +392,12 @@ async function fetchPlaylistVideos(playlistId, apiKey) {
     for (const item of data.items || []) {
       const title = item?.snippet?.title;
       const videoId = item?.snippet?.resourceId?.videoId;
+      const privacyStatus = item?.status?.privacyStatus;
 
-      if (!title || !videoId) continue;
+      if (!videoId) continue;
+      if (privacyStatus === "private") continue;
+      if (!title) continue;
+      if (title.trim().toLowerCase() === "private video") continue;
 
       videos.push({
         title,
