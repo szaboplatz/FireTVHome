@@ -71,7 +71,7 @@ a.button {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(0, 0, 0, 0.97);
+  background: rgba(0, 0, 0, 0.985);
   padding: 0;
   box-sizing: border-box;
   overflow: hidden;
@@ -85,7 +85,7 @@ a.button {
 .player-frame-wrap {
   position: relative;
   width: 100%;
-  height: 78vh;
+  height: 92vh;
   min-height: 320px;
   max-height: 100vh;
   background: #000;
@@ -106,8 +106,8 @@ a.button {
 /* SMALL CLOSE BUTTON OVER VIDEO */
 .player-close-button {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 12px;
+  right: 12px;
   width: 64px;
   height: 64px;
   display: inline-flex;
@@ -117,7 +117,7 @@ a.button {
   font-weight: bold;
   line-height: 1;
   color: white;
-  background: rgba(180, 0, 0, 0.88);
+  background: rgba(180, 0, 0, 0.9);
   border: 3px solid #ff6666;
   border-radius: 999px;
   cursor: pointer;
@@ -149,8 +149,8 @@ a.button {
 .youtube-video-button {
   width: 100%;
   box-sizing: border-box;
-  padding: 22px;
-  font-size: 34px;
+  padding: 24px;
+  font-size: 38px;
   line-height: 1.2;
   background: #1f1f1f;
   color: white;
@@ -160,6 +160,13 @@ a.button {
   cursor: pointer;
   white-space: normal;
   word-break: break-word;
+}
+
+/* WATCHED STATE */
+.youtube-video-button.watched {
+  background: #184d22;
+  border-color: #39a857;
+  color: #ffffff;
 }
 
 /* MESSAGE PANEL */
@@ -264,6 +271,13 @@ a.jump-button:focus,
   outline: none;
 }
 
+.youtube-video-button.watched:hover,
+.youtube-video-button.watched:focus {
+  border-color: yellow;
+  box-shadow: inset 0 0 0 4px yellow;
+  outline: none;
+}
+
 .player-close-button:hover,
 .player-close-button:focus {
   outline: 4px solid yellow;
@@ -353,6 +367,7 @@ const TEST_MODE = true; // set to false later for real sending
 
 const API_KEY = "AIzaSyDz4YYsovruiRP8TgFTAZkpRbnIowELHd8";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
+const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 
 let statusTimeout;
 const panel = document.getElementById("messagePanel");
@@ -363,6 +378,35 @@ const sendButton = document.getElementById("sendButton");
 const playerPanel = document.getElementById("playerPanel");
 const closeVideoButton = document.getElementById("closeVideoButton");
 const playerHost = document.getElementById("youtube-player-host");
+
+function getWatchedVideos() {
+  try {
+    const raw = localStorage.getItem(WATCHED_STORAGE_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw);
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveWatchedVideos(watchedMap) {
+  try {
+    localStorage.setItem(WATCHED_STORAGE_KEY, JSON.stringify(watchedMap));
+  } catch (e) {
+    console.error("Could not save watched videos", e);
+  }
+}
+
+function markVideoWatched(videoId) {
+  const watched = getWatchedVideos();
+  watched[videoId] = true;
+  saveWatchedVideos(watched);
+
+  const btn = document.querySelector(`[data-video-id="${videoId}"]`);
+  if (btn) {
+    btn.classList.add("watched");
+  }
+}
 
 function clearTextareaVisual() {
   textarea.classList.remove("active-box");
@@ -506,6 +550,7 @@ function hidePlayerPanel() {
 function playEmbeddedVideo(videoId) {
   showPlayerPanel();
   destroyEmbeddedPlayer();
+  markVideoWatched(videoId);
 
   const iframe = document.createElement("iframe");
   iframe.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
@@ -525,6 +570,7 @@ function playEmbeddedVideo(videoId) {
 async function loadVideos() {
   const status = document.getElementById("ytStatus");
   const list = document.getElementById("ytList");
+  const watched = getWatchedVideos();
 
   try {
     const videos = await fetchPlaylistVideos(PLAYLIST_ID, API_KEY);
@@ -541,6 +587,11 @@ async function loadVideos() {
       btn.className = "youtube-video-button";
       btn.textContent = video.title;
       btn.type = "button";
+      btn.dataset.videoId = video.videoId;
+
+      if (watched[video.videoId]) {
+        btn.classList.add("watched");
+      }
 
       btn.addEventListener("click", () => {
         playEmbeddedVideo(video.videoId);
