@@ -71,19 +71,39 @@ a.button {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(0, 0, 0, 0.96);
-  padding: 24px;
+  background: rgba(0, 0, 0, 0.97);
+  padding: 18px;
   box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .player-panel.show {
+  display: block;
+}
+
+.player-top-bar {
   display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.player-close-button {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  padding: 20px 28px;
+  font-size: 34px;
+  color: white;
+  background: #444444;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
 .player-overlay-inner {
   width: min(92vw, 1400px);
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -129,8 +149,8 @@ a.button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 28px 42px;
-  font-size: 40px;
+  padding: 24px 36px;
+  font-size: 36px;
   color: white;
   background: #444444;
   border: none;
@@ -267,7 +287,9 @@ a.jump-button:focus,
 .submit-button:hover,
 .submit-button:focus,
 .player-back-button:hover,
-.player-back-button:focus {
+.player-back-button:focus,
+.player-close-button:hover,
+.player-close-button:focus {
   outline: 4px solid yellow;
   outline-offset: 2px;
   filter: brightness(1.1);
@@ -328,6 +350,10 @@ a.jump-button:focus,
   <a class="button" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">YOUTUBE WRESTLING VIDEOS</a>
 
   <section id="playerPanel" class="player-panel">
+    <div class="player-top-bar">
+      <button id="closeVideoButton" class="player-close-button" type="button">X CLOSE VIDEO</button>
+    </div>
+
     <div class="player-overlay-inner">
       <div id="playerTitle" class="player-title"></div>
       <div class="player-frame-wrap">
@@ -377,6 +403,7 @@ const sendButton = document.getElementById("sendButton");
 const playerPanel = document.getElementById("playerPanel");
 const playerTitle = document.getElementById("playerTitle");
 const backToListButton = document.getElementById("backToListButton");
+const closeVideoButton = document.getElementById("closeVideoButton");
 const playerHost = document.getElementById("youtube-player-host");
 
 function clearTextareaVisual() {
@@ -511,14 +538,12 @@ function destroyEmbeddedPlayer() {
 function showPlayerPanel(videoTitle) {
   playerTitle.textContent = videoTitle;
   playerPanel.classList.add("show");
-  document.body.style.overflow = "hidden";
-  backToListButton.focus();
+  closeVideoButton.focus();
 }
 
 function showPlaylistPanel() {
   destroyEmbeddedPlayer();
   playerPanel.classList.remove("show");
-  document.body.style.overflow = "";
 }
 
 function playEmbeddedVideo(videoId, videoTitle) {
@@ -602,6 +627,10 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 
   backToListButton.addEventListener("click", () => {
+    showPlaylistPanel();
+  });
+
+  closeVideoButton.addEventListener("click", () => {
     showPlaylistPanel();
   });
 
