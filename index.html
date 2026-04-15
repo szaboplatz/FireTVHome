@@ -74,7 +74,7 @@ a.button {
   background: rgba(0, 0, 0, 0.97);
   padding: 0;
   box-sizing: border-box;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .player-panel.show {
@@ -83,10 +83,11 @@ a.button {
 
 /* VIDEO AREA AT TOP */
 .player-frame-wrap {
+  position: relative;
   width: 100%;
-  height: 68vh;
+  height: 78vh;
   min-height: 320px;
-  max-height: 78vh;
+  max-height: 100vh;
   background: #000;
   overflow: hidden;
 }
@@ -102,39 +103,26 @@ a.button {
   display: block;
 }
 
-/* CONTENT UNDER VIDEO */
-.player-content {
-  padding: 18px 20px 28px 20px;
-}
-
-.player-title {
-  font-size: 34px;
-  line-height: 1.2;
-  margin: 0 0 18px 0;
-  text-align: center;
-  max-width: 100%;
-}
-
-.player-controls {
-  display: flex;
-  justify-content: center;
-  gap: 18px;
-  flex-wrap: wrap;
-}
-
-.player-close-button,
-.player-back-button {
+/* SMALL CLOSE BUTTON OVER VIDEO */
+.player-close-button {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 64px;
+  height: 64px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 36px;
-  font-size: 36px;
+  font-size: 40px;
+  font-weight: bold;
+  line-height: 1;
   color: white;
-  background: #444444;
-  border: none;
-  border-radius: 12px;
+  background: rgba(180, 0, 0, 0.88);
+  border: 3px solid #ff6666;
+  border-radius: 999px;
   cursor: pointer;
   box-sizing: border-box;
+  z-index: 2;
 }
 
 /* YOUTUBE PLAYLIST PANEL */
@@ -263,11 +251,7 @@ a.button:focus,
 a.jump-button:hover,
 a.jump-button:focus,
 .submit-button:hover,
-.submit-button:focus,
-.player-back-button:hover,
-.player-back-button:focus,
-.player-close-button:hover,
-.player-close-button:focus {
+.submit-button:focus {
   outline: 4px solid yellow;
   outline-offset: 2px;
   filter: brightness(1.1);
@@ -278,6 +262,13 @@ a.jump-button:focus,
   border-color: yellow;
   box-shadow: inset 0 0 0 4px yellow;
   outline: none;
+}
+
+.player-close-button:hover,
+.player-close-button:focus {
+  outline: 4px solid yellow;
+  outline-offset: 2px;
+  filter: brightness(1.1);
 }
 
 /* STATUS */
@@ -329,16 +320,8 @@ a.jump-button:focus,
 
   <section id="playerPanel" class="player-panel">
     <div class="player-frame-wrap">
+      <button id="closeVideoButton" class="player-close-button" type="button" aria-label="Close video">×</button>
       <div id="youtube-player-host"></div>
-    </div>
-
-    <div class="player-content">
-      <div id="playerTitle" class="player-title"></div>
-
-      <div class="player-controls">
-        <button id="closeVideoButton" class="player-close-button" type="button">CLOSE VIDEO</button>
-        <button id="backToListButton" class="player-back-button" type="button">BACK TO VIDEO LIST</button>
-      </div>
     </div>
   </section>
 
@@ -378,8 +361,6 @@ const statusBox = document.getElementById("status");
 const sendButton = document.getElementById("sendButton");
 
 const playerPanel = document.getElementById("playerPanel");
-const playerTitle = document.getElementById("playerTitle");
-const backToListButton = document.getElementById("backToListButton");
 const closeVideoButton = document.getElementById("closeVideoButton");
 const playerHost = document.getElementById("youtube-player-host");
 
@@ -512,19 +493,18 @@ function destroyEmbeddedPlayer() {
   playerHost.innerHTML = "";
 }
 
-function showPlayerPanel(videoTitle) {
-  playerTitle.textContent = videoTitle;
+function showPlayerPanel() {
   playerPanel.classList.add("show");
   closeVideoButton.focus();
 }
 
-function showPlaylistPanel() {
+function hidePlayerPanel() {
   destroyEmbeddedPlayer();
   playerPanel.classList.remove("show");
 }
 
-function playEmbeddedVideo(videoId, videoTitle) {
-  showPlayerPanel(videoTitle);
+function playEmbeddedVideo(videoId) {
+  showPlayerPanel();
   destroyEmbeddedPlayer();
 
   const iframe = document.createElement("iframe");
@@ -563,7 +543,7 @@ async function loadVideos() {
       btn.type = "button";
 
       btn.addEventListener("click", () => {
-        playEmbeddedVideo(video.videoId, video.title);
+        playEmbeddedVideo(video.videoId);
       });
 
       list.appendChild(btn);
@@ -603,12 +583,8 @@ document.addEventListener("DOMContentLoaded", function() {
     clearTextareaVisual();
   });
 
-  backToListButton.addEventListener("click", () => {
-    showPlaylistPanel();
-  });
-
   closeVideoButton.addEventListener("click", () => {
-    showPlaylistPanel();
+    hidePlayerPanel();
   });
 
   loadVideos();
