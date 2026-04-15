@@ -45,6 +45,39 @@ a.button {
 .container a.button:nth-child(4) { background: #9467bd; }
 .container a.button:nth-child(5) { background: #ff7f0e; }
 
+/* YOUTUBE PLAYLIST PANEL */
+.youtube-playlist-panel {
+  grid-column: span 2;
+  width: 100%;
+  margin: 0;
+}
+
+.youtube-playlist-status {
+  font-size: 30px;
+  padding: 10px;
+  text-align: center;
+}
+
+.youtube-playlist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 34vh;
+  overflow-y: auto;
+}
+
+.youtube-video-button {
+  width: 100%;
+  padding: 22px;
+  font-size: 34px;
+  background: #1f1f1f;
+  color: white;
+  border: 3px solid #666;
+  border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
 /* MESSAGE PANEL */
 .message-panel {
   grid-column: span 2;
@@ -58,13 +91,11 @@ a.button {
 .message-title {
   color: #00bcd4;
   font-size: 42px;
-  font-weight: bold;
   text-align: center;
   margin-bottom: 20px;
 }
 
 .message-help {
-  color: white;
   font-size: 28px;
   text-align: center;
   margin-bottom: 25px;
@@ -73,36 +104,22 @@ a.button {
 /* TEXT AREA */
 textarea {
   width: 100%;
-  box-sizing: border-box;
   font-size: 42px;
-  line-height: 1.3;
   padding: 25px;
   border-radius: 12px;
   border: 4px solid #555;
   background: #111;
   color: white;
   min-height: 240px;
-  resize: vertical;
-  font-family: Arial, sans-serif;
-  font-weight: 500;
   outline: none;
-  transition: font-size 0.15s ease, min-height 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
-/* Text box active state */
+/* ACTIVE TEXTBOX */
 textarea:focus,
 textarea.active-box,
 .message-panel.keep-textarea-active textarea {
   font-size: 56px;
-  min-height: 300px;
-  background: #222;
-  color: white;
-  font-weight: 900;
   border: 4px solid yellow;
-}
-
-textarea::placeholder {
-  color: #bbb;
 }
 
 /* SEND BUTTON */
@@ -111,60 +128,20 @@ textarea::placeholder {
   width: 100%;
   padding: 30px;
   font-size: 44px;
-  font-weight: bold;
+  background: #00bcd4;
   border: none;
   border-radius: 12px;
-  background: #00bcd4;
-  color: black;
   cursor: pointer;
-  outline: none;
 }
 
-.submit-button:disabled {
-  opacity: 0.6;
-}
-
-/* Yellow outline only for links and send button */
+/* HIGHLIGHT */
 a.button:hover,
-a.button:focus,
+.youtube-video-button:hover,
 .submit-button:hover,
+a.button:focus,
+.youtube-video-button:focus,
 .submit-button:focus {
   outline: 4px solid yellow;
-  outline-offset: 2px;
-  filter: brightness(1.1);
-}
-
-/* STATUS above button */
-#status {
-  text-align: center;
-  font-size: 40px;
-  margin-top: 10px;
-  margin-bottom: 20px;
-  min-height: 56px;
-  font-weight: bold;
-  opacity: 0;
-  transition: opacity 0.35s ease;
-  border-radius: 12px;
-  padding: 12px 16px;
-}
-
-#status.show {
-  opacity: 1;
-}
-
-#status.sending {
-  background: #4a4300;
-  color: #ffff66;
-}
-
-#status.sent {
-  background: #003d1f;
-  color: #00ff66;
-}
-
-#status.error {
-  background: #4a0000;
-  color: #ff6666;
 }
 </style>
 </head>
@@ -173,145 +150,67 @@ a.button:focus,
 <h1>Home</h1>
 
 <div class="container">
-  <a class="button" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">DAK MAIN PHOTOS LOOP</a>
-  <a class="button" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">DAK MAIN PHOTOS</a>
-  <a class="button" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">DAK LATEST PHOTOS</a>
-  <a class="button" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">DAK VIDEOS</a>
-  <a class="button" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">YOUTUBE WRESTLING VIDEOS</a>
 
-  <div class="message-panel" id="messagePanel">
-    <div class="message-title">SEND MESSAGE</div>
-    <div class="message-help">Click the box, then hold the mic button and speak. When finished, press SEND.</div>
+<a class="button" href="#">DAK MAIN PHOTOS LOOP</a>
+<a class="button" href="#">DAK MAIN PHOTOS</a>
+<a class="button" href="#">DAK LATEST PHOTOS</a>
+<a class="button" href="#">DAK VIDEOS</a>
+<a class="button" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">YOUTUBE WRESTLING VIDEOS</a>
 
-    <form action="https://formspree.io/f/mzdyzybe" method="POST" onsubmit="handleSubmit(event)">
-      <textarea name="message" id="messageBox" placeholder="Type or speak your message here" required></textarea>
+<!-- PLAYLIST SECTION -->
+<section class="youtube-playlist-panel">
+  <div id="ytStatus" class="youtube-playlist-status">Loading videos…</div>
+  <div id="ytList" class="youtube-playlist-list"></div>
+</section>
 
-      <input type="hidden" name="_subject" value="Message from Dad's Fire TV">
+<!-- MESSAGE PANEL -->
+<div class="message-panel">
+  <div class="message-title">SEND MESSAGE</div>
+  <div class="message-help">Click the box, then speak, then press SEND</div>
 
-      <div id="status"></div>
+  <textarea placeholder="Type or speak here"></textarea>
+  <button class="submit-button">SEND</button>
+</div>
 
-      <button class="submit-button" id="sendButton" type="submit">SEND</button>
-    </form>
-  </div>
 </div>
 
 <script>
-const TEST_MODE = true; // set to false later for real sending
+const API_KEY = "AIzaSyDz4YYsovruiRP8TgFTAZkpRbnIowELHd8";
+const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 
-let statusTimeout;
-const panel = document.getElementById("messagePanel");
-const textarea = document.getElementById("messageBox");
-const statusBox = document.getElementById("status");
-const sendButton = document.getElementById("sendButton");
+async function loadVideos() {
+  const status = document.getElementById("ytStatus");
+  const list = document.getElementById("ytList");
 
-function clearTextareaVisual() {
-  textarea.classList.remove("active-box");
-  panel.classList.remove("keep-textarea-active");
-}
+  try {
+    const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${PLAYLIST_ID}&maxResults=12&key=${API_KEY}`;
+    const res = await fetch(url);
+    const data = await res.json();
 
-function setTextareaVisual() {
-  textarea.classList.add("active-box");
-  panel.classList.remove("keep-textarea-active");
-}
+    list.innerHTML = "";
 
-function showStatus(text, mode) {
-  statusBox.textContent = text;
-  statusBox.className = "";
-  statusBox.id = "status";
-  statusBox.classList.add("show", mode);
-}
+    data.items.forEach(item => {
+      const title = item.snippet.title;
+      const id = item.snippet.resourceId.videoId;
 
-function clearStatus() {
-  statusBox.textContent = "";
-  statusBox.className = "";
-  statusBox.id = "status";
-}
+      const btn = document.createElement("button");
+      btn.className = "youtube-video-button";
+      btn.textContent = title;
 
-function handleSubmit(event) {
-  event.preventDefault();
+      btn.onclick = () => {
+        window.location.href = `https://www.youtube.com/watch?v=${id}`;
+      };
 
-  const form = event.target;
+      list.appendChild(btn);
+    });
 
-  clearTimeout(statusTimeout);
-
-  // Only keep textbox highlighted during send, not whole panel
-  textarea.classList.remove("active-box");
-  panel.classList.add("keep-textarea-active");
-
-  sendButton.disabled = true;
-  sendButton.blur();
-
-  showStatus("SENDING...", "sending");
-
-  if (TEST_MODE) {
-    setTimeout(() => {
-      form.reset();
-      panel.classList.add("keep-textarea-active");
-      showStatus("MESSAGE SENT ✓", "sent");
-      sendButton.disabled = false;
-
-      statusTimeout = setTimeout(() => {
-        clearStatus();
-        clearTextareaVisual();
-      }, 5000);
-    }, 900);
-    return;
+    status.style.display = "none";
+  } catch (e) {
+    status.textContent = "Error loading videos";
   }
-
-  const data = new FormData(form);
-
-  fetch(form.action, {
-    method: form.method,
-    body: data,
-    headers: { 'Accept': 'application/json' }
-  })
-  .then((response) => {
-    if (!response.ok) throw new Error("Send failed");
-    form.reset();
-    panel.classList.add("keep-textarea-active");
-    showStatus("MESSAGE SENT ✓", "sent");
-    sendButton.disabled = false;
-
-    statusTimeout = setTimeout(() => {
-      clearStatus();
-      clearTextareaVisual();
-    }, 5000);
-  })
-  .catch(() => {
-    panel.classList.remove("keep-textarea-active");
-    textarea.classList.add("active-box");
-    showStatus("ERROR SENDING", "error");
-    sendButton.disabled = false;
-  });
 }
 
-document.addEventListener("DOMContentLoaded", function() {
-  textarea.addEventListener("focus", () => {
-    clearTimeout(statusTimeout);
-    clearStatus();
-    setTextareaVisual();
-  });
-
-  textarea.addEventListener("click", () => {
-    clearTimeout(statusTimeout);
-    clearStatus();
-    setTextareaVisual();
-  });
-
-  textarea.addEventListener("input", () => {
-    clearTimeout(statusTimeout);
-    clearStatus();
-    setTextareaVisual();
-  });
-
-  sendButton.addEventListener("focus", () => {
-    clearTextareaVisual();
-  });
-
-  sendButton.addEventListener("mouseover", () => {
-    clearTextareaVisual();
-  });
-});
+loadVideos();
 </script>
 
 </body>
