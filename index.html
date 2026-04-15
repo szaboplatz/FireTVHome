@@ -121,9 +121,12 @@ a.button {
   margin-top: 18px;
   display: flex;
   justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
 }
 
-.player-back-button {
+.player-back-button,
+.player-fullscreen-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -265,7 +268,9 @@ a.jump-button:focus,
 .submit-button:hover,
 .submit-button:focus,
 .player-back-button:hover,
-.player-back-button:focus {
+.player-back-button:focus,
+.player-fullscreen-button:hover,
+.player-fullscreen-button:focus {
   outline: 4px solid yellow;
   outline-offset: 2px;
   filter: brightness(1.1);
@@ -332,6 +337,7 @@ a.jump-button:focus,
         <div id="youtube-player-host"></div>
       </div>
       <div class="player-controls">
+        <button id="fullscreenButton" class="player-fullscreen-button" type="button">FULL SCREEN</button>
         <button id="backToListButton" class="player-back-button" type="button">BACK TO VIDEO LIST</button>
       </div>
     </div>
@@ -375,6 +381,7 @@ const sendButton = document.getElementById("sendButton");
 const playerPanel = document.getElementById("playerPanel");
 const playerTitle = document.getElementById("playerTitle");
 const backToListButton = document.getElementById("backToListButton");
+const fullscreenButton = document.getElementById("fullscreenButton");
 const playerHost = document.getElementById("youtube-player-host");
 
 function clearTextareaVisual() {
@@ -506,14 +513,39 @@ function destroyEmbeddedPlayer() {
   playerHost.innerHTML = "";
 }
 
+function requestFullscreenForElement(el) {
+  if (!el) return;
+
+  if (el.requestFullscreen) {
+    el.requestFullscreen().catch(() => {});
+  } else if (el.webkitRequestFullscreen) {
+    el.webkitRequestFullscreen();
+  } else if (el.webkitEnterFullscreen) {
+    el.webkitEnterFullscreen();
+  } else if (el.msRequestFullscreen) {
+    el.msRequestFullscreen();
+  }
+}
+
+function exitFullscreenIfNeeded() {
+  if (document.fullscreenElement && document.exitFullscreen) {
+    document.exitFullscreen().catch(() => {});
+  } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+    document.webkitExitFullscreen();
+  } else if (document.msFullscreenElement && document.msExitFullscreen) {
+    document.msExitFullscreen();
+  }
+}
+
 function showPlayerPanel(videoTitle) {
   playerTitle.textContent = videoTitle;
   playerPanel.classList.add("show");
   document.body.style.overflow = "hidden";
-  backToListButton.focus();
+  fullscreenButton.focus();
 }
 
 function showPlaylistPanel() {
+  exitFullscreenIfNeeded();
   destroyEmbeddedPlayer();
   playerPanel.classList.remove("show");
   document.body.style.overflow = "";
@@ -536,6 +568,14 @@ function playEmbeddedVideo(videoId, videoTitle) {
   iframe.src = embedUrl.toString();
 
   playerHost.appendChild(iframe);
+
+  // Try fullscreen immediately while still in the click event flow
+  requestFullscreenForElement(iframe);
+}
+
+function requestCurrentVideoFullscreen() {
+  const iframe = playerHost.querySelector("iframe");
+  requestFullscreenForElement(iframe);
 }
 
 async function loadVideos() {
@@ -601,6 +641,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
   backToListButton.addEventListener("click", () => {
     showPlaylistPanel();
+  });
+
+  fullscreenButton.addEventListener("click", () => {
+    requestCurrentVideoFullscreen();
   });
 
   loadVideos();
