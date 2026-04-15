@@ -6,7 +6,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  
+
 <style>
 html {
   scroll-behavior: smooth;
@@ -49,7 +49,8 @@ a.jump-button {
 }
 
 /* MAIN BUTTONS */
-a.button {
+a.button,
+button.button-tile {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -61,14 +62,18 @@ a.button {
   min-height: 120px;
   text-align: center;
   box-sizing: border-box;
+  border: none;
+  cursor: pointer;
+  font-family: Arial, sans-serif;
 }
 
 /* MAIN BUTTON COLORS */
-.container a.button:nth-of-type(1) { background: #1f77b4; }
-.container a.button:nth-of-type(2) { background: #2ca02c; }
-.container a.button:nth-of-type(3) { background: #d62728; }
-.container a.button:nth-of-type(4) { background: #9467bd; }
-.container a.button:nth-of-type(5) { background: #ff7f0e; }
+.container > .button:nth-of-type(1) { background: #1f77b4; }
+.container > .button:nth-of-type(2) { background: #2ca02c; }
+.container > .button:nth-of-type(3) { background: #d62728; }
+.container > .button:nth-of-type(4) { background: #9467bd; }
+.container > .button:nth-of-type(5) { background: #ff7f0e; }
+#familyMessagesButton { background: #00a6c7; }
 
 /* PLAYER OVERLAY */
 .player-panel {
@@ -76,7 +81,7 @@ a.button {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(0, 0, 0, 0.985);
+  background: rgba(0, 0, 0, 0.99);
   padding: 0;
   box-sizing: border-box;
   overflow: hidden;
@@ -90,44 +95,47 @@ a.button {
 .player-frame-wrap {
   position: relative;
   width: 100%;
-  height: 92vh;
+  height: 96vh;
   min-height: 320px;
   max-height: 100vh;
   background: #000;
   overflow: hidden;
 }
 
-#youtube-player-host,
-#youtube-player-host iframe {
-  width: 100%;
-  height: 100%;
+#youtube-player-host {
+  position: absolute;
+  inset: 0 92px 0 0;
 }
 
 #youtube-player-host iframe {
+  width: 100%;
+  height: 100%;
   border: 0;
   display: block;
 }
 
-/* SMALL CLOSE BUTTON OVER VIDEO */
+/* TALL RIGHT-SIDE BACK BAR */
 .player-close-button {
   position: absolute;
-  top: 78px;
-  right: 12px;
-  width: 64px;
-  height: 64px;
-  display: inline-flex;
+  top: 0;
+  right: 0;
+  width: 92px;
+  height: 100%;
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 40px;
+  font-size: 34px;
   font-weight: bold;
-  line-height: 1;
   color: white;
-  background: rgba(180, 0, 0, 0.9);
-  border: 3px solid #ff6666;
-  border-radius: 999px;
+  background: rgba(120, 0, 0, 0.95);
+  border: none;
+  border-left: 4px solid #ff6666;
   cursor: pointer;
   box-sizing: border-box;
   z-index: 2;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 4px;
 }
 
 /* YOUTUBE PLAYLIST PANEL */
@@ -155,7 +163,7 @@ a.button {
   width: 100%;
   box-sizing: border-box;
   padding: 24px;
-  font-size: 38px;
+  font-size: 40px;
   line-height: 1.2;
   background: #1f6f2a;
   color: white;
@@ -172,6 +180,127 @@ a.button {
   background: #2a2a2a;
   border-color: #777777;
   color: #ffffff;
+}
+
+/* FAMILY MESSAGES OVERLAY */
+.messages-panel {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.99);
+  padding: 24px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.messages-panel.show {
+  display: block;
+}
+
+.messages-inner {
+  width: min(94vw, 1400px);
+  margin: 0 auto;
+  position: relative;
+}
+
+.messages-close-button {
+  position: sticky;
+  top: 0;
+  margin-left: auto;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44px;
+  font-weight: bold;
+  color: white;
+  background: rgba(180, 0, 0, 0.92);
+  border: 3px solid #ff6666;
+  border-radius: 999px;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.messages-title {
+  font-size: 52px;
+  font-weight: bold;
+  text-align: center;
+  margin: 12px 0 24px 0;
+}
+
+.messages-status {
+  font-size: 30px;
+  text-align: center;
+  margin-bottom: 20px;
+  min-height: 40px;
+}
+
+.messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.message-card {
+  background: #1f6f2a;
+  border: 4px solid #4fc46a;
+  border-radius: 16px;
+  padding: 24px;
+  text-align: left;
+}
+
+.message-card.read {
+  background: #2a2a2a;
+  border-color: #777777;
+}
+
+.message-from,
+.message-subject {
+  font-size: 34px;
+  font-weight: bold;
+  line-height: 1.2;
+  margin-bottom: 10px;
+}
+
+.message-date {
+  font-size: 24px;
+  margin-bottom: 16px;
+  opacity: 0.9;
+}
+
+.message-body {
+  font-size: 34px;
+  line-height: 1.3;
+  white-space: pre-wrap;
+  margin-bottom: 18px;
+}
+
+.message-action-button {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 24px;
+  font-size: 38px;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  background: #00bcd4;
+  color: black;
+  cursor: pointer;
+}
+
+.message-read-badge {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 24px;
+  font-size: 32px;
+  font-weight: bold;
+  border: 3px solid #555555;
+  border-radius: 12px;
+  background: #1a1a1a;
+  color: #cccccc;
+  text-align: center;
 }
 
 /* MESSAGE PANEL */
@@ -260,10 +389,14 @@ textarea.active-box,
 /* HIGHLIGHTS */
 a.button:hover,
 a.button:focus,
+button.button-tile:hover,
+button.button-tile:focus,
 a.jump-button:hover,
 a.jump-button:focus,
 .submit-button:hover,
-.submit-button:focus {
+.submit-button:focus,
+.message-action-button:hover,
+.message-action-button:focus {
   outline: 4px solid yellow;
   outline-offset: 2px;
   filter: brightness(1.1);
@@ -284,9 +417,11 @@ a.jump-button:focus,
 }
 
 .player-close-button:hover,
-.player-close-button:focus {
+.player-close-button:focus,
+.messages-close-button:hover,
+.messages-close-button:focus {
   outline: 4px solid yellow;
-  outline-offset: 2px;
+  outline-offset: -4px;
   filter: brightness(1.1);
 }
 
@@ -336,11 +471,21 @@ a.jump-button:focus,
   <a class="button" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">LATEST PHOTOS</a>
   <a class="button" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">VIDEOS</a>
   <a class="button" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">YOUTUBE WRESTLING VIDEOS</a>
+  <button class="button-tile" id="familyMessagesButton" type="button">FAMILY MESSAGES</button>
 
   <section id="playerPanel" class="player-panel">
     <div class="player-frame-wrap">
-      <button id="closeVideoButton" class="player-close-button" type="button" aria-label="Close video">×</button>
       <div id="youtube-player-host"></div>
+      <button id="closeVideoButton" class="player-close-button" type="button" aria-label="Back to video list">BACK</button>
+    </div>
+  </section>
+
+  <section id="messagesPanel" class="messages-panel">
+    <div class="messages-inner">
+      <button id="closeMessagesButton" class="messages-close-button" type="button" aria-label="Close messages">×</button>
+      <div class="messages-title">FAMILY MESSAGES</div>
+      <div id="messagesStatus" class="messages-status">Loading messages…</div>
+      <div id="messagesList" class="messages-list"></div>
     </div>
   </section>
 
@@ -368,11 +513,12 @@ a.jump-button:focus,
 </div>
 
 <script>
-const TEST_MODE = false; // set to false later for real sending
+const TEST_MODE = false;
 
 const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
+const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
 
 let statusTimeout;
 const panel = document.getElementById("messagePanel");
@@ -383,6 +529,12 @@ const sendButton = document.getElementById("sendButton");
 const playerPanel = document.getElementById("playerPanel");
 const closeVideoButton = document.getElementById("closeVideoButton");
 const playerHost = document.getElementById("youtube-player-host");
+
+const familyMessagesButton = document.getElementById("familyMessagesButton");
+const messagesPanel = document.getElementById("messagesPanel");
+const closeMessagesButton = document.getElementById("closeMessagesButton");
+const messagesStatus = document.getElementById("messagesStatus");
+const messagesList = document.getElementById("messagesList");
 
 function getWatchedVideos() {
   try {
@@ -572,6 +724,164 @@ function playEmbeddedVideo(videoId) {
   playerHost.appendChild(iframe);
 }
 
+function formatDisplayDate(isoString) {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleString();
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function loadJsonp(baseUrl, params = {}) {
+  return new Promise((resolve, reject) => {
+    const callbackName = "jsonpCallback_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
+    const script = document.createElement("script");
+    const url = new URL(baseUrl);
+
+    Object.entries(params).forEach(([key, value]) => {
+      url.searchParams.set(key, value);
+    });
+    url.searchParams.set("callback", callbackName);
+
+    let cleanedUp = false;
+
+    function cleanup() {
+      if (cleanedUp) return;
+      cleanedUp = true;
+      delete window[callbackName];
+      script.remove();
+    }
+
+    window[callbackName] = function(data) {
+      cleanup();
+      resolve(data);
+    };
+
+    script.onerror = function() {
+      cleanup();
+      reject(new Error("JSONP load failed"));
+    };
+
+    script.src = url.toString();
+    document.body.appendChild(script);
+
+    setTimeout(() => {
+      if (!cleanedUp) {
+        cleanup();
+        reject(new Error("JSONP timeout"));
+      }
+    }, 12000);
+  });
+}
+
+function openMessagesPanel() {
+  messagesPanel.classList.add("show");
+  closeMessagesButton.focus();
+  loadMessages();
+}
+
+function closeMessagesPanelFn() {
+  messagesPanel.classList.remove("show");
+}
+
+function renderMessages(data) {
+  messagesList.innerHTML = "";
+
+  if (!data || !data.ok) {
+    messagesStatus.textContent = "Could not load messages.";
+    return;
+  }
+
+  if (!data.messages || !data.messages.length) {
+    messagesStatus.textContent = "No messages right now.";
+    return;
+  }
+
+  messagesStatus.textContent = "";
+
+  data.messages.forEach((msg) => {
+    const card = document.createElement("div");
+    card.className = "message-card" + (msg.read_at ? " read" : "");
+
+    const from = document.createElement("div");
+    from.className = "message-from";
+    from.textContent = "FROM: " + (msg.from_name || "Family");
+
+    const subject = document.createElement("div");
+    subject.className = "message-subject";
+    subject.textContent = "SUBJECT: " + msg.subject;
+
+    const sent = document.createElement("div");
+    sent.className = "message-date";
+    sent.textContent = "SENT: " + formatDisplayDate(msg.created_at);
+
+    const body = document.createElement("div");
+    body.className = "message-body";
+    body.textContent = msg.body;
+
+    card.appendChild(from);
+    card.appendChild(subject);
+    card.appendChild(sent);
+    card.appendChild(body);
+
+    if (msg.read_at) {
+      const badge = document.createElement("div");
+      badge.className = "message-read-badge";
+      badge.textContent = "READ ✓ " + formatDisplayDate(msg.read_at);
+      card.appendChild(badge);
+    } else {
+      const markButton = document.createElement("button");
+      markButton.className = "message-action-button";
+      markButton.type = "button";
+      markButton.textContent = "MARK AS READ";
+      markButton.addEventListener("click", async () => {
+        messagesStatus.textContent = "Marking as read…";
+        try {
+          const result = await loadJsonp(MESSAGES_API_URL, {
+            action: "mark_read",
+            id: msg.id
+          });
+
+          if (!result.ok) {
+            messagesStatus.textContent = "Could not mark message as read.";
+            return;
+          }
+
+          messagesStatus.textContent = "Marked as read ✓";
+          loadMessages();
+        } catch (e) {
+          console.error(e);
+          messagesStatus.textContent = "Could not mark message as read.";
+        }
+      });
+      card.appendChild(markButton);
+    }
+
+    messagesList.appendChild(card);
+  });
+}
+
+async function loadMessages() {
+  messagesStatus.textContent = "Loading messages…";
+  messagesList.innerHTML = "";
+
+  try {
+    const data = await loadJsonp(MESSAGES_API_URL, { action: "list" });
+    renderMessages(data);
+  } catch (e) {
+    console.error(e);
+    messagesStatus.textContent = "Could not load messages.";
+  }
+}
+
 async function loadVideos() {
   const status = document.getElementById("ytStatus");
   const list = document.getElementById("ytList");
@@ -641,6 +951,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
   closeVideoButton.addEventListener("click", () => {
     hidePlayerPanel();
+  });
+
+  familyMessagesButton.addEventListener("click", () => {
+    openMessagesPanel();
+  });
+
+  closeMessagesButton.addEventListener("click", () => {
+    closeMessagesPanelFn();
   });
 
   loadVideos();
