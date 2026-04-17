@@ -20,7 +20,6 @@ body {
   margin: 0;
 }
 
-/* GRID */
 .container {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -28,7 +27,6 @@ body {
   padding: 24px 40px 40px 40px;
 }
 
-/* MAIN BUTTONS */
 a.button,
 button.button-tile,
 a.jump-button {
@@ -52,7 +50,6 @@ a.jump-button {
   background: #444444;
 }
 
-/* EXPLICIT TILE COLORS */
 .button-main-photos-loop { background: #1f77b4; }
 .button-main-photos      { background: #2ca02c; }
 .button-latest-photos    { background: #d62728; }
@@ -64,7 +61,6 @@ a.jump-button {
   position: relative;
 }
 
-/* UNREAD BADGE */
 .unread-badge {
   position: absolute;
   top: 10px;
@@ -89,7 +85,6 @@ a.jump-button {
   display: none;
 }
 
-/* PLAYER OVERLAY */
 .player-panel {
   display: none;
   position: fixed;
@@ -105,7 +100,6 @@ a.jump-button {
   display: block;
 }
 
-/* VIDEO AREA AT TOP */
 .player-frame-wrap {
   position: relative;
   width: 100%;
@@ -118,7 +112,7 @@ a.jump-button {
 
 #youtube-player-host {
   position: absolute;
-  inset: 0 92px 0 0;
+  inset: 0 110px 0 0;
 }
 
 #youtube-player-host iframe {
@@ -128,12 +122,11 @@ a.jump-button {
   display: block;
 }
 
-/* TALL RIGHT-SIDE BACK BAR */
 .player-close-button {
   position: absolute;
   top: 0;
-  right: 0;
-  width: 92px;
+  right: -18px;
+  width: 128px;
   height: 100%;
   display: flex;
   align-items: center;
@@ -152,7 +145,6 @@ a.jump-button {
   letter-spacing: 4px;
 }
 
-/* FAMILY MESSAGES SECTION */
 .messages-panel {
   display: none;
   grid-column: span 2;
@@ -174,16 +166,15 @@ a.jump-button {
   width: 100%;
   margin: 0 auto;
   position: relative;
-  padding-right: 108px;
+  padding-right: 128px;
   box-sizing: border-box;
 }
 
-/* RIGHT-SIDE BACK BAR FOR MESSAGES */
 .messages-close-button {
   position: absolute;
   top: 0;
-  right: 0;
-  width: 92px;
+  right: -18px;
+  width: 128px;
   height: 100%;
   display: flex;
   align-items: center;
@@ -223,93 +214,135 @@ a.jump-button {
 .messages-list {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 18px;
 }
 
-.message-card {
-  background: #1f6f2a;
+.message-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.message-summary-button {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 22px 24px;
+  font-size: 34px;
+  line-height: 1.2;
+  font-weight: bold;
   border: 4px solid #4fc46a;
-  border-radius: 16px;
-  padding: 28px;
+  border-radius: 14px;
+  background: #1f6f2a;
+  color: white;
   text-align: left;
+  cursor: pointer;
 }
 
-.message-card.read {
+.message-summary-button.opened {
+  background: #254764;
+  border-color: #69a9e8;
+}
+
+.message-summary-button.read {
   background: #2a2a2a;
   border-color: #777777;
 }
 
-.message-card.collapsed .message-body {
-  display: none;
+.message-summary-main {
+  display: block;
 }
 
-.message-from,
-.message-subject {
-  font-size: 42px;
+.message-indicator,
+.message-archive-button {
+  width: 86px;
+  min-width: 86px;
+  border-radius: 14px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  font-weight: bold;
+}
+
+.message-indicator {
+  border: 4px solid #666;
+  background: #111;
+  color: white;
+}
+
+.message-indicator.read {
+  background: #00a83a;
+  border-color: #7dff9c;
+  color: white;
+}
+
+.message-archive-button {
+  border: none;
+  background: #666;
+  color: white;
+  cursor: pointer;
+}
+
+.message-expanded {
+  margin-top: 12px;
+  border: 4px solid #777;
+  border-radius: 14px;
+  padding: 22px;
+  background: #151515;
+}
+
+.message-expanded-from,
+.message-expanded-subject {
+  font-size: 38px;
   font-weight: bold;
   line-height: 1.2;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
-.message-date {
-  font-size: 30px;
+.message-expanded-date {
+  font-size: 28px;
   margin-bottom: 18px;
   opacity: 0.9;
 }
 
-.message-body {
-  font-size: 42px;
+.message-expanded-body {
+  font-size: 40px;
   line-height: 1.35;
   white-space: pre-wrap;
   margin-bottom: 20px;
 }
 
-.message-button-row {
-  display: flex;
-  flex-direction: column;
+.message-action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 14px;
 }
 
-.message-action-button,
-.message-secondary-button {
+.message-icon-button {
   width: 100%;
   box-sizing: border-box;
-  padding: 26px;
-  font-size: 42px;
+  padding: 22px;
+  font-size: 40px;
   font-weight: bold;
   border: none;
   border-radius: 12px;
   cursor: pointer;
-}
-
-.message-action-button {
   background: #00bcd4;
   color: black;
 }
 
-.message-secondary-button {
+.message-icon-button.secondary {
   background: #666;
   color: white;
 }
 
-.message-read-badge {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 26px;
-  font-size: 36px;
-  font-weight: bold;
-  border: 3px solid #555555;
-  border-radius: 12px;
-  background: #1a1a1a;
-  color: #cccccc;
-  text-align: center;
+.message-icon-button.active {
+  background: #00a83a;
+  color: white;
 }
 
-.message-card.collapsed .message-read-badge {
-  margin-top: 10px;
-}
-
-/* YOUTUBE PLAYLIST PANEL */
 .youtube-playlist-panel {
   grid-column: span 2;
   width: 100%;
@@ -346,14 +379,12 @@ a.jump-button {
   word-break: break-word;
 }
 
-/* WATCHED STATE */
 .youtube-video-button.watched {
   background: #2a2a2a;
   border-color: #777777;
   color: #ffffff;
 }
 
-/* MESSAGE PANEL */
 .message-panel {
   grid-column: span 2;
   background: #111;
@@ -379,7 +410,6 @@ a.jump-button {
   margin-bottom: 25px;
 }
 
-/* TEXT AREA */
 textarea {
   width: 100%;
   box-sizing: border-box;
@@ -398,7 +428,6 @@ textarea {
   transition: font-size 0.15s ease, min-height 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
-/* ACTIVE TEXTBOX */
 textarea:focus,
 textarea.active-box,
 .message-panel.keep-textarea-active textarea {
@@ -410,7 +439,6 @@ textarea.active-box,
   border: 4px solid yellow;
 }
 
-/* SEND BUTTON */
 .submit-button {
   margin-top: 25px;
   width: 100%;
@@ -429,14 +457,12 @@ textarea.active-box,
   opacity: 0.6;
 }
 
-/* BOTTOM JUMP */
 .jump-top {
   grid-column: span 2;
   justify-self: center;
   margin-top: 10px;
 }
 
-/* HIGHLIGHTS */
 a.button:hover,
 a.button:focus,
 button.button-tile:hover,
@@ -445,10 +471,12 @@ a.jump-button:hover,
 a.jump-button:focus,
 .submit-button:hover,
 .submit-button:focus,
-.message-action-button:hover,
-.message-action-button:focus,
-.message-secondary-button:hover,
-.message-secondary-button:focus {
+.message-summary-button:hover,
+.message-summary-button:focus,
+.message-archive-button:hover,
+.message-archive-button:focus,
+.message-icon-button:hover,
+.message-icon-button:focus {
   outline: 4px solid yellow;
   outline-offset: 2px;
   filter: brightness(1.1);
@@ -477,7 +505,6 @@ a.jump-button:focus,
   filter: brightness(1.1);
 }
 
-/* STATUS */
 #status {
   text-align: center;
   font-size: 40px;
@@ -529,13 +556,13 @@ a.jump-button:focus,
   <section id="playerPanel" class="player-panel">
     <div class="player-frame-wrap">
       <div id="youtube-player-host"></div>
-      <button id="closeVideoButton" class="player-close-button" type="button" aria-label="Back to video list">BACK</button>
+      <button id="closeVideoButton" class="player-close-button" type="button" aria-label="Close video">CLOSE</button>
     </div>
   </section>
 
   <section id="messagesPanel" class="messages-panel">
     <div class="messages-inner">
-      <button id="closeMessagesButton" class="messages-close-button" type="button" aria-label="Back">BACK</button>
+      <button id="closeMessagesButton" class="messages-close-button" type="button" aria-label="Close messages">CLOSE</button>
       <div class="messages-content">
         <div class="messages-title">FAMILY MESSAGES</div>
         <div id="messagesStatus" class="messages-status">Loading messages…</div>
@@ -573,10 +600,11 @@ const TEST_MODE = false;
 const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
-const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
+const MESSAGES_API_URL = "https://script.google.com/macros/library/d/1E8HeN2iho18K4mvWW73zi8Dz2FR5U-ecyL_T4Sjhu8OtWyJ5sZAMs4M1/7";
 
 let statusTimeout;
 let cachedMessages = [];
+let expandedMessageId = null;
 
 const panel = document.getElementById("messagePanel");
 const textarea = document.getElementById("messageBox");
@@ -597,12 +625,7 @@ const messagesList = document.getElementById("messagesList");
 function updateUnreadBadge(messages) {
   const unreadCount = (messages || []).filter(msg => !msg.read_at).length;
   unreadBadge.textContent = String(unreadCount);
-
-  if (unreadCount > 0) {
-    unreadBadge.classList.remove("hidden");
-  } else {
-    unreadBadge.classList.add("hidden");
-  }
+  unreadBadge.classList.toggle("hidden", unreadCount === 0);
 }
 
 function getWatchedVideos() {
@@ -629,9 +652,7 @@ function markVideoWatched(videoId) {
   saveWatchedVideos(watched);
 
   const btn = document.querySelector(`[data-video-id="${videoId}"]`);
-  if (btn) {
-    btn.classList.add("watched");
-  }
+  if (btn) btn.classList.add("watched");
 }
 
 function clearTextareaVisual() {
@@ -725,15 +746,10 @@ async function fetchPlaylistVideos(playlistId, apiKey) {
     url.searchParams.set("maxResults", "50");
     url.searchParams.set("key", apiKey);
 
-    if (nextPageToken) {
-      url.searchParams.set("pageToken", nextPageToken);
-    }
+    if (nextPageToken) url.searchParams.set("pageToken", nextPageToken);
 
     const response = await fetch(url.toString());
-
-    if (!response.ok) {
-      throw new Error(`YouTube API request failed: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`YouTube API request failed: ${response.status}`);
 
     const data = await response.json();
 
@@ -747,10 +763,7 @@ async function fetchPlaylistVideos(playlistId, apiKey) {
       if (!title) continue;
       if (title.trim().toLowerCase() === "private video") continue;
 
-      videos.push({
-        title,
-        videoId
-      });
+      videos.push({ title, videoId });
     }
 
     nextPageToken = data.nextPageToken || "";
@@ -789,7 +802,6 @@ function playEmbeddedVideo(videoId) {
   embedUrl.searchParams.set("rel", "0");
 
   iframe.src = embedUrl.toString();
-
   playerHost.appendChild(iframe);
 }
 
@@ -848,7 +860,7 @@ function openMessagesPanel() {
   messagesPanel.scrollIntoView({ behavior: "auto", block: "start" });
 
   if (cachedMessages.length) {
-    renderMessages({ ok: true, messages: cachedMessages });
+    renderMessages(cachedMessages);
     refreshMessages();
   } else {
     loadMessages();
@@ -857,66 +869,126 @@ function openMessagesPanel() {
 
 function closeMessagesPanelFn() {
   messagesPanel.classList.remove("show");
+  expandedMessageId = null;
+  window.scrollTo({ top: 0, behavior: "auto" });
 }
 
 async function runMessageAction(action, id) {
   return loadJsonp(MESSAGES_API_URL, { action, id });
 }
 
-function renderMessages(data) {
+function findCachedMessage(id) {
+  return cachedMessages.find(msg => msg.id === id);
+}
+
+function renderMessages(messages) {
   messagesList.innerHTML = "";
+  updateUnreadBadge(messages);
 
-  if (!data || !data.ok) {
-    messagesStatus.textContent = "Could not load messages.";
-    return;
-  }
-
-  cachedMessages = data.messages || [];
-  updateUnreadBadge(cachedMessages);
-
-  if (!cachedMessages.length) {
+  if (!messages || !messages.length) {
     messagesStatus.textContent = "No messages right now.";
     return;
   }
 
   messagesStatus.textContent = "";
 
-  cachedMessages.forEach((msg) => {
-    const card = document.createElement("div");
-    card.className = "message-card" + (msg.read_at ? " read" : "") + (msg.collapsed_at ? " collapsed" : "");
+  messages.forEach((msg) => {
+    const row = document.createElement("div");
+    row.className = "message-row";
 
-    const from = document.createElement("div");
-    from.className = "message-from";
-    from.textContent = "FROM: " + (msg.from_name || "Family");
+    const summaryButton = document.createElement("button");
+    summaryButton.className = "message-summary-button";
+    if (msg.opened_at) summaryButton.classList.add("opened");
+    if (msg.read_at) summaryButton.classList.add("read");
+    summaryButton.type = "button";
 
-    const subject = document.createElement("div");
-    subject.className = "message-subject";
-    subject.textContent = "SUBJECT: " + msg.subject;
+    const summaryText = msg.from_name
+      ? `${msg.from_name}: ${msg.subject}`
+      : msg.subject;
 
-    const sent = document.createElement("div");
-    sent.className = "message-date";
-    sent.textContent = "SENT: " + formatDisplayDate(msg.created_at);
+    summaryButton.innerHTML = `<span class="message-summary-main">${summaryText}</span>`;
 
-    card.appendChild(from);
-    card.appendChild(subject);
-    card.appendChild(sent);
+    summaryButton.addEventListener("click", async () => {
+      expandedMessageId = msg.id;
 
-    if (!msg.collapsed_at) {
+      if (!msg.opened_at) {
+        try {
+          const result = await runMessageAction("mark_opened", msg.id);
+          if (result.ok) {
+            const cached = findCachedMessage(msg.id);
+            if (cached) cached.opened_at = result.opened_at || new Date().toISOString();
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      renderMessages(cachedMessages);
+    });
+
+    const readIndicator = document.createElement("div");
+    readIndicator.className = "message-indicator" + (msg.read_at ? " read" : "");
+    readIndicator.textContent = msg.read_at ? "☑" : "☐";
+
+    const archiveButton = document.createElement("button");
+    archiveButton.className = "message-archive-button";
+    archiveButton.type = "button";
+    archiveButton.textContent = "📥";
+    archiveButton.setAttribute("aria-label", "Archive message");
+    archiveButton.addEventListener("click", async () => {
+      messagesStatus.textContent = "Archiving…";
+      try {
+        const result = await runMessageAction("archive_message", msg.id);
+        if (!result.ok) {
+          messagesStatus.textContent = "Could not archive message.";
+          return;
+        }
+
+        cachedMessages = cachedMessages.filter(m => m.id !== msg.id);
+        if (expandedMessageId === msg.id) expandedMessageId = null;
+        messagesStatus.textContent = "";
+        renderMessages(cachedMessages);
+      } catch (e) {
+        console.error(e);
+        messagesStatus.textContent = "Could not archive message.";
+      }
+    });
+
+    row.appendChild(summaryButton);
+    row.appendChild(readIndicator);
+    row.appendChild(archiveButton);
+
+    messagesList.appendChild(row);
+
+    if (expandedMessageId === msg.id) {
+      const expanded = document.createElement("div");
+      expanded.className = "message-expanded";
+
+      const from = document.createElement("div");
+      from.className = "message-expanded-from";
+      from.textContent = "FROM: " + (msg.from_name || "Family");
+
+      const subject = document.createElement("div");
+      subject.className = "message-expanded-subject";
+      subject.textContent = "SUBJECT: " + msg.subject;
+
+      const date = document.createElement("div");
+      date.className = "message-expanded-date";
+      date.textContent = "SENT: " + formatDisplayDate(msg.created_at);
+
       const body = document.createElement("div");
-      body.className = "message-body";
+      body.className = "message-expanded-body";
       body.textContent = msg.body;
-      card.appendChild(body);
-    }
 
-    const buttonRow = document.createElement("div");
-    buttonRow.className = "message-button-row";
+      const actionRow = document.createElement("div");
+      actionRow.className = "message-action-row";
 
-    if (!msg.read_at) {
-      const markButton = document.createElement("button");
-      markButton.className = "message-action-button";
-      markButton.type = "button";
-      markButton.textContent = "MARK AS READ";
-      markButton.addEventListener("click", async () => {
+      const readButton = document.createElement("button");
+      readButton.className = "message-icon-button" + (msg.read_at ? " active" : "");
+      readButton.type = "button";
+      readButton.textContent = msg.read_at ? "☑" : "☐";
+      readButton.setAttribute("aria-label", "Mark as read");
+      readButton.addEventListener("click", async () => {
         messagesStatus.textContent = "Marking as read…";
         try {
           const result = await runMessageAction("mark_read", msg.id);
@@ -924,67 +996,71 @@ function renderMessages(data) {
             messagesStatus.textContent = "Could not mark message as read.";
             return;
           }
-          messagesStatus.textContent = "Marked as read ✓";
-          loadMessages();
+
+          const cached = findCachedMessage(msg.id);
+          if (cached) cached.read_at = result.read_at || new Date().toISOString();
+
+          expandedMessageId = null;
+          messagesStatus.textContent = "";
+          renderMessages(cachedMessages);
         } catch (e) {
           console.error(e);
           messagesStatus.textContent = "Could not mark message as read.";
         }
       });
-      buttonRow.appendChild(markButton);
-    } else {
-      const badge = document.createElement("div");
-      badge.className = "message-read-badge";
-      badge.textContent = "READ ✓ " + formatDisplayDate(msg.read_at);
-      buttonRow.appendChild(badge);
-    }
 
-    if (msg.collapsed_at) {
-      const showButton = document.createElement("button");
-      showButton.className = "message-secondary-button";
-      showButton.type = "button";
-      showButton.textContent = "SHOW MESSAGE";
-      showButton.addEventListener("click", async () => {
-        messagesStatus.textContent = "Opening message…";
+      const likeButton = document.createElement("button");
+      likeButton.className = "message-icon-button" + (msg.liked_at ? " active" : "");
+      likeButton.type = "button";
+      likeButton.textContent = "👍";
+      likeButton.setAttribute("aria-label", "Like message");
+      likeButton.addEventListener("click", async () => {
+        messagesStatus.textContent = "Saving like…";
         try {
-          const result = await runMessageAction("expand_message", msg.id);
+          const result = await runMessageAction("like_message", msg.id);
           if (!result.ok) {
-            messagesStatus.textContent = "Could not open message.";
+            messagesStatus.textContent = "Could not like message.";
             return;
           }
-          messagesStatus.textContent = "";
-          loadMessages();
-        } catch (e) {
-          console.error(e);
-          messagesStatus.textContent = "Could not open message.";
-        }
-      });
-      buttonRow.appendChild(showButton);
-    } else {
-      const collapseButton = document.createElement("button");
-      collapseButton.className = "message-secondary-button";
-      collapseButton.type = "button";
-      collapseButton.textContent = "COLLAPSE";
-      collapseButton.addEventListener("click", async () => {
-        messagesStatus.textContent = "Collapsing message…";
-        try {
-          const result = await runMessageAction("collapse_message", msg.id);
-          if (!result.ok) {
-            messagesStatus.textContent = "Could not collapse message.";
-            return;
-          }
-          messagesStatus.textContent = "";
-          loadMessages();
-        } catch (e) {
-          console.error(e);
-          messagesStatus.textContent = "Could not collapse message.";
-        }
-      });
-      buttonRow.appendChild(collapseButton);
-    }
 
-    card.appendChild(buttonRow);
-    messagesList.appendChild(card);
+          const cached = findCachedMessage(msg.id);
+          if (cached) {
+            cached.liked_at = result.liked_at || new Date().toISOString();
+            cached.read_at = result.read_at || cached.read_at || new Date().toISOString();
+            cached.opened_at = result.opened_at || cached.opened_at || new Date().toISOString();
+          }
+
+          expandedMessageId = null;
+          messagesStatus.textContent = "";
+          renderMessages(cachedMessages);
+        } catch (e) {
+          console.error(e);
+          messagesStatus.textContent = "Could not like message.";
+        }
+      });
+
+      const closeButton = document.createElement("button");
+      closeButton.className = "message-icon-button secondary";
+      closeButton.type = "button";
+      closeButton.textContent = "⇕";
+      closeButton.setAttribute("aria-label", "Collapse message");
+      closeButton.addEventListener("click", () => {
+        expandedMessageId = null;
+        renderMessages(cachedMessages);
+      });
+
+      actionRow.appendChild(readButton);
+      actionRow.appendChild(likeButton);
+      actionRow.appendChild(closeButton);
+
+      expanded.appendChild(from);
+      expanded.appendChild(subject);
+      expanded.appendChild(date);
+      expanded.appendChild(body);
+      expanded.appendChild(actionRow);
+
+      messagesList.appendChild(expanded);
+    }
   });
 }
 
@@ -994,7 +1070,13 @@ async function loadMessages() {
 
   try {
     const data = await loadJsonp(MESSAGES_API_URL, { action: "list" });
-    renderMessages(data);
+    if (!data || !data.ok) {
+      messagesStatus.textContent = "Could not load messages.";
+      return;
+    }
+
+    cachedMessages = data.messages || [];
+    renderMessages(cachedMessages);
   } catch (e) {
     console.error(e);
     messagesStatus.textContent = "Could not load messages.";
@@ -1004,7 +1086,13 @@ async function loadMessages() {
 async function refreshMessages() {
   try {
     const data = await loadJsonp(MESSAGES_API_URL, { action: "list" });
-    renderMessages(data);
+    if (data && data.ok) {
+      cachedMessages = data.messages || [];
+      if (expandedMessageId && !cachedMessages.some(m => m.id === expandedMessageId)) {
+        expandedMessageId = null;
+      }
+      renderMessages(cachedMessages);
+    }
   } catch (e) {
     console.error(e);
     updateUnreadBadge(cachedMessages);
