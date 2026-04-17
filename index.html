@@ -20,12 +20,20 @@ body {
   margin: 0;
 }
 
+/* VERSION */
+.version-label {
+  padding: 14px 0 0 0;
+  font-size: 22px;
+  color: #9aa3aa;
+  letter-spacing: 1px;
+}
+
 /* GRID */
 .container {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 40px;
-  padding: 24px 40px 40px 40px;
+  padding: 18px 40px 40px 40px;
 }
 
 /* MAIN BUTTONS */
@@ -105,7 +113,6 @@ a.jump-button {
   display: block;
 }
 
-/* VIDEO AREA */
 .player-frame-wrap {
   position: relative;
   width: 100%;
@@ -128,7 +135,7 @@ a.jump-button {
   display: block;
 }
 
-/* RIGHT EDGE CLOSE BAR */
+/* CLOSE BAR */
 .player-close-button {
   position: absolute;
   top: 0;
@@ -225,10 +232,16 @@ a.jump-button {
   gap: 18px;
 }
 
+/* LABELS */
+.field-label {
+  color: #00d5ff;
+  font-weight: bold;
+}
+
 /* COLLAPSED MESSAGE ROW */
 .message-row {
   display: grid;
-  grid-template-columns: 1fr 86px 86px 86px;
+  grid-template-columns: 1fr 92px 92px 92px;
   gap: 12px;
   align-items: stretch;
 }
@@ -237,8 +250,8 @@ a.jump-button {
   width: 100%;
   box-sizing: border-box;
   padding: 22px 24px;
-  font-size: 34px;
-  line-height: 1.2;
+  font-size: 32px;
+  line-height: 1.25;
   font-weight: bold;
   border: 4px solid #4fc46a;
   border-radius: 14px;
@@ -248,19 +261,16 @@ a.jump-button {
   cursor: pointer;
 }
 
-/* Opened but unread */
 .message-summary-button.opened {
   background: #2b4b73;
   border-color: #79b4ff;
 }
 
-/* Read */
 .message-summary-button.read {
   background: #2a2a2a;
   border-color: #777777;
 }
 
-/* Liked accent */
 .message-summary-button.liked {
   box-shadow: inset 0 0 0 4px #ffbf47;
 }
@@ -268,28 +278,34 @@ a.jump-button {
 .message-indicator,
 .message-like-indicator,
 .message-archive-button {
-  width: 86px;
-  min-width: 86px;
+  width: 92px;
+  min-width: 92px;
   border-radius: 14px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 38px;
+  font-size: 42px;
   font-weight: bold;
 }
 
 .message-indicator {
   border: 4px solid #666;
   background: #111;
-  color: #666;
+  color: #5f6a72;
 }
 
-/* READ ON = cyan, not green */
+/* READ ON = cyan */
 .message-indicator.read {
   background: #00bcd4;
   border-color: #7cecff;
   color: white;
+}
+
+.message-check-icon {
+  font-size: 46px;
+  line-height: 1;
+  font-weight: 900;
 }
 
 .message-like-indicator {
@@ -311,19 +327,33 @@ a.jump-button {
   cursor: pointer;
 }
 
+.message-archive-button:disabled {
+  background: #303030;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
 /* EXPANDED VIEW */
 .message-expanded {
-  margin-top: 10px;
-  padding: 20px;
+  padding: 22px;
   border: 4px solid #777;
   border-radius: 12px;
   background: #111;
   text-align: left;
 }
 
-.message-expanded div {
+.message-expanded-line {
   font-size: 36px;
-  margin-bottom: 12px;
+  line-height: 1.35;
+  margin-bottom: 14px;
+}
+
+.message-expanded-body {
+  font-size: 40px;
+  line-height: 1.38;
+  margin-bottom: 22px;
+  white-space: pre-wrap;
 }
 
 .action-row {
@@ -566,6 +596,8 @@ a.jump-button:focus,
 </style>
 </head>
 <body id="topOfPage">
+
+<div class="version-label">Fire TV Home v0.1</div>
 
 <div class="container">
   <button class="button-tile" id="familyMessagesButton" type="button">
@@ -832,13 +864,6 @@ function playEmbeddedVideo(videoId) {
   playerHost.appendChild(iframe);
 }
 
-function formatDisplayDate(isoString) {
-  if (!isoString) return "";
-  const d = new Date(isoString);
-  if (isNaN(d.getTime())) return "";
-  return d.toLocaleString();
-}
-
 function loadJsonp(baseUrl, params = {}) {
   return new Promise((resolve, reject) => {
     const callbackName = "jsonpCallback_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
@@ -920,90 +945,15 @@ function renderMessages(messages) {
   messagesStatus.textContent = "";
 
   messages.forEach((msg) => {
-    const row = document.createElement("div");
-    row.className = "message-row";
-
-    const summaryButton = document.createElement("button");
-    summaryButton.className = "message-summary-button";
-    if (msg.opened_at) summaryButton.classList.add("opened");
-    if (msg.read_at) summaryButton.classList.add("read");
-    if (msg.liked_at) summaryButton.classList.add("liked");
-    summaryButton.type = "button";
-
-    summaryButton.innerHTML = `
-      <div><strong>FROM:</strong> ${msg.from_name || "Family"}</div>
-      <div><strong>SUBJECT:</strong> ${msg.subject}</div>
-    `;
-
-    summaryButton.addEventListener("click", async () => {
-      expandedMessageId = msg.id;
-
-      if (!msg.opened_at) {
-        try {
-          const result = await runMessageAction("mark_opened", msg.id);
-          if (result.ok) {
-            const cached = findCachedMessage(msg.id);
-            if (cached) cached.opened_at = result.opened_at || new Date().toISOString();
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      }
-
-      renderMessages(cachedMessages);
-    });
-
-    const readIndicator = document.createElement("div");
-    readIndicator.className = "message-indicator" + (msg.read_at ? " read" : "");
-    readIndicator.textContent = "✓";
-
-    const likeIndicator = document.createElement("div");
-    likeIndicator.className = "message-like-indicator" + (msg.liked_at ? " liked" : "");
-    likeIndicator.textContent = "👍";
-
-    const archiveButton = document.createElement("button");
-    archiveButton.className = "message-archive-button";
-    archiveButton.type = "button";
-    archiveButton.textContent = "📥";
-    archiveButton.setAttribute("aria-label", "Archive message");
-    archiveButton.addEventListener("click", async () => {
-      messagesStatus.textContent = "Archiving…";
-      try {
-        const result = await runMessageAction("archive_message", msg.id);
-        if (!result.ok) {
-          messagesStatus.textContent = "Could not archive message.";
-          return;
-        }
-
-        cachedMessages = cachedMessages.filter(m => m.id !== msg.id);
-        if (expandedMessageId === msg.id) expandedMessageId = null;
-        messagesStatus.textContent = "";
-        renderMessages(cachedMessages);
-      } catch (e) {
-        console.error(e);
-        messagesStatus.textContent = "Could not archive message.";
-      }
-    });
-
-    row.appendChild(summaryButton);
-    row.appendChild(readIndicator);
-    row.appendChild(likeIndicator);
-    row.appendChild(archiveButton);
-
-    messagesList.appendChild(row);
-
     if (expandedMessageId === msg.id) {
       const expanded = document.createElement("div");
       expanded.className = "message-expanded";
 
-      const from = document.createElement("div");
-      from.textContent = "FROM: " + (msg.from_name || "Family");
-
-      const subject = document.createElement("div");
-      subject.textContent = "SUBJECT: " + msg.subject;
-
-      const body = document.createElement("div");
-      body.textContent = "BODY: " + msg.body;
+      expanded.innerHTML = `
+        <div class="message-expanded-line"><span class="field-label">FROM:</span> ${msg.from_name || "Family"}</div>
+        <div class="message-expanded-line"><span class="field-label">SUBJECT:</span> ${msg.subject}</div>
+        <div class="message-expanded-body"><span class="field-label">BODY:</span> ${msg.body}</div>
+      `;
 
       const actions = document.createElement("div");
       actions.className = "action-row";
@@ -1011,7 +961,7 @@ function renderMessages(messages) {
       const readBtn = document.createElement("button");
       readBtn.className = "action-btn read-btn" + (msg.read_at ? " active" : "");
       readBtn.type = "button";
-      readBtn.textContent = "✓ READ";
+      readBtn.textContent = "✔ READ";
       readBtn.addEventListener("click", async () => {
         messagesStatus.textContent = "Marking as read…";
         try {
@@ -1074,14 +1024,87 @@ function renderMessages(messages) {
       actions.appendChild(readBtn);
       actions.appendChild(likeBtn);
       actions.appendChild(closeBtn);
-
-      expanded.appendChild(from);
-      expanded.appendChild(subject);
-      expanded.appendChild(body);
       expanded.appendChild(actions);
-
       messagesList.appendChild(expanded);
+      return;
     }
+
+    const row = document.createElement("div");
+    row.className = "message-row";
+
+    const summaryButton = document.createElement("button");
+    summaryButton.className = "message-summary-button";
+    if (msg.opened_at) summaryButton.classList.add("opened");
+    if (msg.read_at) summaryButton.classList.add("read");
+    if (msg.liked_at) summaryButton.classList.add("liked");
+    summaryButton.type = "button";
+
+    summaryButton.innerHTML = `
+      <div><span class="field-label">FROM:</span> ${msg.from_name || "Family"}</div>
+      <div><span class="field-label">SUBJECT:</span> ${msg.subject}</div>
+    `;
+
+    summaryButton.addEventListener("click", async () => {
+      expandedMessageId = msg.id;
+
+      if (!msg.opened_at) {
+        try {
+          const result = await runMessageAction("mark_opened", msg.id);
+          if (result.ok) {
+            const cached = findCachedMessage(msg.id);
+            if (cached) cached.opened_at = result.opened_at || new Date().toISOString();
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      renderMessages(cachedMessages);
+    });
+
+    const readIndicator = document.createElement("div");
+    readIndicator.className = "message-indicator" + (msg.read_at ? " read" : "");
+    readIndicator.innerHTML = '<span class="message-check-icon">✔</span>';
+
+    const likeIndicator = document.createElement("div");
+    likeIndicator.className = "message-like-indicator" + (msg.liked_at ? " liked" : "");
+    likeIndicator.textContent = "👍";
+
+    const archiveButton = document.createElement("button");
+    archiveButton.className = "message-archive-button";
+    archiveButton.type = "button";
+    archiveButton.textContent = "📥";
+    archiveButton.setAttribute("aria-label", "Archive message");
+
+    if (!msg.opened_at) {
+      archiveButton.disabled = true;
+      archiveButton.title = "Open message before archiving";
+    } else {
+      archiveButton.addEventListener("click", async () => {
+        messagesStatus.textContent = "Archiving…";
+        try {
+          const result = await runMessageAction("archive_message", msg.id);
+          if (!result.ok) {
+            messagesStatus.textContent = "Could not archive message.";
+            return;
+          }
+
+          cachedMessages = cachedMessages.filter(m => m.id !== msg.id);
+          messagesStatus.textContent = "";
+          renderMessages(cachedMessages);
+        } catch (e) {
+          console.error(e);
+          messagesStatus.textContent = "Could not archive message.";
+        }
+      });
+    }
+
+    row.appendChild(summaryButton);
+    row.appendChild(readIndicator);
+    row.appendChild(likeIndicator);
+    row.appendChild(archiveButton);
+
+    messagesList.appendChild(row);
   });
 }
 
