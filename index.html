@@ -234,14 +234,14 @@ a.jump-button {
 
 /* LABELS */
 .field-label {
-  color: #00d5ff;
+  color: #8fe8ff;
   font-weight: bold;
 }
 
 /* COLLAPSED MESSAGE ROW */
 .message-row {
   display: grid;
-  grid-template-columns: 1fr 92px 92px 92px;
+  grid-template-columns: 1fr 74px 74px 92px;
   gap: 12px;
   align-items: stretch;
 }
@@ -272,11 +272,53 @@ a.jump-button {
 }
 
 .message-summary-button.liked {
-  box-shadow: inset 0 0 0 4px #ffbf47;
+  box-shadow: inset 0 0 0 4px #4d7cff;
 }
 
+/* indicators visually distinct from archive button */
 .message-indicator,
-.message-like-indicator,
+.message-like-indicator {
+  width: 74px;
+  min-width: 74px;
+  height: 74px;
+  align-self: center;
+  border-radius: 22px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  border: 4px solid #666;
+  background: #111;
+}
+
+.message-indicator {
+  color: #768089;
+}
+
+.message-like-indicator {
+  color: #768089;
+}
+
+.message-indicator.read,
+.message-like-indicator.liked {
+  background: #4d7cff;
+  border-color: #9cb6ff;
+  color: white;
+}
+
+.message-check-icon {
+  font-size: 44px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.message-like-icon {
+  font-size: 34px;
+  line-height: 1;
+}
+
+/* archive stays button-like and more rectangular */
 .message-archive-button {
   width: 92px;
   min-width: 92px;
@@ -285,42 +327,8 @@ a.jump-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 42px;
+  font-size: 38px;
   font-weight: bold;
-}
-
-.message-indicator {
-  border: 4px solid #666;
-  background: #111;
-  color: #5f6a72;
-}
-
-/* READ ON = cyan */
-.message-indicator.read {
-  background: #00bcd4;
-  border-color: #7cecff;
-  color: white;
-}
-
-.message-check-icon {
-  font-size: 46px;
-  line-height: 1;
-  font-weight: 900;
-}
-
-.message-like-indicator {
-  border: 4px solid #666;
-  background: #111;
-  color: #555;
-}
-
-.message-like-indicator.liked {
-  background: #ffb300;
-  border-color: #ffd56b;
-  color: black;
-}
-
-.message-archive-button {
   border: none;
   background: #666;
   color: white;
@@ -376,19 +384,15 @@ a.jump-button {
   color: #ddd;
 }
 
-.read-btn.active {
-  background: #00bcd4;
-  color: white;
-}
-
 .like-btn {
-  background: #666;
-  color: white;
+  background: #444;
+  color: #ddd;
 }
 
+.read-btn.active,
 .like-btn.active {
-  background: #ffb300;
-  color: black;
+  background: #4d7cff;
+  color: white;
 }
 
 .close-btn {
@@ -1068,7 +1072,7 @@ function renderMessages(messages) {
 
     const likeIndicator = document.createElement("div");
     likeIndicator.className = "message-like-indicator" + (msg.liked_at ? " liked" : "");
-    likeIndicator.textContent = "👍";
+    likeIndicator.innerHTML = '<span class="message-like-icon">👍</span>';
 
     const archiveButton = document.createElement("button");
     archiveButton.className = "message-archive-button";
