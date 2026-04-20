@@ -22,14 +22,25 @@ body {
 
 /* TOP BAR */
 .top-status-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20000;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
   padding: 12px 24px;
-  background: #111;
+  background: rgba(17, 17, 17, 0.98);
   border-bottom: 3px solid #333;
   box-sizing: border-box;
+}
+
+.datetime-bar {
+  font-size: 28px;
+  font-weight: bold;
+  color: #d8f6ff;
+  text-align: left;
+  white-space: nowrap;
 }
 
 .version-label {
@@ -37,14 +48,7 @@ body {
   color: #9aa3aa;
   letter-spacing: 1px;
   white-space: nowrap;
-}
-
-.datetime-bar {
-  font-size: 28px;
-  font-weight: bold;
-  color: #d8f6ff;
   text-align: right;
-  white-space: nowrap;
 }
 
 /* GRID */
@@ -274,13 +278,13 @@ a.jump-button {
 .message-summary-button {
   width: 100%;
   box-sizing: border-box;
-  padding: 14px 18px;
-  font-size: 28px;
-  line-height: 1.18;
+  padding: 16px 20px;
+  font-size: 31px;
+  line-height: 1.22;
   font-weight: bold;
   border: 4px solid #4fc46a;
   border-radius: 14px;
-  background: #1f6f2a; /* unopened */
+  background: #1f6f2a;
   color: white;
   text-align: left;
   cursor: pointer;
@@ -348,7 +352,7 @@ a.jump-button {
 }
 
 .message-check-icon {
-  font-size: 42px;
+  font-size: 44px;
   line-height: 1;
   font-weight: 900;
 }
@@ -383,7 +387,7 @@ a.jump-button {
 
 /* EXPANDED VIEW */
 .message-expanded {
-  padding: 22px;
+  padding: 24px;
   border: 4px solid #777;
   border-radius: 12px;
   background: #111;
@@ -391,15 +395,15 @@ a.jump-button {
 }
 
 .message-expanded-line {
-  font-size: 36px;
-  line-height: 1.35;
-  margin-bottom: 14px;
+  font-size: 40px;
+  line-height: 1.38;
+  margin-bottom: 16px;
 }
 
 .message-expanded-body {
-  font-size: 40px;
-  line-height: 1.38;
-  margin-bottom: 22px;
+  font-size: 44px;
+  line-height: 1.42;
+  margin-bottom: 24px;
   white-space: pre-wrap;
 }
 
@@ -641,8 +645,8 @@ a.jump-button:focus,
 <body id="topOfPage">
 
 <div class="top-status-bar">
-  <div class="version-label">Fire TV Home v0.2</div>
   <div class="datetime-bar" id="datetimeBar">Loading time…</div>
+  <div class="version-label">Fire TV Home v0.4</div>
 </div>
 
 <div class="container">
@@ -702,6 +706,7 @@ a.jump-button:focus,
 
 <script>
 const TEST_MODE = false;
+const REFRESH_INTERVAL_MS = 60 * 60 * 1000;
 
 const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
@@ -1123,9 +1128,7 @@ function renderMessages(messages) {
     if (msg.liked_at) summaryButton.classList.add("liked");
     summaryButton.type = "button";
 
-    const msgDate = msg.created_at
-      ? formatHeaderDate(new Date(msg.created_at))
-      : "";
+    const msgDate = msg.created_at ? formatHeaderDate(new Date(msg.created_at)) : "";
 
     summaryButton.innerHTML = `
       <div class="message-summary-topline">
@@ -1231,6 +1234,9 @@ async function preloadMessagesForBadge() {
     if (data && data.ok) {
       cachedMessages = data.messages || [];
       updateUnreadBadge(cachedMessages);
+      if (messagesPanel.classList.contains("show")) {
+        renderMessages(cachedMessages);
+      }
     } else {
       updateUnreadBadge([]);
     }
@@ -1280,6 +1286,13 @@ async function loadVideos() {
   }
 }
 
+function startPeriodicRefresh() {
+  setInterval(async () => {
+    await preloadMessagesForBadge();
+    await loadVideos();
+  }, REFRESH_INTERVAL_MS);
+}
+
 document.addEventListener("DOMContentLoaded", function() {
   updateDateTimeBar();
   setInterval(updateDateTimeBar, 1000);
@@ -1324,6 +1337,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
   loadVideos();
   preloadMessagesForBadge();
+  startPeriodicRefresh();
 });
 </script>
 
