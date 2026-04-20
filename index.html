@@ -88,11 +88,51 @@ a.jump-button {
 .button-main-photos      { background: #2ca02c; }
 .button-latest-photos    { background: #d62728; }
 .button-videos           { background: #9467bd; }
-.button-youtube          { background: #ff7f0e; }
 
 #familyMessagesButton {
   background: #00a6c7;
   position: relative;
+}
+
+/* TILE UPDATE SUPPORT */
+.tile-button {
+  position: relative;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tile-main-label {
+  display: block;
+  line-height: 1.05;
+}
+
+.tile-update-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #c40000;
+  color: white;
+  border: 4px solid #ff8a8a;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 22px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.tile-update-text {
+  position: absolute;
+  bottom: 10px;
+  left: 14px;
+  right: 14px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #fff4b1;
+  line-height: 1.1;
+}
+
+.hidden {
+  display: none !important;
 }
 
 /* UNREAD BADGE */
@@ -114,10 +154,6 @@ a.jump-button {
   font-weight: bold;
   line-height: 1;
   box-sizing: border-box;
-}
-
-.unread-badge.hidden {
-  display: none;
 }
 
 /* PLAYER OVERLAY */
@@ -450,9 +486,53 @@ a.jump-button {
   text-align: left;
 }
 
+.youtube-section-header {
+  margin-bottom: 14px;
+}
+
+.youtube-section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.youtube-section-title {
+  font-size: 42px;
+  font-weight: bold;
+  color: white;
+}
+
+.youtube-section-badge {
+  background: #c40000;
+  color: white;
+  border: 4px solid #ff8a8a;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.youtube-section-subtitle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
+  font-size: 24px;
+  color: #b7d8e6;
+  min-height: 30px;
+}
+
+.youtube-manual-update {
+  color: #fff4b1;
+  font-weight: bold;
+}
+
 .youtube-playlist-status {
   font-size: 30px;
-  padding: 10px;
+  padding: 10px 0;
   text-align: center;
   min-height: 52px;
 }
@@ -484,6 +564,26 @@ a.jump-button {
   background: #2a2a2a;
   border-color: #777777;
   color: #ffffff;
+}
+
+.youtube-playlist-link-wrap {
+  grid-column: span 2;
+  text-align: center;
+  margin-top: 6px;
+}
+
+.youtube-playlist-link {
+  font-size: 26px;
+  color: #88cfff;
+  text-decoration: underline;
+  opacity: 0.75;
+}
+
+.youtube-playlist-link:hover,
+.youtube-playlist-link:focus {
+  opacity: 1;
+  outline: 3px solid yellow;
+  outline-offset: 4px;
 }
 
 /* SEND MESSAGE PANEL */
@@ -650,16 +750,36 @@ a.jump-button:focus,
 </div>
 
 <div class="container">
+  <a class="button tile-button button-main-photos-loop" id="tileMainPhotosLoop" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">
+    <span class="tile-main-label">MAIN PHOTOS LOOP</span>
+    <span class="tile-update-badge hidden">UPDATED</span>
+    <span class="tile-update-text hidden"></span>
+  </a>
+
   <button class="button-tile" id="familyMessagesButton" type="button">
     FAMILY MESSAGES
     <span id="unreadBadge" class="unread-badge hidden">0</span>
   </button>
+
+  <a class="button tile-button button-main-photos" id="tileMainPhotos" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">
+    <span class="tile-main-label">MAIN PHOTOS</span>
+    <span class="tile-update-badge hidden">UPDATED</span>
+    <span class="tile-update-text hidden"></span>
+  </a>
+
   <a class="jump-button" href="#messagePanel">JUMP TO SEND MESSAGE</a>
 
-  <a class="button button-main-photos-loop" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">MAIN PHOTOS LOOP</a>
-  <a class="button button-main-photos" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">MAIN PHOTOS</a>
-  <a class="button button-latest-photos" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">LATEST PHOTOS</a>
-  <a class="button button-videos" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">VIDEOS</a>
+  <a class="button tile-button button-latest-photos" id="tileLatestPhotos" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">
+    <span class="tile-main-label">LATEST PHOTOS</span>
+    <span class="tile-update-badge hidden">UPDATED</span>
+    <span class="tile-update-text hidden"></span>
+  </a>
+
+  <a class="button tile-button button-videos" id="tileVideos" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">
+    <span class="tile-main-label">VIDEOS</span>
+    <span class="tile-update-badge hidden">UPDATED</span>
+    <span class="tile-update-text hidden"></span>
+  </a>
 
   <section id="messagesPanel" class="messages-panel">
     <div class="messages-inner">
@@ -672,8 +792,6 @@ a.jump-button:focus,
     </div>
   </section>
 
-  <a class="button button-youtube" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">YOUTUBE WRESTLING VIDEOS</a>
-
   <section id="playerPanel" class="player-panel">
     <div class="player-frame-wrap">
       <div id="youtube-player-host"></div>
@@ -682,9 +800,26 @@ a.jump-button:focus,
   </section>
 
   <section id="playlistPanel" class="youtube-playlist-panel">
+    <div class="youtube-section-header">
+      <div class="youtube-section-title-row">
+        <div class="youtube-section-title" id="ytHeaderTitle">WRESTLING VIDEOS (0)</div>
+        <span id="ytManualBadge" class="youtube-section-badge hidden">UPDATED</span>
+      </div>
+      <div class="youtube-section-subtitle">
+        <span id="ytManualUpdateText" class="youtube-manual-update hidden"></span>
+        <span id="ytLastChecked">Last checked: --</span>
+      </div>
+    </div>
+
     <div id="ytStatus" class="youtube-playlist-status">Loading videos…</div>
     <div id="ytList" class="youtube-playlist-list"></div>
   </section>
+
+  <div class="youtube-playlist-link-wrap">
+    <a class="youtube-playlist-link" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">
+      Open YouTube playlist (advanced)
+    </a>
+  </div>
 
   <div class="message-panel" id="messagePanel">
     <div class="message-title">SEND MESSAGE</div>
@@ -713,6 +848,15 @@ const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
 
+/* MANUAL UPDATE FLAGS */
+const MANUAL_UPDATES = {
+  mainPhotosLoop: { badge: false, text: "" },
+  mainPhotos:     { badge: false, text: "" },
+  latestPhotos:   { badge: false, text: "" },
+  videos:         { badge: false, text: "" },
+  youtubeList:    { badge: false, text: "" }
+};
+
 let statusTimeout;
 let cachedMessages = [];
 let expandedMessageId = null;
@@ -733,6 +877,11 @@ const closeMessagesButton = document.getElementById("closeMessagesButton");
 const messagesStatus = document.getElementById("messagesStatus");
 const messagesList = document.getElementById("messagesList");
 const datetimeBar = document.getElementById("datetimeBar");
+
+const ytHeaderTitle = document.getElementById("ytHeaderTitle");
+const ytManualBadge = document.getElementById("ytManualBadge");
+const ytManualUpdateText = document.getElementById("ytManualUpdateText");
+const ytLastChecked = document.getElementById("ytLastChecked");
 
 function formatHeaderDate(dateObj) {
   return dateObj.toLocaleDateString(undefined, {
@@ -761,6 +910,67 @@ function updateUnreadBadge(messages) {
   const unreadCount = (messages || []).filter(msg => !msg.read_at).length;
   unreadBadge.textContent = String(unreadCount);
   unreadBadge.classList.toggle("hidden", unreadCount === 0);
+}
+
+function applyTileUpdate(tileId, cfg) {
+  const tile = document.getElementById(tileId);
+  if (!tile) return;
+
+  const badge = tile.querySelector(".tile-update-badge");
+  const text = tile.querySelector(".tile-update-text");
+
+  if (cfg && cfg.badge) {
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
+
+  if (cfg && cfg.text) {
+    text.textContent = cfg.text;
+    text.classList.remove("hidden");
+  } else {
+    text.textContent = "";
+    text.classList.add("hidden");
+  }
+}
+
+function applyManualUpdateUI() {
+  applyTileUpdate("tileMainPhotosLoop", MANUAL_UPDATES.mainPhotosLoop);
+  applyTileUpdate("tileMainPhotos", MANUAL_UPDATES.mainPhotos);
+  applyTileUpdate("tileLatestPhotos", MANUAL_UPDATES.latestPhotos);
+  applyTileUpdate("tileVideos", MANUAL_UPDATES.videos);
+
+  if (MANUAL_UPDATES.youtubeList && MANUAL_UPDATES.youtubeList.badge) {
+    ytManualBadge.classList.remove("hidden");
+  } else {
+    ytManualBadge.classList.add("hidden");
+  }
+
+  if (MANUAL_UPDATES.youtubeList && MANUAL_UPDATES.youtubeList.text) {
+    ytManualUpdateText.textContent = MANUAL_UPDATES.youtubeList.text;
+    ytManualUpdateText.classList.remove("hidden");
+  } else {
+    ytManualUpdateText.textContent = "";
+    ytManualUpdateText.classList.add("hidden");
+  }
+}
+
+function updateYoutubeLastChecked() {
+  const now = new Date();
+  const datePart = now.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  });
+  const timePart = now.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit"
+  });
+  ytLastChecked.textContent = `Last checked: ${datePart} ${timePart}`;
+}
+
+function updateYoutubeHeaderCount(count) {
+  ytHeaderTitle.textContent = `WRESTLING VIDEOS (${count})`;
 }
 
 function getWatchedVideos() {
@@ -1257,6 +1467,8 @@ async function loadVideos() {
     list.innerHTML = "";
 
     if (!videos.length) {
+      updateYoutubeHeaderCount(0);
+      updateYoutubeLastChecked();
       status.textContent = "No videos found.";
       return;
     }
@@ -1279,9 +1491,13 @@ async function loadVideos() {
       list.appendChild(btn);
     });
 
+    updateYoutubeHeaderCount(videos.length);
+    updateYoutubeLastChecked();
     status.style.display = "none";
   } catch (e) {
     console.error(e);
+    updateYoutubeLastChecked();
+    status.style.display = "block";
     status.textContent = "Error loading videos";
   }
 }
@@ -1294,6 +1510,7 @@ function startPeriodicRefresh() {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
+  applyManualUpdateUI();
   updateDateTimeBar();
   setInterval(updateDateTimeBar, 1000);
 
