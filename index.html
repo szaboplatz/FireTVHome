@@ -573,10 +573,10 @@ a.jump-button {
 }
 
 .youtube-playlist-link {
-  font-size: 26px;
+  font-size: 34px;
   color: #88cfff;
   text-decoration: underline;
-  opacity: 0.75;
+  opacity: 0.82;
 }
 
 .youtube-playlist-link:hover,
@@ -746,28 +746,28 @@ a.jump-button:focus,
 
 <div class="top-status-bar">
   <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-  <div class="version-label">Fire TV Home v0.4</div>
+  <div class="version-label">Fire TV Home v0.6</div>
 </div>
 
 <div class="container">
+  <button class="button-tile" id="familyMessagesButton" type="button">
+    FAMILY MESSAGES
+    <span id="unreadBadge" class="unread-badge hidden">0</span>
+  </button>
+
+  <a class="jump-button" href="#messagePanel">JUMP TO SEND MESSAGE</a>
+
   <a class="button tile-button button-main-photos-loop" id="tileMainPhotosLoop" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">
     <span class="tile-main-label">MAIN PHOTOS LOOP</span>
     <span class="tile-update-badge hidden">UPDATED</span>
     <span class="tile-update-text hidden"></span>
   </a>
 
-  <button class="button-tile" id="familyMessagesButton" type="button">
-    FAMILY MESSAGES
-    <span id="unreadBadge" class="unread-badge hidden">0</span>
-  </button>
-
   <a class="button tile-button button-main-photos" id="tileMainPhotos" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">
     <span class="tile-main-label">MAIN PHOTOS</span>
     <span class="tile-update-badge hidden">UPDATED</span>
     <span class="tile-update-text hidden"></span>
   </a>
-
-  <a class="jump-button" href="#messagePanel">JUMP TO SEND MESSAGE</a>
 
   <a class="button tile-button button-latest-photos" id="tileLatestPhotos" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">
     <span class="tile-main-label">LATEST PHOTOS</span>
@@ -1469,6 +1469,7 @@ async function loadVideos() {
     if (!videos.length) {
       updateYoutubeHeaderCount(0);
       updateYoutubeLastChecked();
+      status.style.display = "block";
       status.textContent = "No videos found.";
       return;
     }
