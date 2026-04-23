@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
@@ -10,6 +11,7 @@
 <style>
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -18,6 +20,13 @@ body {
   font-family: Arial, sans-serif;
   text-align: center;
   margin: 0;
+  overflow-x: hidden;
+}
+
+/* keep sizing predictable everywhere */
+*, *::before, *::after {
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 /* TOP BAR */
@@ -32,7 +41,6 @@ body {
   padding: 12px 24px;
   background: rgba(17, 17, 17, 0.98);
   border-bottom: 3px solid #333;
-  box-sizing: border-box;
 }
 
 .datetime-bar {
@@ -57,6 +65,8 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 40px;
   padding: 18px 40px 40px 40px;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 /* MAIN BUTTONS */
@@ -73,7 +83,6 @@ a.jump-button {
   border-radius: 12px;
   min-height: 120px;
   text-align: center;
-  box-sizing: border-box;
   border: none;
   cursor: pointer;
   font-family: Arial, sans-serif;
@@ -153,7 +162,6 @@ a.jump-button {
   font-size: 28px;
   font-weight: bold;
   line-height: 1;
-  box-sizing: border-box;
 }
 
 /* PLAYER OVERLAY */
@@ -164,7 +172,6 @@ a.jump-button {
   z-index: 9999;
   background: rgba(0, 0, 0, 0.99);
   padding: 0;
-  box-sizing: border-box;
   overflow: hidden;
 }
 
@@ -211,7 +218,6 @@ a.jump-button {
   border: none;
   border-left: 4px solid rgba(255, 102, 102, 0.9);
   cursor: pointer;
-  box-sizing: border-box;
   z-index: 2;
   writing-mode: vertical-rl;
   text-orientation: mixed;
@@ -227,7 +233,6 @@ a.jump-button {
   border: 4px solid #555;
   border-radius: 16px;
   padding: 0;
-  box-sizing: border-box;
   text-align: left;
   overflow: hidden;
 }
@@ -241,7 +246,6 @@ a.jump-button {
   margin: 0 auto;
   position: relative;
   padding-right: 132px;
-  box-sizing: border-box;
 }
 
 .messages-close-button {
@@ -260,7 +264,6 @@ a.jump-button {
   border: none;
   border-left: 4px solid rgba(255, 102, 102, 0.9);
   cursor: pointer;
-  box-sizing: border-box;
   z-index: 3;
   writing-mode: vertical-rl;
   text-orientation: mixed;
@@ -313,7 +316,6 @@ a.jump-button {
 
 .message-summary-button {
   width: 100%;
-  box-sizing: border-box;
   padding: 16px 20px;
   font-size: 31px;
   line-height: 1.22;
@@ -363,7 +365,6 @@ a.jump-button {
   min-width: 72px;
   height: 72px;
   border-radius: 22px;
-  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -402,7 +403,6 @@ a.jump-button {
   width: 88px;
   min-width: 88px;
   border-radius: 14px;
-  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -546,7 +546,6 @@ a.jump-button {
 
 .youtube-video-button {
   width: 100%;
-  box-sizing: border-box;
   padding: 24px;
   font-size: 40px;
   line-height: 1.2;
@@ -579,13 +578,6 @@ a.jump-button {
   opacity: 0.82;
 }
 
-.youtube-playlist-link:hover,
-.youtube-playlist-link:focus {
-  opacity: 1;
-  outline: 3px solid yellow;
-  outline-offset: 4px;
-}
-
 /* SEND MESSAGE PANEL */
 .message-panel {
   grid-column: span 2;
@@ -614,7 +606,6 @@ a.jump-button {
 
 textarea {
   width: 100%;
-  box-sizing: border-box;
   font-size: 42px;
   line-height: 1.3;
   padding: 25px;
@@ -679,9 +670,11 @@ a.jump-button:focus,
 .message-archive-button:hover,
 .message-archive-button:focus,
 .action-btn:hover,
-.action-btn:focus {
-  outline: 4px solid yellow;
-  outline-offset: 2px;
+.action-btn:focus,
+.youtube-playlist-link:hover,
+.youtube-playlist-link:focus {
+  outline: 6px solid yellow;
+  outline-offset: 3px;
   filter: brightness(1.1);
 }
 
@@ -740,42 +733,51 @@ a.jump-button:focus,
   background: #4a0000;
   color: #ff6666;
 }
+
+/* reduce browser cursor relevance */
+.managed-focus {
+  position: relative;
+}
+
+.managed-focus:focus {
+  scroll-margin: 20px;
+}
 </style>
 </head>
 <body id="topOfPage">
 
 <div class="top-status-bar">
   <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-  <div class="version-label">Fire TV Home v0.6</div>
+  <div class="version-label">Fire TV Home v0.7</div>
 </div>
 
 <div class="container">
-  <button class="button-tile" id="familyMessagesButton" type="button">
+  <button class="button-tile managed-focus" id="familyMessagesButton" type="button">
     FAMILY MESSAGES
     <span id="unreadBadge" class="unread-badge hidden">0</span>
   </button>
 
-  <a class="jump-button" href="#messagePanel">JUMP TO SEND MESSAGE</a>
+  <a class="jump-button managed-focus" id="jumpToMessageButton" href="#messagePanel">JUMP TO SEND MESSAGE</a>
 
-  <a class="button tile-button button-main-photos-loop" id="tileMainPhotosLoop" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">
+  <a class="button tile-button button-main-photos-loop managed-focus" id="tileMainPhotosLoop" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">
     <span class="tile-main-label">MAIN PHOTOS LOOP</span>
     <span class="tile-update-badge hidden">UPDATED</span>
     <span class="tile-update-text hidden"></span>
   </a>
 
-  <a class="button tile-button button-main-photos" id="tileMainPhotos" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">
+  <a class="button tile-button button-main-photos managed-focus" id="tileMainPhotos" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">
     <span class="tile-main-label">MAIN PHOTOS</span>
     <span class="tile-update-badge hidden">UPDATED</span>
     <span class="tile-update-text hidden"></span>
   </a>
 
-  <a class="button tile-button button-latest-photos" id="tileLatestPhotos" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">
+  <a class="button tile-button button-latest-photos managed-focus" id="tileLatestPhotos" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">
     <span class="tile-main-label">LATEST PHOTOS</span>
     <span class="tile-update-badge hidden">UPDATED</span>
     <span class="tile-update-text hidden"></span>
   </a>
 
-  <a class="button tile-button button-videos" id="tileVideos" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">
+  <a class="button tile-button button-videos managed-focus" id="tileVideos" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">
     <span class="tile-main-label">VIDEOS</span>
     <span class="tile-update-badge hidden">UPDATED</span>
     <span class="tile-update-text hidden"></span>
@@ -783,7 +785,7 @@ a.jump-button:focus,
 
   <section id="messagesPanel" class="messages-panel">
     <div class="messages-inner">
-      <button id="closeMessagesButton" class="messages-close-button" type="button" aria-label="Close messages">CLOSE</button>
+      <button id="closeMessagesButton" class="messages-close-button managed-focus" type="button" aria-label="Close messages">CLOSE</button>
       <div class="messages-content">
         <div class="messages-title">FAMILY MESSAGES</div>
         <div id="messagesStatus" class="messages-status">Loading messages…</div>
@@ -795,7 +797,7 @@ a.jump-button:focus,
   <section id="playerPanel" class="player-panel">
     <div class="player-frame-wrap">
       <div id="youtube-player-host"></div>
-      <button id="closeVideoButton" class="player-close-button" type="button" aria-label="Close video">CLOSE</button>
+      <button id="closeVideoButton" class="player-close-button managed-focus" type="button" aria-label="Close video">CLOSE</button>
     </div>
   </section>
 
@@ -816,7 +818,7 @@ a.jump-button:focus,
   </section>
 
   <div class="youtube-playlist-link-wrap">
-    <a class="youtube-playlist-link" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">
+    <a class="youtube-playlist-link managed-focus" id="youtubePlaylistLink" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">
       Open YouTube playlist (advanced)
     </a>
   </div>
@@ -832,11 +834,11 @@ a.jump-button:focus,
 
       <div id="status"></div>
 
-      <button class="submit-button" id="sendButton" type="submit">SEND</button>
+      <button class="submit-button managed-focus" id="sendButton" type="submit">SEND</button>
     </form>
   </div>
 
-  <a class="jump-button jump-top" href="#topOfPage">JUMP TO TOP</a>
+  <a class="jump-button jump-top managed-focus" id="jumpTopButton" href="#topOfPage">JUMP TO TOP</a>
 </div>
 
 <script>
@@ -1207,6 +1209,7 @@ function openMessagesPanel() {
 function closeMessagesPanelFn() {
   messagesPanel.classList.remove("show");
   expandedMessageId = null;
+  familyMessagesButton.focus();
   window.scrollTo({ top: 0, behavior: "auto" });
 }
 
@@ -1216,6 +1219,12 @@ async function runMessageAction(action, id) {
 
 function findCachedMessage(id) {
   return cachedMessages.find(msg => msg.id === id);
+}
+
+function tagManagedFocus(scope = document) {
+  scope.querySelectorAll('a, button').forEach((el) => {
+    el.classList.add('managed-focus');
+  });
 }
 
 function renderMessages(messages) {
@@ -1244,7 +1253,8 @@ function renderMessages(messages) {
       actions.className = "action-row";
 
       const readBtn = document.createElement("button");
-      readBtn.className = "action-btn read-btn" + (msg.read_at ? " active" : "");
+      readBtn.className = "action-btn read-btn";
+      if (msg.read_at) readBtn.classList.add("active");
       readBtn.type = "button";
       readBtn.textContent = "✔ READ";
       readBtn.addEventListener("click", async () => {
@@ -1269,7 +1279,8 @@ function renderMessages(messages) {
       });
 
       const likeBtn = document.createElement("button");
-      likeBtn.className = "action-btn like-btn" + (msg.liked_at ? " active" : "");
+      likeBtn.className = "action-btn like-btn";
+      if (msg.liked_at) likeBtn.classList.add("active");
       likeBtn.type = "button";
       likeBtn.textContent = "👍 LIKE";
       likeBtn.addEventListener("click", async () => {
@@ -1311,6 +1322,7 @@ function renderMessages(messages) {
       actions.appendChild(closeBtn);
       expanded.appendChild(actions);
       messagesList.appendChild(expanded);
+      tagManagedFocus(expanded);
       return;
     }
 
@@ -1400,6 +1412,7 @@ function renderMessages(messages) {
     row.appendChild(archiveButton);
 
     messagesList.appendChild(row);
+    tagManagedFocus(row);
   });
 }
 
@@ -1476,7 +1489,7 @@ async function loadVideos() {
 
     videos.forEach((video) => {
       const btn = document.createElement("button");
-      btn.className = "youtube-video-button";
+      btn.className = "youtube-video-button managed-focus";
       btn.textContent = video.title;
       btn.type = "button";
       btn.dataset.videoId = video.videoId;
@@ -1509,6 +1522,102 @@ function startPeriodicRefresh() {
     await loadVideos();
   }, REFRESH_INTERVAL_MS);
 }
+
+/* ---------- directional focus management ---------- */
+
+function isVisible(el) {
+  if (!el) return false;
+  if (el.disabled) return false;
+  if (el.offsetParent === null && getComputedStyle(el).position !== 'fixed') return false;
+  const style = getComputedStyle(el);
+  return style.display !== 'none' && style.visibility !== 'hidden';
+}
+
+function getManagedFocusableElements() {
+  const elements = Array.from(document.querySelectorAll('.managed-focus'));
+  return elements.filter(isVisible);
+}
+
+function getRectCenter(el) {
+  const rect = el.getBoundingClientRect();
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2,
+    left: rect.left,
+    right: rect.right,
+    top: rect.top,
+    bottom: rect.bottom
+  };
+}
+
+function chooseNextByDirection(current, direction) {
+  const candidates = getManagedFocusableElements().filter(el => el !== current);
+  if (!candidates.length) return null;
+
+  const c = getRectCenter(current);
+  const scored = [];
+
+  candidates.forEach((el) => {
+    const r = getRectCenter(el);
+    let valid = false;
+    let primary = 0;
+    let secondary = 0;
+
+    if (direction === 'ArrowLeft' && r.x < c.x - 5) {
+      valid = true;
+      primary = c.x - r.x;
+      secondary = Math.abs(c.y - r.y);
+    } else if (direction === 'ArrowRight' && r.x > c.x + 5) {
+      valid = true;
+      primary = r.x - c.x;
+      secondary = Math.abs(c.y - r.y);
+    } else if (direction === 'ArrowUp' && r.y < c.y - 5) {
+      valid = true;
+      primary = c.y - r.y;
+      secondary = Math.abs(c.x - r.x);
+    } else if (direction === 'ArrowDown' && r.y > c.y + 5) {
+      valid = true;
+      primary = r.y - c.y;
+      secondary = Math.abs(c.x - r.x);
+    }
+
+    if (valid) {
+      scored.push({ el, score: primary * 1000 + secondary });
+    }
+  });
+
+  if (!scored.length) return null;
+  scored.sort((a, b) => a.score - b.score);
+  return scored[0].el;
+}
+
+function shouldManageKeydown(e) {
+  if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return false;
+  const active = document.activeElement;
+  if (!active) return false;
+  if (active === textarea) return false;
+  if (!active.classList.contains('managed-focus')) return false;
+  return true;
+}
+
+document.addEventListener('keydown', function(e) {
+  if (!shouldManageKeydown(e)) return;
+
+  const active = document.activeElement;
+  const next = chooseNextByDirection(active, e.key);
+
+  if (next) {
+    e.preventDefault();
+    next.focus();
+    if (typeof next.scrollIntoView === 'function') {
+      next.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+  } else {
+    /* trap focus at edges so browser cursor does not wander off-screen */
+    e.preventDefault();
+    active.focus();
+  }
+});
 
 document.addEventListener("DOMContentLoaded", function() {
   applyManualUpdateUI();
@@ -1556,6 +1665,11 @@ document.addEventListener("DOMContentLoaded", function() {
   loadVideos();
   preloadMessagesForBadge();
   startPeriodicRefresh();
+
+  /* stable starting focus for TV browsers */
+  setTimeout(() => {
+    familyMessagesButton.focus();
+  }, 300);
 });
 </script>
 
