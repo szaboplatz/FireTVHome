@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
@@ -11,11 +11,10 @@
 <style>
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden;
 }
 
 body {
-  background: black;
+  background: #000;
   color: white;
   font-family: Arial, sans-serif;
   text-align: center;
@@ -23,10 +22,10 @@ body {
   overflow-x: hidden;
 }
 
-/* keep sizing predictable everywhere */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
-  max-width: 100%;
 }
 
 /* TOP BAR */
@@ -65,7 +64,6 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 40px;
   padding: 18px 40px 40px 40px;
-  width: 100%;
   overflow-x: hidden;
 }
 
@@ -80,12 +78,19 @@ a.jump-button {
   font-size: 50px;
   color: white;
   text-decoration: none;
-  border-radius: 12px;
+  border-radius: 16px;
   min-height: 120px;
   text-align: center;
   border: none;
   cursor: pointer;
   font-family: Arial, sans-serif;
+  position: relative;
+  transform: scale(1);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    filter 0.12s ease,
+    outline-color 0.12s ease;
 }
 
 a.jump-button {
@@ -101,6 +106,63 @@ a.jump-button {
 #familyMessagesButton {
   background: #00a6c7;
   position: relative;
+}
+
+/* NETFLIX-LIKE TILE BEHAVIOR */
+a.button,
+button.button-tile,
+a.jump-button,
+.youtube-video-button,
+.submit-button,
+.message-summary-button,
+.message-archive-button,
+.action-btn,
+.youtube-playlist-link,
+.player-close-button,
+.messages-close-button {
+  box-shadow: 0 0 0 0 rgba(255,255,255,0);
+}
+
+a.button:hover,
+a.button:focus,
+button.button-tile:hover,
+button.button-tile:focus,
+a.jump-button:hover,
+a.jump-button:focus,
+.youtube-video-button:hover,
+.youtube-video-button:focus,
+.submit-button:hover,
+.submit-button:focus,
+.message-summary-button:hover,
+.message-summary-button:focus,
+.message-archive-button:hover,
+.message-archive-button:focus,
+.action-btn:hover,
+.action-btn:focus,
+.youtube-playlist-link:hover,
+.youtube-playlist-link:focus,
+.player-close-button:hover,
+.player-close-button:focus,
+.messages-close-button:hover,
+.messages-close-button:focus {
+  outline: 6px solid #ffffff;
+  outline-offset: 4px;
+  transform: scale(1.045);
+  filter: brightness(1.16);
+  box-shadow:
+    0 0 0 4px rgba(255,255,255,0.25),
+    0 14px 36px rgba(0,0,0,0.55);
+  z-index: 5;
+}
+
+.youtube-video-button:hover,
+.youtube-video-button:focus {
+  border-color: #ffffff;
+}
+
+.youtube-video-button.watched:hover,
+.youtube-video-button.watched:focus {
+  border-color: #ffffff;
 }
 
 /* TILE UPDATE SUPPORT */
@@ -421,6 +483,14 @@ a.jump-button {
   opacity: 0.8;
 }
 
+.message-archive-button:disabled:hover,
+.message-archive-button:disabled:focus {
+  transform: none;
+  outline: none;
+  box-shadow: none;
+  filter: none;
+}
+
 /* EXPANDED VIEW */
 .message-expanded {
   padding: 24px;
@@ -557,6 +627,11 @@ a.jump-button {
   cursor: pointer;
   white-space: normal;
   word-break: break-word;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    filter 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .youtube-video-button.watched {
@@ -572,10 +647,17 @@ a.jump-button {
 }
 
 .youtube-playlist-link {
+  display: inline-block;
   font-size: 34px;
   color: #88cfff;
   text-decoration: underline;
   opacity: 0.82;
+  border-radius: 8px;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    filter 0.12s ease,
+    opacity 0.12s ease;
 }
 
 /* SEND MESSAGE PANEL */
@@ -644,6 +726,10 @@ textarea.active-box,
   color: black;
   cursor: pointer;
   outline: none;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    filter 0.12s ease;
 }
 
 .submit-button:disabled {
@@ -654,51 +740,6 @@ textarea.active-box,
   grid-column: span 2;
   justify-self: center;
   margin-top: 10px;
-}
-
-/* HIGHLIGHTS */
-a.button:hover,
-a.button:focus,
-button.button-tile:hover,
-button.button-tile:focus,
-a.jump-button:hover,
-a.jump-button:focus,
-.submit-button:hover,
-.submit-button:focus,
-.message-summary-button:hover,
-.message-summary-button:focus,
-.message-archive-button:hover,
-.message-archive-button:focus,
-.action-btn:hover,
-.action-btn:focus,
-.youtube-playlist-link:hover,
-.youtube-playlist-link:focus {
-  outline: 6px solid yellow;
-  outline-offset: 3px;
-  filter: brightness(1.1);
-}
-
-.youtube-video-button:hover,
-.youtube-video-button:focus {
-  border-color: yellow;
-  box-shadow: inset 0 0 0 4px yellow;
-  outline: none;
-}
-
-.youtube-video-button.watched:hover,
-.youtube-video-button.watched:focus {
-  border-color: yellow;
-  box-shadow: inset 0 0 0 4px yellow;
-  outline: none;
-}
-
-.player-close-button:hover,
-.player-close-button:focus,
-.messages-close-button:hover,
-.messages-close-button:focus {
-  outline: 4px solid yellow;
-  outline-offset: -4px;
-  filter: brightness(1.1);
 }
 
 /* SEND STATUS */
@@ -734,18 +775,10 @@ a.jump-button:focus,
   color: #ff6666;
 }
 
-/* reduce browser cursor relevance */
-.managed-focus {
-  position: relative;
-}
-
-.managed-focus:focus {
-  scroll-margin: 20px;
-}
-
-:focus {
-  outline: 6px solid yellow !important;
-  outline-offset: 4px;
+/* keep pointer-based browsers visually synced */
+.pointer-focus,
+.pointer-focus * {
+  cursor: pointer;
 }
 </style>
 </head>
@@ -753,36 +786,36 @@ a.jump-button:focus,
 
 <div class="top-status-bar">
   <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-  <div class="version-label">Fire TV Home v0.7</div>
+  <div class="version-label">Fire TV Home v0.8</div>
 </div>
 
 <div class="container">
-  <button class="button-tile managed-focus" id="familyMessagesButton" type="button">
+  <button class="button-tile pointer-focus" id="familyMessagesButton" type="button">
     FAMILY MESSAGES
     <span id="unreadBadge" class="unread-badge hidden">0</span>
   </button>
 
-  <a class="jump-button managed-focus" id="jumpToMessageButton" href="#messagePanel">JUMP TO SEND MESSAGE</a>
+  <a class="jump-button pointer-focus" href="#messagePanel">JUMP TO SEND MESSAGE</a>
 
-  <a class="button tile-button button-main-photos-loop managed-focus" id="tileMainPhotosLoop" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">
+  <a class="button tile-button button-main-photos-loop pointer-focus" id="tileMainPhotosLoop" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">
     <span class="tile-main-label">MAIN PHOTOS LOOP</span>
     <span class="tile-update-badge hidden">UPDATED</span>
     <span class="tile-update-text hidden"></span>
   </a>
 
-  <a class="button tile-button button-main-photos managed-focus" id="tileMainPhotos" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">
+  <a class="button tile-button button-main-photos pointer-focus" id="tileMainPhotos" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">
     <span class="tile-main-label">MAIN PHOTOS</span>
     <span class="tile-update-badge hidden">UPDATED</span>
     <span class="tile-update-text hidden"></span>
   </a>
 
-  <a class="button tile-button button-latest-photos managed-focus" id="tileLatestPhotos" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">
+  <a class="button tile-button button-latest-photos pointer-focus" id="tileLatestPhotos" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">
     <span class="tile-main-label">LATEST PHOTOS</span>
     <span class="tile-update-badge hidden">UPDATED</span>
     <span class="tile-update-text hidden"></span>
   </a>
 
-  <a class="button tile-button button-videos managed-focus" id="tileVideos" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">
+  <a class="button tile-button button-videos pointer-focus" id="tileVideos" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">
     <span class="tile-main-label">VIDEOS</span>
     <span class="tile-update-badge hidden">UPDATED</span>
     <span class="tile-update-text hidden"></span>
@@ -790,7 +823,7 @@ a.jump-button:focus,
 
   <section id="messagesPanel" class="messages-panel">
     <div class="messages-inner">
-      <button id="closeMessagesButton" class="messages-close-button managed-focus" type="button" aria-label="Close messages">CLOSE</button>
+      <button id="closeMessagesButton" class="messages-close-button pointer-focus" type="button" aria-label="Close messages">CLOSE</button>
       <div class="messages-content">
         <div class="messages-title">FAMILY MESSAGES</div>
         <div id="messagesStatus" class="messages-status">Loading messages…</div>
@@ -802,7 +835,7 @@ a.jump-button:focus,
   <section id="playerPanel" class="player-panel">
     <div class="player-frame-wrap">
       <div id="youtube-player-host"></div>
-      <button id="closeVideoButton" class="player-close-button managed-focus" type="button" aria-label="Close video">CLOSE</button>
+      <button id="closeVideoButton" class="player-close-button pointer-focus" type="button" aria-label="Close video">CLOSE</button>
     </div>
   </section>
 
@@ -823,7 +856,7 @@ a.jump-button:focus,
   </section>
 
   <div class="youtube-playlist-link-wrap">
-    <a class="youtube-playlist-link managed-focus" id="youtubePlaylistLink" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">
+    <a class="youtube-playlist-link pointer-focus" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">
       Open YouTube playlist (advanced)
     </a>
   </div>
@@ -839,11 +872,11 @@ a.jump-button:focus,
 
       <div id="status"></div>
 
-      <button class="submit-button managed-focus" id="sendButton" type="submit">SEND</button>
+      <button class="submit-button pointer-focus" id="sendButton" type="submit">SEND</button>
     </form>
   </div>
 
-  <a class="jump-button jump-top managed-focus" id="jumpTopButton" href="#topOfPage">JUMP TO TOP</a>
+  <a class="jump-button jump-top pointer-focus" href="#topOfPage">JUMP TO TOP</a>
 </div>
 
 <script>
@@ -1214,7 +1247,6 @@ function openMessagesPanel() {
 function closeMessagesPanelFn() {
   messagesPanel.classList.remove("show");
   expandedMessageId = null;
-  familyMessagesButton.focus();
   window.scrollTo({ top: 0, behavior: "auto" });
 }
 
@@ -1224,12 +1256,6 @@ async function runMessageAction(action, id) {
 
 function findCachedMessage(id) {
   return cachedMessages.find(msg => msg.id === id);
-}
-
-function tagManagedFocus(scope = document) {
-  scope.querySelectorAll('a, button').forEach((el) => {
-    el.classList.add('managed-focus');
-  });
 }
 
 function renderMessages(messages) {
@@ -1258,8 +1284,7 @@ function renderMessages(messages) {
       actions.className = "action-row";
 
       const readBtn = document.createElement("button");
-      readBtn.className = "action-btn read-btn";
-      if (msg.read_at) readBtn.classList.add("active");
+      readBtn.className = "action-btn read-btn" + (msg.read_at ? " active" : "");
       readBtn.type = "button";
       readBtn.textContent = "✔ READ";
       readBtn.addEventListener("click", async () => {
@@ -1284,8 +1309,7 @@ function renderMessages(messages) {
       });
 
       const likeBtn = document.createElement("button");
-      likeBtn.className = "action-btn like-btn";
-      if (msg.liked_at) likeBtn.classList.add("active");
+      likeBtn.className = "action-btn like-btn" + (msg.liked_at ? " active" : "");
       likeBtn.type = "button";
       likeBtn.textContent = "👍 LIKE";
       likeBtn.addEventListener("click", async () => {
@@ -1327,7 +1351,6 @@ function renderMessages(messages) {
       actions.appendChild(closeBtn);
       expanded.appendChild(actions);
       messagesList.appendChild(expanded);
-      tagManagedFocus(expanded);
       return;
     }
 
@@ -1349,7 +1372,7 @@ function renderMessages(messages) {
     indicatorStack.appendChild(likeIndicator);
 
     const summaryButton = document.createElement("button");
-    summaryButton.className = "message-summary-button";
+    summaryButton.className = "message-summary-button pointer-focus";
     if (msg.opened_at) summaryButton.classList.add("opened");
     if (msg.read_at) summaryButton.classList.add("read");
     if (msg.liked_at) summaryButton.classList.add("liked");
@@ -1384,7 +1407,7 @@ function renderMessages(messages) {
     });
 
     const archiveButton = document.createElement("button");
-    archiveButton.className = "message-archive-button";
+    archiveButton.className = "message-archive-button pointer-focus";
     archiveButton.type = "button";
     archiveButton.textContent = "📥";
     archiveButton.setAttribute("aria-label", "Archive message");
@@ -1417,7 +1440,6 @@ function renderMessages(messages) {
     row.appendChild(archiveButton);
 
     messagesList.appendChild(row);
-    tagManagedFocus(row);
   });
 }
 
@@ -1494,7 +1516,7 @@ async function loadVideos() {
 
     videos.forEach((video) => {
       const btn = document.createElement("button");
-      btn.className = "youtube-video-button managed-focus";
+      btn.className = "youtube-video-button pointer-focus";
       btn.textContent = video.title;
       btn.type = "button";
       btn.dataset.videoId = video.videoId;
@@ -1528,14 +1550,32 @@ function startPeriodicRefresh() {
   }, REFRESH_INTERVAL_MS);
 }
 
-// keep focus synced with cursor movement
-document.addEventListener('mouseover', (e) => {
-  const target = e.target.closest('.managed-focus');
-  if (target) {
-    target.focus();
-  }
-});
-  
+/* Keep hover and focus visually synced in pointer-based TV browsers */
+function syncPointerFocus() {
+  const selector = '.pointer-focus, .pointer-focus *';
+
+  document.addEventListener('mousemove', function(e) {
+    const target = e.target.closest('.pointer-focus');
+    if (target && typeof target.focus === 'function') {
+      target.focus({ preventScroll: true });
+    }
+  });
+
+  document.addEventListener('mouseover', function(e) {
+    const target = e.target.closest('.pointer-focus');
+    if (target && typeof target.focus === 'function') {
+      target.focus({ preventScroll: true });
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    const target = e.target.closest('.pointer-focus');
+    if (target && typeof target.focus === 'function') {
+      target.focus({ preventScroll: true });
+    }
+  });
+}
+
 document.addEventListener("DOMContentLoaded", function() {
   applyManualUpdateUI();
   updateDateTimeBar();
@@ -1579,14 +1619,10 @@ document.addEventListener("DOMContentLoaded", function() {
     closeMessagesPanelFn();
   });
 
+  syncPointerFocus();
   loadVideos();
   preloadMessagesForBadge();
   startPeriodicRefresh();
-
-  /* stable starting focus for TV browsers */
-  setTimeout(() => {
-    familyMessagesButton.focus();
-  }, 300);
 });
 </script>
 
