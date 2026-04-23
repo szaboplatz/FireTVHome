@@ -62,107 +62,77 @@ body {
 .container {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 40px;
-  padding: 18px 40px 40px 40px;
+  gap: 44px;
+  padding: 20px 40px 40px 40px;
   overflow-x: hidden;
 }
 
-/* MAIN BUTTONS */
+/* MAIN BUTTONS - downloader-first: strong static styling */
 a.button,
 button.button-tile,
 a.jump-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
-  font-size: 50px;
+  padding: 42px;
+  font-size: 52px;
   color: white;
   text-decoration: none;
-  border-radius: 16px;
-  min-height: 120px;
+  border-radius: 18px;
+  min-height: 138px;
   text-align: center;
-  border: none;
+  border: 4px solid rgba(255,255,255,0.14);
   cursor: pointer;
   font-family: Arial, sans-serif;
   position: relative;
-  transform: scale(1);
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease,
-    filter 0.12s ease,
-    outline-color 0.12s ease;
+  line-height: 1.05;
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,0.05),
+    0 12px 28px rgba(0,0,0,0.35);
 }
 
 a.jump-button {
-  background: #444444;
+  background: #4d4d4d;
 }
 
 /* EXPLICIT TILE COLORS */
-.button-main-photos-loop { background: #1f77b4; }
-.button-main-photos      { background: #2ca02c; }
-.button-latest-photos    { background: #d62728; }
-.button-videos           { background: #9467bd; }
+.button-main-photos-loop { background: #2478b5; }
+.button-main-photos      { background: #2e9d42; }
+.button-latest-photos    { background: #cb2f2f; }
+.button-videos           { background: #8a5ec4; }
 
 #familyMessagesButton {
   background: #00a6c7;
   position: relative;
 }
 
-/* NETFLIX-LIKE TILE BEHAVIOR */
-a.button,
-button.button-tile,
-a.jump-button,
-.youtube-video-button,
-.submit-button,
-.message-summary-button,
-.message-archive-button,
-.action-btn,
-.youtube-playlist-link,
-.player-close-button,
-.messages-close-button {
-  box-shadow: 0 0 0 0 rgba(255,255,255,0);
+/* gentle click/focus feedback only */
+a.button:active,
+button.button-tile:active,
+a.jump-button:active,
+.submit-button:active,
+.youtube-video-button:active,
+.message-summary-button:active,
+.message-archive-button:active,
+.action-btn:active,
+.youtube-playlist-link:active {
+  transform: scale(0.985);
+  filter: brightness(1.08);
 }
 
-a.button:hover,
 a.button:focus,
-button.button-tile:hover,
 button.button-tile:focus,
-a.jump-button:hover,
 a.jump-button:focus,
-.youtube-video-button:hover,
-.youtube-video-button:focus,
-.submit-button:hover,
 .submit-button:focus,
-.message-summary-button:hover,
 .message-summary-button:focus,
-.message-archive-button:hover,
 .message-archive-button:focus,
-.action-btn:hover,
 .action-btn:focus,
-.youtube-playlist-link:hover,
 .youtube-playlist-link:focus,
-.player-close-button:hover,
 .player-close-button:focus,
-.messages-close-button:hover,
-.messages-close-button:focus {
-  outline: 6px solid #ffffff;
-  outline-offset: 4px;
-  transform: scale(1.045);
-  filter: brightness(1.16);
-  box-shadow:
-    0 0 0 4px rgba(255,255,255,0.25),
-    0 14px 36px rgba(0,0,0,0.55);
-  z-index: 5;
-}
-
-.youtube-video-button:hover,
+.messages-close-button:focus,
 .youtube-video-button:focus {
-  border-color: #ffffff;
-}
-
-.youtube-video-button.watched:hover,
-.youtube-video-button.watched:focus {
-  border-color: #ffffff;
+  outline: 6px solid yellow;
+  outline-offset: 3px;
 }
 
 /* TILE UPDATE SUPPORT */
@@ -174,7 +144,7 @@ a.jump-button:focus,
 
 .tile-main-label {
   display: block;
-  line-height: 1.05;
+  line-height: 1.03;
 }
 
 .tile-update-badge {
@@ -353,7 +323,7 @@ a.jump-button:focus,
 .messages-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 /* LABELS */
@@ -366,19 +336,19 @@ a.jump-button:focus,
 .message-row {
   display: grid;
   grid-template-columns: 72px 1fr 88px;
-  gap: 6px;
+  gap: 8px;
   align-items: stretch;
 }
 
 .message-indicator-stack {
   display: grid;
   grid-template-rows: 1fr 1fr;
-  gap: 6px;
+  gap: 8px;
 }
 
 .message-summary-button {
   width: 100%;
-  padding: 16px 20px;
+  padding: 18px 20px;
   font-size: 31px;
   line-height: 1.22;
   font-weight: bold;
@@ -481,14 +451,6 @@ a.jump-button:focus,
   color: #666;
   cursor: not-allowed;
   opacity: 0.8;
-}
-
-.message-archive-button:disabled:hover,
-.message-archive-button:disabled:focus {
-  transform: none;
-  outline: none;
-  box-shadow: none;
-  filter: none;
 }
 
 /* EXPANDED VIEW */
@@ -610,28 +572,26 @@ a.jump-button:focus,
 .youtube-playlist-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
 }
 
 .youtube-video-button {
   width: 100%;
-  padding: 24px;
+  padding: 26px;
   font-size: 40px;
   line-height: 1.2;
   background: #1f6f2a;
   color: white;
   border: 3px solid #4fc46a;
-  border-radius: 12px;
+  border-radius: 14px;
   text-align: left;
   cursor: pointer;
   white-space: normal;
   word-break: break-word;
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease,
-    filter 0.12s ease,
-    border-color 0.12s ease;
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,0.04),
+    0 10px 24px rgba(0,0,0,0.28);
 }
 
 .youtube-video-button.watched {
@@ -649,15 +609,13 @@ a.jump-button:focus,
 .youtube-playlist-link {
   display: inline-block;
   font-size: 34px;
-  color: #88cfff;
+  color: #9ad8ff;
   text-decoration: underline;
-  opacity: 0.82;
-  border-radius: 8px;
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease,
-    filter 0.12s ease,
-    opacity 0.12s ease;
+  opacity: 0.95;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  border: 2px solid rgba(255,255,255,0.08);
 }
 
 /* SEND MESSAGE PANEL */
@@ -718,18 +676,15 @@ textarea.active-box,
   margin-top: 25px;
   width: 100%;
   padding: 30px;
-  font-size: 44px;
+  font-size: 46px;
   font-weight: bold;
-  border: none;
-  border-radius: 12px;
+  border: 4px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
   background: #00bcd4;
   color: black;
   cursor: pointer;
   outline: none;
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease,
-    filter 0.12s ease;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.28);
 }
 
 .submit-button:disabled {
@@ -774,48 +729,42 @@ textarea.active-box,
   background: #4a0000;
   color: #ff6666;
 }
-
-/* keep pointer-based browsers visually synced */
-.pointer-focus,
-.pointer-focus * {
-  cursor: pointer;
-}
 </style>
 </head>
 <body id="topOfPage">
 
 <div class="top-status-bar">
   <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-  <div class="version-label">Fire TV Home v0.8</div>
+  <div class="version-label">Fire TV Home v0.9</div>
 </div>
 
 <div class="container">
-  <button class="button-tile pointer-focus" id="familyMessagesButton" type="button">
+  <button class="button-tile" id="familyMessagesButton" type="button">
     FAMILY MESSAGES
     <span id="unreadBadge" class="unread-badge hidden">0</span>
   </button>
 
-  <a class="jump-button pointer-focus" href="#messagePanel">JUMP TO SEND MESSAGE</a>
+  <a class="jump-button" href="#messagePanel">JUMP TO SEND MESSAGE</a>
 
-  <a class="button tile-button button-main-photos-loop pointer-focus" id="tileMainPhotosLoop" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">
+  <a class="button tile-button button-main-photos-loop" id="tileMainPhotosLoop" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">
     <span class="tile-main-label">MAIN PHOTOS LOOP</span>
     <span class="tile-update-badge hidden">UPDATED</span>
     <span class="tile-update-text hidden"></span>
   </a>
 
-  <a class="button tile-button button-main-photos pointer-focus" id="tileMainPhotos" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">
+  <a class="button tile-button button-main-photos" id="tileMainPhotos" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">
     <span class="tile-main-label">MAIN PHOTOS</span>
     <span class="tile-update-badge hidden">UPDATED</span>
     <span class="tile-update-text hidden"></span>
   </a>
 
-  <a class="button tile-button button-latest-photos pointer-focus" id="tileLatestPhotos" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">
+  <a class="button tile-button button-latest-photos" id="tileLatestPhotos" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">
     <span class="tile-main-label">LATEST PHOTOS</span>
     <span class="tile-update-badge hidden">UPDATED</span>
     <span class="tile-update-text hidden"></span>
   </a>
 
-  <a class="button tile-button button-videos pointer-focus" id="tileVideos" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">
+  <a class="button tile-button button-videos" id="tileVideos" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">
     <span class="tile-main-label">VIDEOS</span>
     <span class="tile-update-badge hidden">UPDATED</span>
     <span class="tile-update-text hidden"></span>
@@ -823,7 +772,7 @@ textarea.active-box,
 
   <section id="messagesPanel" class="messages-panel">
     <div class="messages-inner">
-      <button id="closeMessagesButton" class="messages-close-button pointer-focus" type="button" aria-label="Close messages">CLOSE</button>
+      <button id="closeMessagesButton" class="messages-close-button" type="button" aria-label="Close messages">CLOSE</button>
       <div class="messages-content">
         <div class="messages-title">FAMILY MESSAGES</div>
         <div id="messagesStatus" class="messages-status">Loading messages…</div>
@@ -835,7 +784,7 @@ textarea.active-box,
   <section id="playerPanel" class="player-panel">
     <div class="player-frame-wrap">
       <div id="youtube-player-host"></div>
-      <button id="closeVideoButton" class="player-close-button pointer-focus" type="button" aria-label="Close video">CLOSE</button>
+      <button id="closeVideoButton" class="player-close-button" type="button" aria-label="Close video">CLOSE</button>
     </div>
   </section>
 
@@ -856,7 +805,7 @@ textarea.active-box,
   </section>
 
   <div class="youtube-playlist-link-wrap">
-    <a class="youtube-playlist-link pointer-focus" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">
+    <a class="youtube-playlist-link" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">
       Open YouTube playlist (advanced)
     </a>
   </div>
@@ -872,11 +821,11 @@ textarea.active-box,
 
       <div id="status"></div>
 
-      <button class="submit-button pointer-focus" id="sendButton" type="submit">SEND</button>
+      <button class="submit-button" id="sendButton" type="submit">SEND</button>
     </form>
   </div>
 
-  <a class="jump-button jump-top pointer-focus" href="#topOfPage">JUMP TO TOP</a>
+  <a class="jump-button jump-top" href="#topOfPage">JUMP TO TOP</a>
 </div>
 
 <script>
@@ -1372,7 +1321,7 @@ function renderMessages(messages) {
     indicatorStack.appendChild(likeIndicator);
 
     const summaryButton = document.createElement("button");
-    summaryButton.className = "message-summary-button pointer-focus";
+    summaryButton.className = "message-summary-button";
     if (msg.opened_at) summaryButton.classList.add("opened");
     if (msg.read_at) summaryButton.classList.add("read");
     if (msg.liked_at) summaryButton.classList.add("liked");
@@ -1407,7 +1356,7 @@ function renderMessages(messages) {
     });
 
     const archiveButton = document.createElement("button");
-    archiveButton.className = "message-archive-button pointer-focus";
+    archiveButton.className = "message-archive-button";
     archiveButton.type = "button";
     archiveButton.textContent = "📥";
     archiveButton.setAttribute("aria-label", "Archive message");
@@ -1516,7 +1465,7 @@ async function loadVideos() {
 
     videos.forEach((video) => {
       const btn = document.createElement("button");
-      btn.className = "youtube-video-button pointer-focus";
+      btn.className = "youtube-video-button";
       btn.textContent = video.title;
       btn.type = "button";
       btn.dataset.videoId = video.videoId;
@@ -1548,32 +1497,6 @@ function startPeriodicRefresh() {
     await preloadMessagesForBadge();
     await loadVideos();
   }, REFRESH_INTERVAL_MS);
-}
-
-/* Keep hover and focus visually synced in pointer-based TV browsers */
-function syncPointerFocus() {
-  const selector = '.pointer-focus, .pointer-focus *';
-
-  document.addEventListener('mousemove', function(e) {
-    const target = e.target.closest('.pointer-focus');
-    if (target && typeof target.focus === 'function') {
-      target.focus({ preventScroll: true });
-    }
-  });
-
-  document.addEventListener('mouseover', function(e) {
-    const target = e.target.closest('.pointer-focus');
-    if (target && typeof target.focus === 'function') {
-      target.focus({ preventScroll: true });
-    }
-  });
-
-  document.addEventListener('click', function(e) {
-    const target = e.target.closest('.pointer-focus');
-    if (target && typeof target.focus === 'function') {
-      target.focus({ preventScroll: true });
-    }
-  });
 }
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -1619,7 +1542,6 @@ document.addEventListener("DOMContentLoaded", function() {
     closeMessagesPanelFn();
   });
 
-  syncPointerFocus();
   loadVideos();
   preloadMessagesForBadge();
   startPeriodicRefresh();
