@@ -1523,102 +1523,14 @@ function startPeriodicRefresh() {
   }, REFRESH_INTERVAL_MS);
 }
 
-/* ---------- directional focus management ---------- */
-
-function isVisible(el) {
-  if (!el) return false;
-  if (el.disabled) return false;
-  if (el.offsetParent === null && getComputedStyle(el).position !== 'fixed') return false;
-  const style = getComputedStyle(el);
-  return style.display !== 'none' && style.visibility !== 'hidden';
-}
-
-function getManagedFocusableElements() {
-  const elements = Array.from(document.querySelectorAll('.managed-focus'));
-  return elements.filter(isVisible);
-}
-
-function getRectCenter(el) {
-  const rect = el.getBoundingClientRect();
-  return {
-    x: rect.left + rect.width / 2,
-    y: rect.top + rect.height / 2,
-    left: rect.left,
-    right: rect.right,
-    top: rect.top,
-    bottom: rect.bottom
-  };
-}
-
-function chooseNextByDirection(current, direction) {
-  const candidates = getManagedFocusableElements().filter(el => el !== current);
-  if (!candidates.length) return null;
-
-  const c = getRectCenter(current);
-  const scored = [];
-
-  candidates.forEach((el) => {
-    const r = getRectCenter(el);
-    let valid = false;
-    let primary = 0;
-    let secondary = 0;
-
-    if (direction === 'ArrowLeft' && r.x < c.x - 5) {
-      valid = true;
-      primary = c.x - r.x;
-      secondary = Math.abs(c.y - r.y);
-    } else if (direction === 'ArrowRight' && r.x > c.x + 5) {
-      valid = true;
-      primary = r.x - c.x;
-      secondary = Math.abs(c.y - r.y);
-    } else if (direction === 'ArrowUp' && r.y < c.y - 5) {
-      valid = true;
-      primary = c.y - r.y;
-      secondary = Math.abs(c.x - r.x);
-    } else if (direction === 'ArrowDown' && r.y > c.y + 5) {
-      valid = true;
-      primary = r.y - c.y;
-      secondary = Math.abs(c.x - r.x);
-    }
-
-    if (valid) {
-      scored.push({ el, score: primary * 1000 + secondary });
-    }
-  });
-
-  if (!scored.length) return null;
-  scored.sort((a, b) => a.score - b.score);
-  return scored[0].el;
-}
-
-function shouldManageKeydown(e) {
-  if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return false;
-  const active = document.activeElement;
-  if (!active) return false;
-  if (active === textarea) return false;
-  if (!active.classList.contains('managed-focus')) return false;
-  return true;
-}
-
-document.addEventListener('keydown', function(e) {
-  if (!shouldManageKeydown(e)) return;
-
-  const active = document.activeElement;
-  const next = chooseNextByDirection(active, e.key);
-
-  if (next) {
-    e.preventDefault();
-    next.focus();
-    if (typeof next.scrollIntoView === 'function') {
-      next.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-    }
-  } else {
-    /* trap focus at edges so browser cursor does not wander off-screen */
-    e.preventDefault();
-    active.focus();
+// keep focus synced with cursor movement
+document.addEventListener('mouseover', (e) => {
+  const target = e.target.closest('.managed-focus');
+  if (target) {
+    target.focus();
   }
 });
-
+  
 document.addEventListener("DOMContentLoaded", function() {
   applyManualUpdateUI();
   updateDateTimeBar();
