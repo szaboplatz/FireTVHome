@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -14,18 +13,11 @@ html {
 }
 
 body {
-  background: #000;
+  background: black;
   color: white;
   font-family: Arial, sans-serif;
   text-align: center;
   margin: 0;
-  overflow-x: hidden;
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
 }
 
 /* TOP BAR */
@@ -40,6 +32,7 @@ body {
   padding: 12px 24px;
   background: rgba(17, 17, 17, 0.98);
   border-bottom: 3px solid #333;
+  box-sizing: border-box;
 }
 
 .datetime-bar {
@@ -62,77 +55,43 @@ body {
 .container {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 44px;
-  padding: 20px 40px 40px 40px;
-  overflow-x: hidden;
+  gap: 40px;
+  padding: 18px 40px 40px 40px;
 }
 
-/* MAIN BUTTONS - downloader-first: strong static styling */
+/* MAIN BUTTONS */
 a.button,
 button.button-tile,
 a.jump-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 42px;
-  font-size: 52px;
+  padding: 40px;
+  font-size: 50px;
   color: white;
   text-decoration: none;
-  border-radius: 18px;
-  min-height: 138px;
+  border-radius: 12px;
+  min-height: 120px;
   text-align: center;
-  border: 4px solid rgba(255,255,255,0.14);
+  box-sizing: border-box;
+  border: none;
   cursor: pointer;
   font-family: Arial, sans-serif;
-  position: relative;
-  line-height: 1.05;
-  box-shadow:
-    inset 0 0 0 2px rgba(255,255,255,0.05),
-    0 12px 28px rgba(0,0,0,0.35);
 }
 
 a.jump-button {
-  background: #4d4d4d;
+  background: #444444;
 }
 
 /* EXPLICIT TILE COLORS */
-.button-main-photos-loop { background: #2478b5; }
-.button-main-photos      { background: #2e9d42; }
-.button-latest-photos    { background: #cb2f2f; }
-.button-videos           { background: #8a5ec4; }
+.button-main-photos-loop { background: #1f77b4; }
+.button-main-photos      { background: #2ca02c; }
+.button-latest-photos    { background: #d62728; }
+.button-videos           { background: #9467bd; }
 
 #familyMessagesButton {
   background: #00a6c7;
   position: relative;
-}
-
-/* gentle click/focus feedback only */
-a.button:active,
-button.button-tile:active,
-a.jump-button:active,
-.submit-button:active,
-.youtube-video-button:active,
-.message-summary-button:active,
-.message-archive-button:active,
-.action-btn:active,
-.youtube-playlist-link:active {
-  transform: scale(0.985);
-  filter: brightness(1.08);
-}
-
-a.button:focus,
-button.button-tile:focus,
-a.jump-button:focus,
-.submit-button:focus,
-.message-summary-button:focus,
-.message-archive-button:focus,
-.action-btn:focus,
-.youtube-playlist-link:focus,
-.player-close-button:focus,
-.messages-close-button:focus,
-.youtube-video-button:focus {
-  outline: 6px solid yellow;
-  outline-offset: 3px;
 }
 
 /* TILE UPDATE SUPPORT */
@@ -144,7 +103,7 @@ a.jump-button:focus,
 
 .tile-main-label {
   display: block;
-  line-height: 1.03;
+  line-height: 1.05;
 }
 
 .tile-update-badge {
@@ -194,6 +153,7 @@ a.jump-button:focus,
   font-size: 28px;
   font-weight: bold;
   line-height: 1;
+  box-sizing: border-box;
 }
 
 /* PLAYER OVERLAY */
@@ -204,6 +164,7 @@ a.jump-button:focus,
   z-index: 9999;
   background: rgba(0, 0, 0, 0.99);
   padding: 0;
+  box-sizing: border-box;
   overflow: hidden;
 }
 
@@ -250,6 +211,7 @@ a.jump-button:focus,
   border: none;
   border-left: 4px solid rgba(255, 102, 102, 0.9);
   cursor: pointer;
+  box-sizing: border-box;
   z-index: 2;
   writing-mode: vertical-rl;
   text-orientation: mixed;
@@ -265,6 +227,7 @@ a.jump-button:focus,
   border: 4px solid #555;
   border-radius: 16px;
   padding: 0;
+  box-sizing: border-box;
   text-align: left;
   overflow: hidden;
 }
@@ -278,6 +241,7 @@ a.jump-button:focus,
   margin: 0 auto;
   position: relative;
   padding-right: 132px;
+  box-sizing: border-box;
 }
 
 .messages-close-button {
@@ -296,6 +260,7 @@ a.jump-button:focus,
   border: none;
   border-left: 4px solid rgba(255, 102, 102, 0.9);
   cursor: pointer;
+  box-sizing: border-box;
   z-index: 3;
   writing-mode: vertical-rl;
   text-orientation: mixed;
@@ -323,7 +288,7 @@ a.jump-button:focus,
 .messages-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 /* LABELS */
@@ -336,19 +301,20 @@ a.jump-button:focus,
 .message-row {
   display: grid;
   grid-template-columns: 72px 1fr 88px;
-  gap: 8px;
+  gap: 6px;
   align-items: stretch;
 }
 
 .message-indicator-stack {
   display: grid;
   grid-template-rows: 1fr 1fr;
-  gap: 8px;
+  gap: 6px;
 }
 
 .message-summary-button {
   width: 100%;
-  padding: 18px 20px;
+  box-sizing: border-box;
+  padding: 16px 20px;
   font-size: 31px;
   line-height: 1.22;
   font-weight: bold;
@@ -397,6 +363,7 @@ a.jump-button:focus,
   min-width: 72px;
   height: 72px;
   border-radius: 22px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -435,6 +402,7 @@ a.jump-button:focus,
   width: 88px;
   min-width: 88px;
   border-radius: 14px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -572,26 +540,24 @@ a.jump-button:focus,
 .youtube-playlist-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   width: 100%;
 }
 
 .youtube-video-button {
   width: 100%;
-  padding: 26px;
+  box-sizing: border-box;
+  padding: 24px;
   font-size: 40px;
   line-height: 1.2;
   background: #1f6f2a;
   color: white;
   border: 3px solid #4fc46a;
-  border-radius: 14px;
+  border-radius: 12px;
   text-align: left;
   cursor: pointer;
   white-space: normal;
   word-break: break-word;
-  box-shadow:
-    inset 0 0 0 2px rgba(255,255,255,0.04),
-    0 10px 24px rgba(0,0,0,0.28);
 }
 
 .youtube-video-button.watched {
@@ -607,15 +573,17 @@ a.jump-button:focus,
 }
 
 .youtube-playlist-link {
-  display: inline-block;
   font-size: 34px;
-  color: #9ad8ff;
+  color: #88cfff;
   text-decoration: underline;
-  opacity: 0.95;
-  padding: 10px 16px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.05);
-  border: 2px solid rgba(255,255,255,0.08);
+  opacity: 0.82;
+}
+
+.youtube-playlist-link:hover,
+.youtube-playlist-link:focus {
+  opacity: 1;
+  outline: 3px solid yellow;
+  outline-offset: 4px;
 }
 
 /* SEND MESSAGE PANEL */
@@ -646,6 +614,7 @@ a.jump-button:focus,
 
 textarea {
   width: 100%;
+  box-sizing: border-box;
   font-size: 42px;
   line-height: 1.3;
   padding: 25px;
@@ -676,15 +645,14 @@ textarea.active-box,
   margin-top: 25px;
   width: 100%;
   padding: 30px;
-  font-size: 46px;
+  font-size: 44px;
   font-weight: bold;
-  border: 4px solid rgba(255,255,255,0.12);
-  border-radius: 14px;
+  border: none;
+  border-radius: 12px;
   background: #00bcd4;
   color: black;
   cursor: pointer;
   outline: none;
-  box-shadow: 0 10px 24px rgba(0,0,0,0.28);
 }
 
 .submit-button:disabled {
@@ -695,6 +663,49 @@ textarea.active-box,
   grid-column: span 2;
   justify-self: center;
   margin-top: 10px;
+}
+
+/* HIGHLIGHTS */
+a.button:hover,
+a.button:focus,
+button.button-tile:hover,
+button.button-tile:focus,
+a.jump-button:hover,
+a.jump-button:focus,
+.submit-button:hover,
+.submit-button:focus,
+.message-summary-button:hover,
+.message-summary-button:focus,
+.message-archive-button:hover,
+.message-archive-button:focus,
+.action-btn:hover,
+.action-btn:focus {
+  outline: 4px solid yellow;
+  outline-offset: 2px;
+  filter: brightness(1.1);
+}
+
+.youtube-video-button:hover,
+.youtube-video-button:focus {
+  border-color: yellow;
+  box-shadow: inset 0 0 0 4px yellow;
+  outline: none;
+}
+
+.youtube-video-button.watched:hover,
+.youtube-video-button.watched:focus {
+  border-color: yellow;
+  box-shadow: inset 0 0 0 4px yellow;
+  outline: none;
+}
+
+.player-close-button:hover,
+.player-close-button:focus,
+.messages-close-button:hover,
+.messages-close-button:focus {
+  outline: 4px solid yellow;
+  outline-offset: -4px;
+  filter: brightness(1.1);
 }
 
 /* SEND STATUS */
@@ -735,7 +746,7 @@ textarea.active-box,
 
 <div class="top-status-bar">
   <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-  <div class="version-label">Fire TV Home v0.9</div>
+  <div class="version-label">Fire TV Home v0.6</div>
 </div>
 
 <div class="container">
