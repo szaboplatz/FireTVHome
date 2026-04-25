@@ -786,7 +786,7 @@ textarea.active-box,
 
 <div class="top-status-bar">
   <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-  <div class="version-label">Fire TV Home v0.8</div>
+  <div class="version-label">Fire TV Home v0.8.3</div>
 </div>
 
 <div class="container">
@@ -881,12 +881,39 @@ textarea.active-box,
 
 <script>
 const TEST_MODE = false;
-const REFRESH_INTERVAL_MS = 60 * 60 * 1000;
+const MESSAGE_REFRESH_INTERVAL_MS = 60 * 60 * 1000;       // 1 hour
+const VIDEO_REFRESH_INTERVAL_MS = 4 * 60 * 60 * 1000;       // 4 hours
+const PAGE_RELOAD_CHECK_INTERVAL_MS = 60 * 60 * 1000;       // check hourly
+const PAGE_RELOAD_IDLE_MS = 12 * 60 * 60 * 1000;              // reload only after 12 idle hours
+
+let lastPageActivityAt = Date.now();
 
 const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
+const PAGE_VERSION = "v0.8.3";
+const ENABLE_MONITORING_LOGS = true;
+
+function logEvent(eventType, eventLabel = "", extra = {}) {
+  if (!ENABLE_MONITORING_LOGS) return;
+
+  try {
+    loadJsonp(MESSAGES_API_URL, {
+      action: "log_event",
+      event_type: eventType,
+      event_label: eventLabel,
+      page_version: PAGE_VERSION,
+      url: window.location.href,
+      user_agent: navigator.userAgent,
+      extra: JSON.stringify(extra)
+    }).catch(() => {
+      /* monitoring should never interrupt the TV page */
+    });
+  } catch (e) {
+    /* monitoring should never interrupt the TV page */
+  }
+}
 
 /* MANUAL UPDATE FLAGS */
 const MANUAL_UPDATES = {
@@ -1076,6 +1103,7 @@ function handleSubmit(event) {
   sendButton.blur();
 
   showStatus("SENDING...", "sending");
+  logEvent("send_message_attempt", "Send Message");
 
   if (TEST_MODE) {
     setTimeout(() => {
@@ -1104,6 +1132,7 @@ function handleSubmit(event) {
     form.reset();
     panel.classList.add("keep-textarea-active");
     showStatus("MESSAGE SENT ✓", "sent");
+    logEvent("send_message_success", "Send Message");
     sendButton.disabled = false;
 
     statusTimeout = setTimeout(() => {
@@ -1115,6 +1144,7 @@ function handleSubmit(event) {
     panel.classList.remove("keep-textarea-active");
     textarea.classList.add("active-box");
     showStatus("ERROR SENDING", "error");
+    logEvent("send_message_error", "Send Message");
     sendButton.disabled = false;
   });
 }
@@ -1171,6 +1201,7 @@ function hidePlayerPanel() {
 }
 
 function playEmbeddedVideo(videoId) {
+  logEvent("youtube_video_open", videoId);
   showPlayerPanel();
   destroyEmbeddedPlayer();
   markVideoWatched(videoId);
@@ -1288,6 +1319,7 @@ function renderMessages(messages) {
       readBtn.type = "button";
       readBtn.textContent = "✔ READ";
       readBtn.addEventListener("click", async () => {
+        logEvent("message_mark_read", msg.subject || msg.id, { id: msg.id });
         messagesStatus.textContent = "Marking as read…";
         try {
           const result = await runMessageAction("mark_read", msg.id);
@@ -1313,6 +1345,7 @@ function renderMessages(messages) {
       likeBtn.type = "button";
       likeBtn.textContent = "👍 LIKE";
       likeBtn.addEventListener("click", async () => {
+        logEvent("message_like", msg.subject || msg.id, { id: msg.id });
         messagesStatus.textContent = "Saving like…";
         try {
           const result = await runMessageAction("like_message", msg.id);
@@ -1342,6 +1375,7 @@ function renderMessages(messages) {
       closeBtn.type = "button";
       closeBtn.textContent = "CLOSE";
       closeBtn.addEventListener("click", () => {
+        logEvent("message_close", msg.subject || msg.id, { id: msg.id });
         expandedMessageId = null;
         renderMessages(cachedMessages);
       });
@@ -1389,6 +1423,7 @@ function renderMessages(messages) {
     `;
 
     summaryButton.addEventListener("click", async () => {
+      logEvent("message_open", msg.subject || msg.id, { id: msg.id });
       expandedMessageId = msg.id;
 
       if (!msg.opened_at) {
@@ -1417,6 +1452,7 @@ function renderMessages(messages) {
       archiveButton.title = "Open message before archiving";
     } else {
       archiveButton.addEventListener("click", async () => {
+        logEvent("message_archive", msg.subject || msg.id, { id: msg.id });
         messagesStatus.textContent = "Archiving…";
         try {
           const result = await runMessageAction("archive_message", msg.id);
@@ -1546,8 +1582,42 @@ async function loadVideos() {
 function startPeriodicRefresh() {
   setInterval(async () => {
     await preloadMessagesForBadge();
+  }, MESSAGE_REFRESH_INTERVAL_MS);
+
+  setInterval(async () => {
     await loadVideos();
-  }, REFRESH_INTERVAL_MS);
+  }, VIDEO_REFRESH_INTERVAL_MS);
+
+  setInterval(() => {
+    maybeReloadPage();
+  }, PAGE_RELOAD_CHECK_INTERVAL_MS);
+}
+
+function markPageActivity() {
+  lastPageActivityAt = Date.now();
+}
+
+function maybeReloadPage() {
+  const videoIsOpen = playerPanel.classList.contains("show");
+  const messagesAreOpen = messagesPanel.classList.contains("show");
+  const textBoxActive = document.activeElement === textarea;
+  const idleMs = Date.now() - lastPageActivityAt;
+
+  if (videoIsOpen || messagesAreOpen || textBoxActive) {
+    logEvent("auto_reload_skipped", "Page reload skipped because page was in use", {
+      idle_ms: idleMs
+    });
+    return;
+  }
+
+  if (idleMs < PAGE_RELOAD_IDLE_MS) {
+    return;
+  }
+
+  logEvent("auto_reload", "Automatic page reload after idle period", {
+    idle_ms: idleMs
+  });
+  window.location.reload();
 }
 
 /* Keep hover and focus visually synced in pointer-based TV browsers */
@@ -1608,18 +1678,49 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 
   closeVideoButton.addEventListener("click", () => {
+    logEvent("video_close", "Close video");
     hidePlayerPanel();
   });
 
   familyMessagesButton.addEventListener("click", () => {
+    logEvent("open_family_messages", "Family Messages");
     openMessagesPanel();
   });
 
   closeMessagesButton.addEventListener("click", () => {
+    logEvent("close_family_messages", "Close Family Messages");
     closeMessagesPanelFn();
   });
 
+  document.getElementById("tileMainPhotosLoop").addEventListener("click", () => {
+    logEvent("tile_click", "Main Photos Loop");
+  });
+
+  document.getElementById("tileMainPhotos").addEventListener("click", () => {
+    logEvent("tile_click", "Main Photos");
+  });
+
+  document.getElementById("tileLatestPhotos").addEventListener("click", () => {
+    logEvent("tile_click", "Latest Photos");
+  });
+
+  document.getElementById("tileVideos").addEventListener("click", () => {
+    logEvent("tile_click", "Videos");
+  });
+
+  const playlistLink = document.querySelector(".youtube-playlist-link");
+  if (playlistLink) {
+    playlistLink.addEventListener("click", () => {
+      logEvent("youtube_playlist_link_click", "Open YouTube playlist advanced");
+    });
+  }
+
+  ["click", "keydown", "touchstart", "mousemove", "input", "focus"].forEach((eventName) => {
+    document.addEventListener(eventName, markPageActivity, true);
+  });
+
   syncPointerFocus();
+  logEvent("page_load", "Fire TV Home loaded");
   loadVideos();
   preloadMessagesForBadge();
   startPeriodicRefresh();
