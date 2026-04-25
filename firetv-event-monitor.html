@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fire TV Event Monitor</title>
+
+<style>
+body {
+  margin: 0;
+  background: #0b0b0b;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #111;
+  border-bottom: 3px solid #333;
+  padding: 16px 22px;
+}
+
+.title {
+  font-size: 34px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.sub {
+  color: #b8d7e5;
+  font-size: 18px;
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px 22px;
+  background: #151515;
+  border-bottom: 2px solid #333;
+}
+
+button, select {
+  font-size: 18px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 2px solid #444;
+}
+
+button {
+  background: #00a6c7;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+select {
+  background: #222;
+  color: #fff;
+}
+
+.status {
+  padding: 12px 22px;
+  font-size: 18px;
+  color: #fff4b1;
+}
+
+.table-wrap {
+  padding: 0 22px 30px;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+th {
+  position: sticky;
+  top: 88px;
+  background: #222;
+  color: #8fe8ff;
+  text-align: left;
+  padding: 10px;
+  border-bottom: 2px solid #555;
+  white-space: nowrap;
+}
+
+td {
+  padding: 10px;
+  border-bottom: 1px solid #333;
+  vertical-align: top;
+}
+
+tr:nth-child(even) {
+  background: #121212;
+}
+
+.mono {
+  font-family: Consolas, Monaco, monospace;
+  font-size: 13px;
+  color: #ddd;
+  max-width: 420px;
+  word-break: break-word;
+}
+
+.event-type {
+  font-weight: bold;
+  color: #fff;
+}
+
+.small {
+  color: #aaa;
+  font-size: 13px;
+}
+</style>
+</head>
+
+<body>
+<div class="header">
+  <div class="title">Fire TV Event Monitor</div>
+  <div class="sub">View page loads, clicks, message actions, videos opened, and device/browser details.</div>
+</div>
+
+<div class="controls">
+  <button id="refreshBtn">Refresh</button>
+
+  <select id="limitSelect">
+    <option value="50">Last 50</option>
+    <option value="100" selected>Last 100</option>
+    <option value="250">Last 250</option>
+    <option value="500">Last 500</option>
+  </select>
+
+  <select id="eventFilter">
+    <option value="">All events</option>
+    <option value="page_load">Page loads</option>
+    <option value="tile_click">Tile clicks</option>
+    <option value="open_family_messages">Family messages opened</option>
+    <option value="youtube_video_open">YouTube videos opened</option>
+    <option value="send_message_attempt">Send attempts</option>
+    <option value="send_message_success">Send successes</option>
+    <option value="auto_reload">Auto reloads</option>
+  </select>
+</div>
+
+<div id="status" class="status">Loading events…</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Event</th>
+        <th>Label</th>
+        <th>IP</th>
+        <th>Timezone</th>
+        <th>Version</th>
+        <th>Device / Browser</th>
+        <th>Extra</th>
+      </tr>
+    </thead>
+    <tbody id="eventsBody"></tbody>
+  </table>
+</div>
+
+<script>
+const EVENTS_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
+
+const statusEl = document.getElementById("status");
+const bodyEl = document.getElementById("eventsBody");
+const refreshBtn = document.getElementById("refreshBtn");
+const limitSelect = document.getElementById("limitSelect");
+const eventFilter = document.getElementById("eventFilter");
+
+function loadJsonp(baseUrl, params = {}) {
+  return new Promise((resolve, reject) => {
+    const callbackName = "jsonpCallback_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
+    const script = document.createElement("script");
+    const url = new URL(baseUrl);
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        url.searchParams.set(key, value);
+      }
+    });
+    url.searchParams.set("callback", callbackName);
+
+    let cleanedUp = false;
+
+    function cleanup() {
+      if (cleanedUp) return;
+      cleanedUp = true;
+      delete window[callbackName];
+      script.remove();
+    }
+
+    window[callbackName] = function(data) {
+      cleanup();
+      resolve(data);
+    };
+
+    script.onerror = function() {
+      cleanup();
+      reject(new Error("JSONP load failed"));
+    };
+
+    script.src = url.toString();
+    document.body.appendChild(script);
+
+    setTimeout(() => {
+      if (!cleanedUp) {
+        cleanup();
+        reject(new Error("JSONP timeout"));
+      }
+    }, 12000);
+  });
+}
+
+function safeJsonParse(value, fallback = {}) {
+  try {
+    if (!value) return fallback;
+    if (typeof value === "object") return value;
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
+function formatTime(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleString();
+}
+
+function shortenUserAgent(ua) {
+  if (!ua) return "";
+  return ua
+    .replace("Mozilla/5.0 ", "")
+    .replace("AppleWebKit/537.36 ", "")
+    .replace("KHTML, like Gecko", "")
+    .trim();
+}
+
+function renderEvents(events) {
+  bodyEl.innerHTML = "";
+
+  if (!events || !events.length) {
+    statusEl.textContent = "No events found.";
+    return;
+  }
+
+  statusEl.textContent = `Showing ${events.length} event(s).`;
+
+  events.forEach((event) => {
+    const device = safeJsonParse(event.device_info, {});
+    const extra = safeJsonParse(event.extra, {});
+
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${formatTime(event.timestamp || event.created_at || event.time)}</td>
+      <td class="event-type">${event.event_type || ""}</td>
+      <td>${event.event_label || ""}</td>
+      <td class="mono">${event.public_ip || ""}</td>
+      <td>${device.timezone || event.timezone || ""}</td>
+      <td>${event.page_version || ""}</td>
+      <td class="mono">
+        <div>${shortenUserAgent(device.user_agent || event.user_agent || "")}</div>
+        <div class="small">${device.platform || ""} ${device.screen_width || ""}×${device.screen_height || ""}</div>
+      </td>
+      <td class="mono">${JSON.stringify(extra)}</td>
+    `;
+
+    bodyEl.appendChild(tr);
+  });
+}
+
+async function loadEvents() {
+  const limit = limitSelect.value;
+  const eventType = eventFilter.value;
+
+  statusEl.textContent = "Loading events…";
+  bodyEl.innerHTML = "";
+
+  try {
+    const data = await loadJsonp(EVENTS_API_URL, {
+      action: "list_events",
+      limit,
+      event_type: eventType
+    });
+
+    if (!data || !data.ok) {
+      statusEl.textContent = "Could not load events. Backend may not support list_events yet.";
+      return;
+    }
+
+    renderEvents(data.events || []);
+  } catch (e) {
+    console.error(e);
+    statusEl.textContent = "Could not load events. Check Apps Script and deployment permissions.";
+  }
+}
+
+refreshBtn.addEventListener("click", loadEvents);
+limitSelect.addEventListener("change", loadEvents);
+eventFilter.addEventListener("change", loadEvents);
+
+loadEvents();
+setInterval(loadEvents, 60 * 1000);
+</script>
+</body>
+</html>
