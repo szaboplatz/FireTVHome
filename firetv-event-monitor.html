@@ -14,9 +14,6 @@ body {
 }
 
 .header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
   background: #111;
   border-bottom: 3px solid #333;
   padding: 16px 22px;
@@ -76,11 +73,10 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 15px;
+  table-layout: fixed;
 }
 
 th {
-  position: sticky;
-  top: 88px;
   background: #222;
   color: #8fe8ff;
   text-align: left;
@@ -99,12 +95,29 @@ tr:nth-child(even) {
   background: #121212;
 }
 
+.col-time { width: 150px; }
+.col-event { width: 160px; }
+.col-label { width: 180px; }
+.col-ip { width: 120px; }
+.col-zone { width: 165px; }
+.col-version { width: 80px; }
+.col-device { width: 370px; }
+.col-extra { width: 120px; }
+
 .mono {
   font-family: Consolas, Monaco, monospace;
   font-size: 13px;
   color: #ddd;
-  max-width: 420px;
   word-break: break-word;
+}
+
+.ip {
+  font-family: Consolas, Monaco, monospace;
+  font-size: 13px;
+  color: #ddd;
+  word-break: normal;
+  overflow-wrap: normal;
+  white-space: nowrap;
 }
 
 .event-type {
@@ -116,12 +129,16 @@ tr:nth-child(even) {
   color: #aaa;
   font-size: 13px;
 }
+
+.nowrap {
+  white-space: nowrap;
+}
 </style>
 </head>
 
 <body>
 <div class="header">
-  <div class="title">Fire TV Event Monitor</div>
+  <div class="title">Fire TV Event Monitor v0.2</div>
   <div class="sub">View page loads, clicks, message actions, videos opened, and device/browser details.</div>
 </div>
 
@@ -153,14 +170,14 @@ tr:nth-child(even) {
   <table>
     <thead>
       <tr>
-        <th>Time</th>
-        <th>Event</th>
-        <th>Label</th>
-        <th>IP</th>
-        <th>Timezone</th>
-        <th>Version</th>
-        <th>Device / Browser</th>
-        <th>Extra</th>
+        <th class="col-time">Time</th>
+        <th class="col-event">Event</th>
+        <th class="col-label">Label</th>
+        <th class="col-ip">IP</th>
+        <th class="col-zone">Timezone</th>
+        <th class="col-version">Version</th>
+        <th class="col-device">Device / Browser</th>
+        <th class="col-extra">Extra</th>
       </tr>
     </thead>
     <tbody id="eventsBody"></tbody>
@@ -266,9 +283,9 @@ function renderEvents(events) {
       <td>${formatTime(event.timestamp || event.created_at || event.time)}</td>
       <td class="event-type">${event.event_type || ""}</td>
       <td>${event.event_label || ""}</td>
-      <td class="mono">${event.public_ip || ""}</td>
+      <td class="ip">${event.public_ip || ""}</td>
       <td>${device.timezone || event.timezone || ""}</td>
-      <td>${event.page_version || ""}</td>
+      <td class="nowrap">${event.page_version || ""}</td>
       <td class="mono">
         <div>${shortenUserAgent(device.user_agent || event.user_agent || "")}</div>
         <div class="small">${device.platform || ""} ${device.screen_width || ""}×${device.screen_height || ""}</div>
