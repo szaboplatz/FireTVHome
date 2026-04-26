@@ -524,6 +524,15 @@ textarea:focus {
   border-radius: 12px;
   background: #111;
   text-align: left;
+  scroll-margin-top: 72px;
+}
+
+.message-expanded:focus {
+  outline: 6px solid #ffffff;
+  outline-offset: 4px;
+  box-shadow:
+    0 0 0 4px rgba(255,255,255,0.25),
+    0 14px 36px rgba(0,0,0,0.55);
 }
 
 .message-expanded-line {
@@ -541,7 +550,7 @@ textarea:focus {
 
 .action-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 10px;
 }
 
@@ -567,6 +576,11 @@ textarea:focus {
 .read-btn.active,
 .like-btn.active {
   background: #4d7cff;
+  color: white;
+}
+
+.archive-action-btn {
+  background: #666;
   color: white;
 }
 
@@ -832,7 +846,7 @@ textarea.active-box,
 
 <div class="top-status-bar">
   <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-  <div class="version-label">Fire TV Home v0.9.1</div>
+  <div class="version-label">Fire TV Home v0.9.2</div>
 </div>
 
 <div class="container">
@@ -869,7 +883,7 @@ textarea.active-box,
 
   <section id="messagesPanel" class="messages-panel">
     <div class="messages-inner">
-      <button id="closeMessagesButton" class="messages-close-button pointer-focus" type="button" tabindex="0" aria-label="Close messages">CLOSE</button>
+      <button id="closeMessagesButton" class="messages-close-button" type="button" tabindex="-1" aria-hidden="true" aria-label="Close messages">CLOSE</button>
       <div class="messages-content">
         <div class="messages-title">FAMILY MESSAGES</div>
         <div id="messagesStatus" class="messages-status">Loading messages…</div>
@@ -881,7 +895,7 @@ textarea.active-box,
   <section id="playerPanel" class="player-panel">
     <div class="player-frame-wrap">
       <div id="youtube-player-host"></div>
-      <button id="closeVideoButton" class="player-close-button pointer-focus" type="button" tabindex="0" aria-label="Close video">CLOSE</button>
+      <button id="closeVideoButton" class="player-close-button" type="button" tabindex="-1" aria-hidden="true" aria-label="Close video">CLOSE</button>
     </div>
   </section>
 
@@ -947,7 +961,7 @@ const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v0.9.1";
+const PAGE_VERSION = "v0.9.2";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 let cachedPublicIp = localStorage.getItem(PUBLIC_IP_STORAGE_KEY) || "";
@@ -1359,14 +1373,16 @@ function loadJsonp(baseUrl, params = {}) {
 
 function openMessagesPanel() {
   messagesPanel.classList.add("show");
-  closeMessagesButton.focus();
   messagesPanel.scrollIntoView({ behavior: "auto", block: "start" });
 
   if (cachedMessages.length) {
     renderMessages(cachedMessages);
+    focusFirstMessageSummary();
     refreshMessages();
   } else {
-    loadMessages();
+    loadMessages().then(() => {
+      focusFirstMessageSummary();
+    });
   }
 }
 
@@ -1384,6 +1400,25 @@ function findCachedMessage(id) {
   return cachedMessages.find(msg => msg.id === id);
 }
 
+function focusFirstMessageSummary() {
+  setTimeout(() => {
+    const first = messagesList.querySelector(".message-summary-button");
+    if (first) {
+      first.focus({ preventScroll: true });
+    }
+  }, 80);
+}
+
+function focusExpandedMessage() {
+  setTimeout(() => {
+    const expanded = messagesList.querySelector(".message-expanded");
+    if (expanded) {
+      expanded.scrollIntoView({ behavior: "auto", block: "start" });
+      expanded.focus({ preventScroll: true });
+    }
+  }, 80);
+}
+
 function renderMessages(messages) {
   messagesList.innerHTML = "";
   updateUnreadBadge(messages);
@@ -1398,7 +1433,8 @@ function renderMessages(messages) {
   messages.forEach((msg) => {
     if (expandedMessageId === msg.id) {
       const expanded = document.createElement("div");
-      expanded.className = "message-expanded";
+      expanded.className = "message-expanded pointer-focus";
+      expanded.tabIndex = 0;
 
       expanded.innerHTML = `
         <div class="message-expanded-line"><span class="field-label">FROM:</span> ${msg.from_name || "Family"}</div>
@@ -1410,7 +1446,7 @@ function renderMessages(messages) {
       actions.className = "action-row";
 
       const readBtn = document.createElement("button");
-      readBtn.className = "action-btn read-btn" + (msg.read_at ? " active" : "");
+      readBtn.className = "action-btn read-btn pointer-focus" + (msg.read_at ? " active" : "");
       readBtn.type = "button";
       readBtn.tabIndex = 0;
       readBtn.textContent = "✔ READ";
@@ -1437,7 +1473,7 @@ function renderMessages(messages) {
       });
 
       const likeBtn = document.createElement("button");
-      likeBtn.className = "action-btn like-btn" + (msg.liked_at ? " active" : "");
+      likeBtn.className = "action-btn like-btn pointer-focus" + (msg.liked_at ? " active" : "");
       likeBtn.type = "button";
       likeBtn.tabIndex = 0;
       likeBtn.textContent = "👍 LIKE";
@@ -1467,8 +1503,34 @@ function renderMessages(messages) {
         }
       });
 
+      const archiveActionBtn = document.createElement("button");
+      archiveActionBtn.className = "action-btn archive-action-btn pointer-focus";
+      archiveActionBtn.type = "button";
+      archiveActionBtn.tabIndex = 0;
+      archiveActionBtn.textContent = "📥 ARCHIVE";
+      archiveActionBtn.addEventListener("click", async () => {
+        logEvent("message_archive", msg.subject || msg.id, { id: msg.id });
+        messagesStatus.textContent = "Archiving…";
+        try {
+          const result = await runMessageAction("archive_message", msg.id);
+          if (!result.ok) {
+            messagesStatus.textContent = "Could not archive message.";
+            return;
+          }
+
+          cachedMessages = cachedMessages.filter(m => m.id !== msg.id);
+          expandedMessageId = null;
+          messagesStatus.textContent = "";
+          renderMessages(cachedMessages);
+          focusFirstMessageSummary();
+        } catch (e) {
+          console.error(e);
+          messagesStatus.textContent = "Could not archive message.";
+        }
+      });
+
       const closeBtn = document.createElement("button");
-      closeBtn.className = "action-btn close-btn";
+      closeBtn.className = "action-btn close-btn pointer-focus";
       closeBtn.type = "button";
       closeBtn.tabIndex = 0;
       closeBtn.textContent = "CLOSE";
@@ -1476,10 +1538,12 @@ function renderMessages(messages) {
         logEvent("message_close", msg.subject || msg.id, { id: msg.id });
         expandedMessageId = null;
         renderMessages(cachedMessages);
+        focusFirstMessageSummary();
       });
 
       actions.appendChild(readBtn);
       actions.appendChild(likeBtn);
+      actions.appendChild(archiveActionBtn);
       actions.appendChild(closeBtn);
       expanded.appendChild(actions);
       messagesList.appendChild(expanded);
@@ -1542,12 +1606,14 @@ function renderMessages(messages) {
       }
 
       renderMessages(cachedMessages);
+      focusExpandedMessage();
     });
 
     const archiveButton = document.createElement("button");
-    archiveButton.className = "message-archive-button pointer-focus";
+    archiveButton.className = "message-archive-button";
     archiveButton.type = "button";
-    archiveButton.tabIndex = 0;
+    archiveButton.tabIndex = -1;
+    archiveButton.setAttribute("aria-hidden", "true");
     archiveButton.textContent = "📥";
     archiveButton.setAttribute("aria-label", "Archive message");
 
