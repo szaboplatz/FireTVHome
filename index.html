@@ -12,6 +12,7 @@
 
 <style>
 :root {
+  --app-height: var(--app-height);
   --bg: #000;
   --panel: #111;
   --panel2: #1a1a1a;
@@ -40,7 +41,7 @@ body {
 
 body {
   width: 100vw;
-  height: 100vh;
+  height: var(--app-height);
 }
 
 /* Never let browser focus styling drive the UI. */
@@ -50,7 +51,7 @@ body {
 
 .app {
   width: 100vw;
-  height: 100vh;
+  height: var(--app-height);
   display: grid;
   grid-template-rows: auto 1fr;
   overflow: hidden;
@@ -84,6 +85,7 @@ body {
   display: none;
   width: 100%;
   height: 100%;
+  min-height: 0;
   overflow: hidden;
   padding: 24px 36px 34px;
 }
@@ -149,7 +151,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 28px;
-  height: calc(100vh - 120px);
+  height: calc(var(--app-height) - 120px);
 }
 
 .home-tile {
@@ -232,7 +234,7 @@ body {
 .messages-list-shell {
   display: grid;
   grid-template-rows: auto 1fr;
-  height: calc(100vh - 130px);
+  height: calc(var(--app-height) - 130px);
   gap: 12px;
 }
 
@@ -322,7 +324,7 @@ body {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: 10px;
-  height: calc(100vh - 112px);
+  height: calc(var(--app-height) - 112px);
   min-height: 0;
 }
 
@@ -387,6 +389,7 @@ body {
 .action-close { background: #777; }
 
 .message-body-panel {
+  max-height: 100%;
   background: #111;
   border: 3px solid #555;
   border-radius: 14px;
@@ -412,7 +415,7 @@ body {
 .videos-shell {
   display: grid;
   grid-template-rows: auto 1fr auto;
-  height: calc(100vh - 130px);
+  height: calc(var(--app-height) - 130px);
   gap: 12px;
 }
 
@@ -470,7 +473,7 @@ body {
   display: grid;
   grid-template-rows: auto 1fr auto auto;
   gap: 16px;
-  height: calc(100vh - 130px);
+  height: calc(var(--app-height) - 130px);
 }
 
 .message-help {
@@ -606,7 +609,7 @@ textarea:focus {
 
   .home-grid {
     gap: 20px;
-    height: calc(100vh - 95px);
+    height: calc(var(--app-height) - 95px);
   }
 
   .home-tile {
@@ -639,7 +642,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.0.5 spatial</div>
+    <div class="version-label">Fire TV Home v1.0.6 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -790,7 +793,7 @@ const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.0.5";
+const PAGE_VERSION = "v1.0.6";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1856,12 +1859,12 @@ document.addEventListener("keydown", function(event) {
 
     if (action === "body") {
       if (key === "ArrowDown") {
-        messageBodyPanel.scrollTop += 220;
+        messageBodyPanel.scrollTop += Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75));
         return;
       }
       if (key === "ArrowUp") {
         if (messageBodyPanel.scrollTop > 0) {
-          messageBodyPanel.scrollTop -= 220;
+          messageBodyPanel.scrollTop -= Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75));
           return;
         }
         moveLinear("messageActions", "ArrowUp");
@@ -1978,9 +1981,15 @@ closeVideoButton.addEventListener("click", hidePlayerPanel);
   document.addEventListener(eventName, markPageActivity, true);
 });
 
+function setMeasuredAppHeight() {
+  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty("--app-height", Math.floor(h) + "px");
+}
+
 /* ---------- INIT ---------- */
 
 document.addEventListener("DOMContentLoaded", function() {
+  setMeasuredAppHeight();
   window.scrollTo(0, 0);
   applyManualUpdateUI();
   updateDateTimeBar();
@@ -1993,7 +2002,9 @@ document.addEventListener("DOMContentLoaded", function() {
       messages_page_size: listState.messages.pageSize,
       videos_page_size: listState.videos.pageSize,
       viewport_height: window.innerHeight,
-      viewport_width: window.innerWidth
+      viewport_width: window.innerWidth,
+      visual_viewport_height: window.visualViewport ? window.visualViewport.height : "",
+      measured_app_height: getComputedStyle(document.documentElement).getPropertyValue("--app-height")
     });
   });
 
@@ -2002,10 +2013,20 @@ document.addEventListener("DOMContentLoaded", function() {
   startPeriodicRefresh();
 
   window.addEventListener("resize", () => {
+    setMeasuredAppHeight();
     updateMeasuredPageSizes();
     if (currentView === "messages") renderMessagesList();
     if (currentView === "videos") renderVideosList();
   });
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", () => {
+      setMeasuredAppHeight();
+      updateMeasuredPageSizes();
+      if (currentView === "messages") renderMessagesList();
+      if (currentView === "videos") renderVideosList();
+    });
+  }
 
   selected.home = 0;
   setSelected("home", 0);
