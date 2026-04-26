@@ -258,7 +258,7 @@ body {
   padding: 16px 22px;
   background: #1f6f2a;
   border: 4px solid #4fc46a;
-  min-height: 105px;
+  min-height: 126px;
   text-align: left;
   color: white;
 }
@@ -268,10 +268,10 @@ body {
   padding: 20px 22px;
   background: #444;
   border: 4px solid #999;
-  min-height: 86px;
+  min-height: 92px;
   text-align: center;
   color: white;
-  font-size: 42px;
+  font-size: 40px;
   font-weight: 900;
 }
 
@@ -293,16 +293,16 @@ body {
   display: flex;
   justify-content: space-between;
   gap: 18px;
-  font-size: 34px;
-  line-height: 1.14;
+  font-size: 32px;
+  line-height: 1.16;
   font-weight: 900;
   margin-bottom: 8px;
   white-space: nowrap;
 }
 
 .message-subject {
-  font-size: 34px;
-  line-height: 1.14;
+  font-size: 32px;
+  line-height: 1.16;
   font-weight: 900;
 }
 
@@ -683,7 +683,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.1.0 spatial</div>
+    <div class="version-label">Fire TV Home v1.1.1 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -834,7 +834,7 @@ const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.1.0";
+const PAGE_VERSION = "v1.1.1";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1260,7 +1260,7 @@ function measureListPageSize(container, sampleMinHeight, gap, minRows, maxRows) 
 }
 
 function updateMeasuredPageSizes() {
-  listState.messages.pageSize = measureListPageSize(messagesList, 105, 14, 2, 5);
+  listState.messages.pageSize = measureListPageSize(messagesList, 126, 14, 2, 4);
   listState.videos.pageSize = measureListPageSize(ytList, 88, 14, 2, 6);
 }
 
@@ -1311,18 +1311,26 @@ function renderMessagesList() {
     messagesList.appendChild(card);
   });
 
-  const homeCard = document.createElement("div");
-  homeCard.className = "message-home-card spatial-item";
-  homeCard.dataset.navGroup = "messages";
-  homeCard.dataset.action = "home";
-  homeCard.textContent = "HOME";
-  messagesList.appendChild(homeCard);
+  const isFinalPage = state.offset + visible.length >= cachedMessages.length;
+
+  if (isFinalPage) {
+    const homeCard = document.createElement("div");
+    homeCard.className = "message-home-card spatial-item";
+    homeCard.dataset.navGroup = "messages";
+    homeCard.dataset.action = "home";
+    homeCard.textContent = "HOME";
+    messagesList.appendChild(homeCard);
+  }
+
+  if (!isFinalPage) {
+    state.homeSelected = false;
+  }
 
   messagesPageInfo.textContent = state.homeSelected
     ? `HOME selected — press Select to return`
     : `Message ${state.index + 1} of ${cachedMessages.length}`;
 
-  const selectedIndex = state.homeSelected ? visible.length : state.index - state.offset;
+  const selectedIndex = state.homeSelected && isFinalPage ? visible.length : state.index - state.offset;
   setSelected("messages", selectedIndex);
 }
 
@@ -1335,19 +1343,18 @@ function moveMessages(key) {
       return;
     }
 
-    const visibleLastIndex = Math.min(state.offset + state.pageSize - 1, cachedMessages.length - 1);
-
-    if (state.index >= visibleLastIndex || state.index >= cachedMessages.length - 1) {
+    if (state.index >= cachedMessages.length - 1) {
       state.homeSelected = true;
     } else {
       state.index = Math.min(state.index + 1, cachedMessages.length - 1);
+      state.homeSelected = false;
     }
   }
 
   if (key === "ArrowUp") {
     if (state.homeSelected) {
       state.homeSelected = false;
-      state.index = Math.min(state.offset + state.pageSize - 1, cachedMessages.length - 1);
+      state.index = cachedMessages.length - 1;
     } else {
       state.index = Math.max(state.index - 1, 0);
     }
