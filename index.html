@@ -19,7 +19,7 @@
   --text: #fff;
   --muted: #b8d7e5;
   --label: #8fe8ff;
-  --focus: #fff;
+  --focus: #ffd400;
   --yellow: #ffd400;
 }
 
@@ -136,13 +136,13 @@ body {
 }
 
 .spatial-item.selected {
-  outline: 5px solid var(--focus);
-  outline-offset: -2px;
-  transform: scale(1.01);
-  filter: brightness(1.16);
+  outline: 6px solid var(--focus);
+  outline-offset: -6px;
+  transform: scale(1);
+  filter: brightness(1.12);
   box-shadow:
-    0 0 0 4px rgba(255,255,255,0.25),
-    0 16px 36px rgba(0,0,0,0.65);
+    inset 0 0 0 3px rgba(255,212,0,0.35),
+    0 12px 28px rgba(0,0,0,0.60);
   z-index: 3;
 }
 
@@ -280,8 +280,9 @@ body {
   display: flex;
   justify-content: space-between;
   gap: 18px;
-  font-size: 28px;
-  font-weight: bold;
+  font-size: 34px;
+  line-height: 1.14;
+  font-weight: 900;
   margin-bottom: 8px;
   white-space: nowrap;
 }
@@ -337,7 +338,7 @@ body {
 }
 
 .message-detail-line {
-  font-size: 28px;
+  font-size: 32px;
   line-height: 1.18;
   margin-bottom: 4px;
 }
@@ -348,6 +349,9 @@ body {
   gap: 18px;
   align-items: baseline;
   margin-bottom: 4px;
+  font-size: 32px;
+  line-height: 1.18;
+  font-weight: 900;
 }
 
 .message-detail-topline .right {
@@ -372,11 +376,15 @@ body {
 }
 
 .action-btn.inactive {
-  background: #222;
-  color: #aaa;
-  border: 3px solid #555;
+  background: #123c24;
+  color: #b8ffd0;
+  border: 4px solid #54d982;
   filter: none;
-  opacity: 0.9;
+  opacity: 1;
+}
+
+.action-btn.inactive::after {
+  content: " ✓";
 }
 
 .action-btn.active {
@@ -391,18 +399,22 @@ body {
 .message-body-panel {
   max-height: 100%;
   background: #111;
-  border: 3px solid #555;
+  border: 5px solid #777;
   border-radius: 14px;
-  padding: 14px 18px;
+  padding: 14px 18px 28px 18px;
   overflow-y: auto;
   text-align: left;
   min-height: 0;
+  box-shadow: inset 0 -10px 0 rgba(255,255,255,0.06);
 }
 
 .message-body-panel.selected {
-  outline: 5px solid var(--focus);
-  outline-offset: -2px;
+  outline: 6px solid var(--focus);
+  outline-offset: -6px;
   filter: brightness(1.12);
+  box-shadow:
+    inset 0 0 0 3px rgba(255,212,0,0.35),
+    inset 0 -10px 0 rgba(255,255,255,0.08);
 }
 
 .message-body {
@@ -437,6 +449,7 @@ body {
   flex-direction: column;
   gap: 14px;
   overflow: hidden;
+  padding: 4px 8px;
 }
 
 .video-card {
@@ -628,7 +641,7 @@ textarea:focus {
   }
 
   .message-topline {
-    font-size: 24px;
+    font-size: 29px;
   }
 
   .message-subject {
@@ -642,7 +655,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.0.6 spatial</div>
+    <div class="version-label">Fire TV Home v1.0.7 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -793,7 +806,7 @@ const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.0.6";
+const PAGE_VERSION = "v1.0.7";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1345,13 +1358,13 @@ function renderMessageDetail() {
   if (msg.read_at && readBtn) {
     readBtn.classList.add("inactive");
     readBtn.disabled = true;
-    readBtn.textContent = "✔ READ DONE";
+    readBtn.textContent = "DONE: READ";
   }
 
   if (msg.liked_at && likeBtn) {
     likeBtn.classList.add("inactive");
     likeBtn.disabled = true;
-    likeBtn.textContent = "👍 LIKED";
+    likeBtn.textContent = "DONE: LIKED";
   }
 
   selected.messageActions = 0;
