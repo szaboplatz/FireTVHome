@@ -263,6 +263,18 @@ body {
   color: white;
 }
 
+.message-home-card {
+  border-radius: 18px;
+  padding: 20px 22px;
+  background: #444;
+  border: 4px solid #999;
+  min-height: 86px;
+  text-align: center;
+  color: white;
+  font-size: 42px;
+  font-weight: 900;
+}
+
 .message-card.opened {
   background: #2b4b73;
   border-color: #79b4ff;
@@ -671,7 +683,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.0.9 spatial</div>
+    <div class="version-label">Fire TV Home v1.1.0 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -822,7 +834,7 @@ const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.0.9";
+const PAGE_VERSION = "v1.1.0";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -833,7 +845,7 @@ let currentMessage = null;
 let currentView = "home";
 let selected = {};
 let listState = {
-  messages: { index: 0, offset: 0, pageSize: 3 },
+  messages: { index: 0, offset: 0, pageSize: 3, homeSelected: false },
   videos: { index: 0, offset: 0, pageSize: 4 }
 };
 let loadedVideos = [];
@@ -1203,6 +1215,7 @@ function sortMessages_(a, b) {
 }
 
 function openMessagesView() {
+  listState.messages.homeSelected = false;
   showView("messages");
 
   if (cachedMessages.length) {
@@ -1279,6 +1292,7 @@ function renderMessagesList() {
     card.className = "message-card spatial-item";
     card.dataset.navGroup = "messages";
     card.dataset.index = String(actualIndex);
+    card.dataset.action = "open";
 
     if (msg.opened_at) card.classList.add("opened");
     if (msg.read_at) card.classList.add("read");
@@ -1297,25 +1311,58 @@ function renderMessagesList() {
     messagesList.appendChild(card);
   });
 
-  messagesPageInfo.textContent = `Message ${state.index + 1} of ${cachedMessages.length}`;
-  setSelected("messages", state.index - state.offset);
+  const homeCard = document.createElement("div");
+  homeCard.className = "message-home-card spatial-item";
+  homeCard.dataset.navGroup = "messages";
+  homeCard.dataset.action = "home";
+  homeCard.textContent = "HOME";
+  messagesList.appendChild(homeCard);
+
+  messagesPageInfo.textContent = state.homeSelected
+    ? `HOME selected — press Select to return`
+    : `Message ${state.index + 1} of ${cachedMessages.length}`;
+
+  const selectedIndex = state.homeSelected ? visible.length : state.index - state.offset;
+  setSelected("messages", selectedIndex);
 }
 
 function moveMessages(key) {
   const state = listState.messages;
 
   if (key === "ArrowDown") {
-    state.index = Math.min(state.index + 1, cachedMessages.length - 1);
+    if (state.homeSelected) {
+      renderMessagesList();
+      return;
+    }
+
+    const visibleLastIndex = Math.min(state.offset + state.pageSize - 1, cachedMessages.length - 1);
+
+    if (state.index >= visibleLastIndex || state.index >= cachedMessages.length - 1) {
+      state.homeSelected = true;
+    } else {
+      state.index = Math.min(state.index + 1, cachedMessages.length - 1);
+    }
   }
 
   if (key === "ArrowUp") {
-    state.index = Math.max(state.index - 1, 0);
+    if (state.homeSelected) {
+      state.homeSelected = false;
+      state.index = Math.min(state.offset + state.pageSize - 1, cachedMessages.length - 1);
+    } else {
+      state.index = Math.max(state.index - 1, 0);
+    }
   }
 
   renderMessagesList();
 }
 
 async function activateMessage() {
+  if (listState.messages.homeSelected) {
+    logEvent("nav_home", "Messages bottom HOME row");
+    showView("home");
+    return;
+  }
+
   const msg = cachedMessages[listState.messages.index];
   if (!msg) return;
 
@@ -1410,6 +1457,7 @@ async function activateMessageAction() {
 
   if (action === "close") {
     logEvent("message_close", msg.subject || msg.id, { id: msg.id });
+    listState.messages.homeSelected = false;
     showView("messages");
     return;
   }
@@ -1463,6 +1511,7 @@ async function activateMessageAction() {
         cachedMessages = cachedMessages.filter(m => m.id !== msg.id);
         currentMessage = null;
         listState.messages.index = Math.min(listState.messages.index, Math.max(0, cachedMessages.length - 1));
+        listState.messages.homeSelected = false;
         showView("messages");
       }
     } catch (e) {
@@ -1994,8 +2043,15 @@ document.addEventListener("click", function(event) {
   if (group === "home") activateHomeItem();
   if (group === "messagesHeader" || group === "videosHeader" || group === "sendHeader") activateHeaderHome();
   if (group === "messages") {
+    if (item.dataset.action === "home") {
+      listState.messages.homeSelected = true;
+      activateMessage();
+      return;
+    }
+
     const actualIndex = Number(item.dataset.index || "0");
     listState.messages.index = actualIndex;
+    listState.messages.homeSelected = false;
     activateMessage();
   }
   if (group === "messageActions") activateMessageAction();
