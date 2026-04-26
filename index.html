@@ -258,7 +258,7 @@ body {
   padding: 16px 22px;
   background: #1f6f2a;
   border: 4px solid #4fc46a;
-  min-height: 126px;
+  min-height: 154px;
   text-align: left;
   color: white;
 }
@@ -290,19 +290,23 @@ body {
 }
 
 .message-topline {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 18px;
-  font-size: 32px;
+  font-size: 29px;
   line-height: 1.16;
   font-weight: 900;
   margin-bottom: 8px;
-  white-space: nowrap;
+  white-space: normal;
+}
+
+.message-topline span {
+  min-width: 0;
 }
 
 .message-subject {
-  font-size: 32px;
-  line-height: 1.16;
+  font-size: 31px;
+  line-height: 1.18;
   font-weight: 900;
 }
 
@@ -499,6 +503,18 @@ body {
   border-color: #777;
 }
 
+.video-home-card {
+  border-radius: 18px;
+  padding: 18px 22px;
+  background: #444;
+  border: 4px solid #999;
+  min-height: 82px;
+  text-align: center;
+  color: white;
+  font-size: 38px;
+  font-weight: 900;
+}
+
 .advanced-link-card {
   border-radius: 16px;
   background: #333;
@@ -669,11 +685,11 @@ textarea:focus {
   }
 
   .message-topline {
-    font-size: 29px;
+    font-size: 26px;
   }
 
   .message-subject {
-    font-size: 29px;
+    font-size: 28px;
   }
 }
 </style>
@@ -683,7 +699,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.1.1 spatial</div>
+    <div class="version-label">Fire TV Home v1.1.2 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -731,7 +747,7 @@ textarea:focus {
     <div class="view-title-row">
       <div>
         <div class="view-title">FAMILY MESSAGES</div>
-        <div class="view-subtitle">Use up/down. Press Select to open.</div>
+        <div class="view-subtitle">Use up/down. Press Left for HOME. Press Select to open.</div>
       </div>
       <button class="nav-button spatial-item" data-nav-group="messagesHeader" data-action="home">HOME</button>
     </div>
@@ -774,6 +790,7 @@ textarea:focus {
     <div class="view-title-row">
       <div>
         <div class="view-title" id="ytHeaderTitle">WRESTLING VIDEOS</div>
+        <div class="view-subtitle">Use up/down. Press Left for HOME. Press Select to play.</div>
         <div class="youtube-header-meta">
           <span id="ytManualUpdateText" class="youtube-manual-update hidden"></span>
           <span id="ytLastChecked">Last checked: --</span>
@@ -834,7 +851,7 @@ const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.1.1";
+const PAGE_VERSION = "v1.1.2";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -846,7 +863,7 @@ let currentView = "home";
 let selected = {};
 let listState = {
   messages: { index: 0, offset: 0, pageSize: 3, homeSelected: false },
-  videos: { index: 0, offset: 0, pageSize: 4 }
+  videos: { index: 0, offset: 0, pageSize: 4, homeSelected: false }
 };
 let loadedVideos = [];
 let lastPageActivityAt = Date.now();
@@ -1260,7 +1277,7 @@ function measureListPageSize(container, sampleMinHeight, gap, minRows, maxRows) 
 }
 
 function updateMeasuredPageSizes() {
-  listState.messages.pageSize = measureListPageSize(messagesList, 126, 14, 2, 4);
+  listState.messages.pageSize = measureListPageSize(messagesList, 154, 14, 2, 3);
   listState.videos.pageSize = measureListPageSize(ytList, 88, 14, 2, 6);
 }
 
@@ -1634,6 +1651,7 @@ function updateYoutubeHeaderCount(count) {
 }
 
 function openVideosView() {
+  listState.videos.homeSelected = false;
   showView("videos");
 
   if (!loadedVideos.length) {
@@ -1671,6 +1689,7 @@ function renderVideosList() {
     const card = document.createElement("div");
     card.className = "video-card spatial-item";
     card.dataset.navGroup = "videos";
+    card.dataset.action = "open";
     card.dataset.index = String(actualIndex);
     card.dataset.videoId = video.videoId;
 
@@ -1682,25 +1701,65 @@ function renderVideosList() {
     ytList.appendChild(card);
   });
 
-  videosPageInfo.textContent = `Video ${state.index + 1} of ${loadedVideos.length}`;
-  setSelected("videos", state.index - state.offset);
+  const isFinalPage = state.offset + visible.length >= loadedVideos.length;
+
+  if (isFinalPage) {
+    const homeCard = document.createElement("div");
+    homeCard.className = "video-home-card spatial-item";
+    homeCard.dataset.navGroup = "videos";
+    homeCard.dataset.action = "home";
+    homeCard.textContent = "HOME";
+    ytList.appendChild(homeCard);
+  }
+
+  if (!isFinalPage) {
+    state.homeSelected = false;
+  }
+
+  videosPageInfo.textContent = state.homeSelected
+    ? `HOME selected — press Select to return`
+    : `Video ${state.index + 1} of ${loadedVideos.length}`;
+
+  const selectedIndex = state.homeSelected && isFinalPage ? visible.length : state.index - state.offset;
+  setSelected("videos", selectedIndex);
 }
 
 function moveVideos(key) {
   const state = listState.videos;
 
   if (key === "ArrowDown") {
-    state.index = Math.min(state.index + 1, loadedVideos.length - 1);
+    if (state.homeSelected) {
+      renderVideosList();
+      return;
+    }
+
+    if (state.index >= loadedVideos.length - 1) {
+      state.homeSelected = true;
+    } else {
+      state.index = Math.min(state.index + 1, loadedVideos.length - 1);
+      state.homeSelected = false;
+    }
   }
 
   if (key === "ArrowUp") {
-    state.index = Math.max(state.index - 1, 0);
+    if (state.homeSelected) {
+      state.homeSelected = false;
+      state.index = loadedVideos.length - 1;
+    } else {
+      state.index = Math.max(state.index - 1, 0);
+    }
   }
 
   renderVideosList();
 }
 
 function activateVideo() {
+  if (listState.videos.homeSelected) {
+    logEvent("nav_home", "Videos bottom HOME row");
+    showView("home");
+    return;
+  }
+
   const video = loadedVideos[listState.videos.index];
   if (!video) return;
 
@@ -1918,15 +1977,23 @@ document.addEventListener("keydown", function(event) {
   if (currentView === "messages") {
     const headerSelected = getSelectedItem("messagesHeader")?.classList.contains("selected");
 
-    if (key === "ArrowUp" && listState.messages.index === 0) {
+    if (key === "ArrowLeft" && !headerSelected) {
       clearGroupSelection("messages");
       setSelected("messagesHeader", 0);
       return;
     }
 
-    if (key === "ArrowDown" && headerSelected) {
+    if ((key === "ArrowRight" || key === "ArrowDown") && headerSelected) {
       clearGroupSelection("messagesHeader");
-      setSelected("messages", Math.max(0, listState.messages.index - listState.messages.offset));
+      setSelected("messages", listState.messages.homeSelected
+        ? getItems("messages").length - 1
+        : Math.max(0, listState.messages.index - listState.messages.offset));
+      return;
+    }
+
+    if (key === "ArrowUp" && listState.messages.index === 0 && !listState.messages.homeSelected) {
+      clearGroupSelection("messages");
+      setSelected("messagesHeader", 0);
       return;
     }
 
@@ -1975,15 +2042,21 @@ document.addEventListener("keydown", function(event) {
   if (currentView === "videos") {
     const headerSelected = getSelectedItem("videosHeader")?.classList.contains("selected");
 
-    if (key === "ArrowUp" && listState.videos.index === 0) {
+    if (key === "ArrowLeft" && !headerSelected) {
       clearGroupSelection("videos");
       setSelected("videosHeader", 0);
       return;
     }
 
-    if (key === "ArrowDown" && headerSelected) {
+    if ((key === "ArrowRight" || key === "ArrowDown") && headerSelected) {
       clearGroupSelection("videosHeader");
       setSelected("videos", Math.max(0, listState.videos.index - listState.videos.offset));
+      return;
+    }
+
+    if (key === "ArrowUp" && listState.videos.index === 0) {
+      clearGroupSelection("videos");
+      setSelected("videosHeader", 0);
       return;
     }
 
@@ -2063,8 +2136,15 @@ document.addEventListener("click", function(event) {
   }
   if (group === "messageActions") activateMessageAction();
   if (group === "videos") {
+    if (item.dataset.action === "home") {
+      listState.videos.homeSelected = true;
+      activateVideo();
+      return;
+    }
+
     const actualIndex = Number(item.dataset.index || "0");
     listState.videos.index = actualIndex;
+    listState.videos.homeSelected = false;
     activateVideo();
   }
 });
