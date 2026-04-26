@@ -108,6 +108,14 @@ a.jump-button {
   position: relative;
 }
 
+/* SILK SPATIAL NAVIGATION SUPPORT
+   The goal is for Silk's spatial navigation to land only on real controls.
+   Decorative badges and labels are marked aria-hidden/tabindex=-1 in the HTML.
+*/
+*:focus {
+  outline: none;
+}
+
 /* NETFLIX-LIKE TILE BEHAVIOR */
 a.button,
 button.button-tile,
@@ -163,6 +171,10 @@ a.jump-button:focus,
 .youtube-video-button.watched:hover,
 .youtube-video-button.watched:focus {
   border-color: #ffffff;
+}
+
+textarea:focus {
+  outline: none;
 }
 
 /* TILE UPDATE SUPPORT */
@@ -786,44 +798,44 @@ textarea.active-box,
 
 <div class="top-status-bar">
   <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-  <div class="version-label">Fire TV Home v0.8.5</div>
+  <div class="version-label">Fire TV Home v0.9.0</div>
 </div>
 
 <div class="container">
-  <button class="button-tile pointer-focus" id="familyMessagesButton" type="button">
+  <button class="button-tile pointer-focus" id="familyMessagesButton" type="button" tabindex="0">
     FAMILY MESSAGES
-    <span id="unreadBadge" class="unread-badge hidden">0</span>
+    <span id="unreadBadge" class="unread-badge hidden" tabindex="-1" aria-hidden="true">0</span>
   </button>
 
-  <a class="jump-button pointer-focus" href="#messagePanel">JUMP TO SEND MESSAGE</a>
+  <a class="jump-button pointer-focus" href="#messagePanel" tabindex="0">JUMP TO SEND MESSAGE</a>
 
-  <a class="button tile-button button-main-photos-loop pointer-focus" id="tileMainPhotosLoop" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">
-    <span class="tile-main-label">MAIN PHOTOS LOOP</span>
-    <span class="tile-update-badge hidden">UPDATED</span>
-    <span class="tile-update-text hidden"></span>
+  <a class="button tile-button button-main-photos-loop pointer-focus" id="tileMainPhotosLoop" tabindex="0" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">
+    <span class="tile-main-label" tabindex="-1" aria-hidden="true">MAIN PHOTOS LOOP</span>
+    <span class="tile-update-badge hidden" tabindex="-1" aria-hidden="true">UPDATED</span>
+    <span class="tile-update-text hidden" tabindex="-1" aria-hidden="true"></span>
   </a>
 
-  <a class="button tile-button button-main-photos pointer-focus" id="tileMainPhotos" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">
-    <span class="tile-main-label">MAIN PHOTOS</span>
-    <span class="tile-update-badge hidden">UPDATED</span>
-    <span class="tile-update-text hidden"></span>
+  <a class="button tile-button button-main-photos pointer-focus" id="tileMainPhotos" tabindex="0" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">
+    <span class="tile-main-label" tabindex="-1" aria-hidden="true">MAIN PHOTOS</span>
+    <span class="tile-update-badge hidden" tabindex="-1" aria-hidden="true">UPDATED</span>
+    <span class="tile-update-text hidden" tabindex="-1" aria-hidden="true"></span>
   </a>
 
-  <a class="button tile-button button-latest-photos pointer-focus" id="tileLatestPhotos" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">
-    <span class="tile-main-label">LATEST PHOTOS</span>
-    <span class="tile-update-badge hidden">UPDATED</span>
-    <span class="tile-update-text hidden"></span>
+  <a class="button tile-button button-latest-photos pointer-focus" id="tileLatestPhotos" tabindex="0" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">
+    <span class="tile-main-label" tabindex="-1" aria-hidden="true">LATEST PHOTOS</span>
+    <span class="tile-update-badge hidden" tabindex="-1" aria-hidden="true">UPDATED</span>
+    <span class="tile-update-text hidden" tabindex="-1" aria-hidden="true"></span>
   </a>
 
-  <a class="button tile-button button-videos pointer-focus" id="tileVideos" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">
-    <span class="tile-main-label">VIDEOS</span>
-    <span class="tile-update-badge hidden">UPDATED</span>
-    <span class="tile-update-text hidden"></span>
+  <a class="button tile-button button-videos pointer-focus" id="tileVideos" tabindex="0" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">
+    <span class="tile-main-label" tabindex="-1" aria-hidden="true">VIDEOS</span>
+    <span class="tile-update-badge hidden" tabindex="-1" aria-hidden="true">UPDATED</span>
+    <span class="tile-update-text hidden" tabindex="-1" aria-hidden="true"></span>
   </a>
 
   <section id="messagesPanel" class="messages-panel">
     <div class="messages-inner">
-      <button id="closeMessagesButton" class="messages-close-button pointer-focus" type="button" aria-label="Close messages">CLOSE</button>
+      <button id="closeMessagesButton" class="messages-close-button pointer-focus" type="button" tabindex="0" aria-label="Close messages">CLOSE</button>
       <div class="messages-content">
         <div class="messages-title">FAMILY MESSAGES</div>
         <div id="messagesStatus" class="messages-status">Loading messages…</div>
@@ -835,7 +847,7 @@ textarea.active-box,
   <section id="playerPanel" class="player-panel">
     <div class="player-frame-wrap">
       <div id="youtube-player-host"></div>
-      <button id="closeVideoButton" class="player-close-button pointer-focus" type="button" aria-label="Close video">CLOSE</button>
+      <button id="closeVideoButton" class="player-close-button pointer-focus" type="button" tabindex="0" aria-label="Close video">CLOSE</button>
     </div>
   </section>
 
@@ -856,7 +868,7 @@ textarea.active-box,
   </section>
 
   <div class="youtube-playlist-link-wrap">
-    <a class="youtube-playlist-link pointer-focus" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">
+    <a class="youtube-playlist-link pointer-focus" tabindex="0" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">
       Open YouTube playlist (advanced)
     </a>
   </div>
@@ -872,11 +884,11 @@ textarea.active-box,
 
       <div id="status"></div>
 
-      <button class="submit-button pointer-focus" id="sendButton" type="submit">SEND</button>
+      <button class="submit-button pointer-focus" id="sendButton" type="submit" tabindex="0">SEND</button>
     </form>
   </div>
 
-  <a class="jump-button jump-top pointer-focus" href="#topOfPage">JUMP TO TOP</a>
+  <a class="jump-button jump-top pointer-focus" href="#topOfPage" tabindex="0">JUMP TO TOP</a>
 </div>
 
 <script>
@@ -901,7 +913,7 @@ const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v0.8.5";
+const PAGE_VERSION = "v0.9.0";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 let cachedPublicIp = localStorage.getItem(PUBLIC_IP_STORAGE_KEY) || "";
@@ -916,6 +928,14 @@ function getBrowserDeviceInfo() {
     screen_height: String(window.screen?.height || ""),
     viewport_width: String(window.innerWidth || ""),
     viewport_height: String(window.innerHeight || "")
+  };
+}
+
+function getUrlEntryInfo() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    entry: params.get("entry") || "",
+    query_string: window.location.search || ""
   };
 }
 
@@ -944,6 +964,8 @@ function logEvent(eventType, eventLabel = "", extra = {}) {
       page_version: PAGE_VERSION,
       url: window.location.href,
       public_ip: cachedPublicIp,
+      entry: getUrlEntryInfo().entry,
+      query_string: getUrlEntryInfo().query_string,
       device_info: JSON.stringify(getBrowserDeviceInfo()),
       extra: JSON.stringify(extra)
     }).catch(() => {
@@ -1356,6 +1378,7 @@ function renderMessages(messages) {
       const readBtn = document.createElement("button");
       readBtn.className = "action-btn read-btn" + (msg.read_at ? " active" : "");
       readBtn.type = "button";
+      readBtn.tabIndex = 0;
       readBtn.textContent = "✔ READ";
       readBtn.addEventListener("click", async () => {
         logEvent("message_mark_read", msg.subject || msg.id, { id: msg.id });
@@ -1382,6 +1405,7 @@ function renderMessages(messages) {
       const likeBtn = document.createElement("button");
       likeBtn.className = "action-btn like-btn" + (msg.liked_at ? " active" : "");
       likeBtn.type = "button";
+      likeBtn.tabIndex = 0;
       likeBtn.textContent = "👍 LIKE";
       likeBtn.addEventListener("click", async () => {
         logEvent("message_like", msg.subject || msg.id, { id: msg.id });
@@ -1412,6 +1436,7 @@ function renderMessages(messages) {
       const closeBtn = document.createElement("button");
       closeBtn.className = "action-btn close-btn";
       closeBtn.type = "button";
+      closeBtn.tabIndex = 0;
       closeBtn.textContent = "CLOSE";
       closeBtn.addEventListener("click", () => {
         logEvent("message_close", msg.subject || msg.id, { id: msg.id });
@@ -1435,11 +1460,15 @@ function renderMessages(messages) {
 
     const readIndicator = document.createElement("div");
     readIndicator.className = "message-indicator" + (msg.read_at ? " read" : "");
-    readIndicator.innerHTML = '<span class="message-check-icon">✔</span>';
+    readIndicator.tabIndex = -1;
+    readIndicator.setAttribute("aria-hidden", "true");
+    readIndicator.innerHTML = '<span class="message-check-icon" tabindex="-1" aria-hidden="true">✔</span>';
 
     const likeIndicator = document.createElement("div");
     likeIndicator.className = "message-like-indicator" + (msg.liked_at ? " liked" : "");
-    likeIndicator.innerHTML = '<span class="message-like-icon">👍</span>';
+    likeIndicator.tabIndex = -1;
+    likeIndicator.setAttribute("aria-hidden", "true");
+    likeIndicator.innerHTML = '<span class="message-like-icon" tabindex="-1" aria-hidden="true">👍</span>';
 
     indicatorStack.appendChild(readIndicator);
     indicatorStack.appendChild(likeIndicator);
@@ -1450,6 +1479,7 @@ function renderMessages(messages) {
     if (msg.read_at) summaryButton.classList.add("read");
     if (msg.liked_at) summaryButton.classList.add("liked");
     summaryButton.type = "button";
+    summaryButton.tabIndex = 0;
 
     const msgDate = msg.created_at ? formatHeaderDate(new Date(msg.created_at)) : "";
 
@@ -1483,11 +1513,14 @@ function renderMessages(messages) {
     const archiveButton = document.createElement("button");
     archiveButton.className = "message-archive-button pointer-focus";
     archiveButton.type = "button";
+    archiveButton.tabIndex = 0;
     archiveButton.textContent = "📥";
     archiveButton.setAttribute("aria-label", "Archive message");
 
     if (!msg.opened_at) {
       archiveButton.disabled = true;
+      archiveButton.tabIndex = -1;
+      archiveButton.setAttribute("aria-hidden", "true");
       archiveButton.title = "Open message before archiving";
     } else {
       archiveButton.addEventListener("click", async () => {
@@ -1594,6 +1627,7 @@ async function loadVideos() {
       btn.className = "youtube-video-button pointer-focus";
       btn.textContent = video.title;
       btn.type = "button";
+      btn.tabIndex = 0;
       btn.dataset.videoId = video.videoId;
 
       if (watched[video.videoId]) {
