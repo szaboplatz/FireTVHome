@@ -786,7 +786,7 @@ textarea.active-box,
 
 <div class="top-status-bar">
   <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-  <div class="version-label">Fire TV Home v0.8.4</div>
+  <div class="version-label">Fire TV Home v0.8.5</div>
 </div>
 
 <div class="container">
@@ -887,12 +887,21 @@ const PAGE_RELOAD_CHECK_INTERVAL_MS = 60 * 60 * 1000;       // check hourly
 const PAGE_RELOAD_IDLE_MS = 12 * 60 * 60 * 1000;              // reload only after 12 idle hours
 
 let lastPageActivityAt = Date.now();
+let lastPageActivityType = "page_start";
+
+function formatActivityTime_(ms) {
+  try {
+    return new Date(ms).toISOString();
+  } catch (e) {
+    return "";
+  }
+}
 
 const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v0.8.4";
+const PAGE_VERSION = "v0.8.5";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 let cachedPublicIp = localStorage.getItem(PUBLIC_IP_STORAGE_KEY) || "";
@@ -1623,8 +1632,9 @@ function startPeriodicRefresh() {
   }, PAGE_RELOAD_CHECK_INTERVAL_MS);
 }
 
-function markPageActivity() {
+function markPageActivity(event) {
   lastPageActivityAt = Date.now();
+  lastPageActivityType = event && event.type ? event.type : "unknown";
 }
 
 function maybeReloadPage() {
@@ -1635,7 +1645,13 @@ function maybeReloadPage() {
 
   if (videoIsOpen || messagesAreOpen || textBoxActive) {
     logEvent("auto_reload_skipped", "Page reload skipped because page was in use", {
-      idle_ms: idleMs
+      idle_ms: idleMs,
+      idle_hours: Math.round((idleMs / (60 * 60 * 1000)) * 100) / 100,
+      last_activity_at: formatActivityTime_(lastPageActivityAt),
+      last_activity_type: lastPageActivityType,
+      video_is_open: videoIsOpen,
+      messages_are_open: messagesAreOpen,
+      text_box_active: textBoxActive
     });
     return;
   }
@@ -1645,7 +1661,10 @@ function maybeReloadPage() {
   }
 
   logEvent("auto_reload", "Automatic page reload after idle period", {
-    idle_ms: idleMs
+    idle_ms: idleMs,
+    idle_hours: Math.round((idleMs / (60 * 60 * 1000)) * 100) / 100,
+    last_activity_at: formatActivityTime_(lastPageActivityAt),
+    last_activity_type: lastPageActivityType
   });
   window.location.reload();
 }
