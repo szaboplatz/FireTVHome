@@ -37,13 +37,13 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  padding: 12px 24px;
+  padding: 8px 22px;
   background: rgba(17, 17, 17, 0.98);
   border-bottom: 3px solid #333;
 }
 
 .datetime-bar {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: bold;
   color: #d8f6ff;
   text-align: left;
@@ -51,7 +51,7 @@ body {
 }
 
 .version-label {
-  font-size: 22px;
+  font-size: 19px;
   color: #9aa3aa;
   letter-spacing: 1px;
   white-space: nowrap;
@@ -62,8 +62,8 @@ body {
 .container {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 40px;
-  padding: 18px 40px 40px 40px;
+  gap: 24px;
+  padding: 14px 30px 34px 30px;
   overflow-x: hidden;
 }
 
@@ -74,12 +74,12 @@ a.jump-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
-  font-size: 50px;
+  padding: 28px;
+  font-size: 44px;
   color: white;
   text-decoration: none;
-  border-radius: 16px;
-  min-height: 120px;
+  border-radius: 14px;
+  min-height: 100px;
   text-align: center;
   border: none;
   cursor: pointer;
@@ -106,6 +106,20 @@ a.jump-button {
 #familyMessagesButton {
   background: #00a6c7;
   position: relative;
+}
+
+/* SILK SPATIAL NAVIGATION LAYOUT TUNING */
+.button,
+.button-tile,
+.jump-button,
+.youtube-video-button,
+.message-summary-button,
+.message-archive-button,
+.action-btn,
+.submit-button,
+.youtube-playlist-link {
+  scroll-margin-top: 72px;
+  scroll-margin-bottom: 28px;
 }
 
 /* SILK SPATIAL NAVIGATION SUPPORT
@@ -154,8 +168,8 @@ a.jump-button:focus,
 .messages-close-button:hover,
 .messages-close-button:focus {
   outline: 6px solid #ffffff;
-  outline-offset: 4px;
-  transform: scale(1.045);
+  outline-offset: 2px;
+  transform: scale(1.025);
   filter: brightness(1.16);
   box-shadow:
     0 0 0 4px rgba(255,255,255,0.25),
@@ -198,7 +212,7 @@ textarea:focus {
   border: 4px solid #ff8a8a;
   border-radius: 999px;
   padding: 6px 14px;
-  font-size: 22px;
+  font-size: 19px;
   font-weight: bold;
   line-height: 1;
 }
@@ -233,7 +247,7 @@ textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 22px;
   font-weight: bold;
   line-height: 1;
 }
@@ -305,7 +319,7 @@ textarea:focus {
   width: 100%;
   background: rgba(0, 0, 0, 0.99);
   border: 4px solid #555;
-  border-radius: 16px;
+  border-radius: 14px;
   padding: 0;
   text-align: left;
   overflow: hidden;
@@ -581,7 +595,7 @@ textarea:focus {
 }
 
 .youtube-section-title {
-  font-size: 42px;
+  font-size: 38px;
   font-weight: bold;
   color: white;
 }
@@ -602,7 +616,7 @@ textarea:focus {
   flex-wrap: wrap;
   gap: 18px;
   align-items: center;
-  font-size: 24px;
+  font-size: 22px;
   color: #b7d8e6;
   min-height: 30px;
 }
@@ -628,8 +642,8 @@ textarea:focus {
 
 .youtube-video-button {
   width: 100%;
-  padding: 24px;
-  font-size: 40px;
+  padding: 20px;
+  font-size: 36px;
   line-height: 1.2;
   background: #1f6f2a;
   color: white;
@@ -685,7 +699,7 @@ textarea:focus {
 
 .message-title {
   color: #00bcd4;
-  font-size: 42px;
+  font-size: 38px;
   font-weight: bold;
   text-align: center;
   margin-bottom: 20px;
@@ -693,14 +707,14 @@ textarea:focus {
 
 .message-help {
   color: white;
-  font-size: 28px;
+  font-size: 22px;
   text-align: center;
   margin-bottom: 25px;
 }
 
 textarea {
   width: 100%;
-  font-size: 42px;
+  font-size: 38px;
   line-height: 1.3;
   padding: 25px;
   border-radius: 12px;
@@ -754,6 +768,26 @@ textarea.active-box,
   margin-top: 10px;
 }
 
+@media (max-height: 720px) {
+  .container {
+    gap: 18px;
+    padding-top: 10px;
+  }
+
+  a.button,
+  button.button-tile,
+  a.jump-button {
+    min-height: 88px;
+    padding: 22px;
+    font-size: 38px;
+  }
+
+  .top-status-bar {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+}
+
 /* SEND STATUS */
 #status {
   text-align: center;
@@ -798,7 +832,7 @@ textarea.active-box,
 
 <div class="top-status-bar">
   <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-  <div class="version-label">Fire TV Home v0.9.0</div>
+  <div class="version-label">Fire TV Home v0.9.1</div>
 </div>
 
 <div class="container">
@@ -913,7 +947,7 @@ const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v0.9.0";
+const PAGE_VERSION = "v0.9.1";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 let cachedPublicIp = localStorage.getItem(PUBLIC_IP_STORAGE_KEY) || "";
