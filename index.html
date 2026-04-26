@@ -304,42 +304,65 @@ body {
 }
 
 /* MESSAGE DETAIL VIEW */
+.message-detail-title-row {
+  margin-bottom: 8px;
+}
+
+.message-detail-title-row .view-title {
+  font-size: 42px;
+}
+
+.message-detail-title-row .nav-button {
+  min-height: 54px;
+  font-size: 24px;
+  padding: 8px 18px;
+}
+
 .message-detail-layout {
   display: grid;
-  grid-template-rows: auto auto 1fr;
-  gap: 14px;
-  height: calc(100vh - 130px);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 10px;
+  height: calc(100vh - 112px);
+  min-height: 0;
 }
 
 .message-detail-header {
   background: #111;
-  border: 4px solid #555;
-  border-radius: 16px;
-  padding: 16px 20px;
+  border: 3px solid #555;
+  border-radius: 14px;
+  padding: 10px 16px;
   text-align: left;
 }
 
 .message-detail-line {
-  font-size: 34px;
-  line-height: 1.25;
-  margin-bottom: 8px;
+  font-size: 28px;
+  line-height: 1.18;
+  margin-bottom: 4px;
 }
 
 .detail-actions {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
+  gap: 10px;
 }
 
 .action-btn {
   border: none;
-  border-radius: 16px;
-  min-height: 78px;
-  padding: 12px;
-  font-size: 28px;
+  border-radius: 14px;
+  min-height: 58px;
+  padding: 8px 10px;
+  font-size: 23px;
   font-weight: 900;
   color: white;
   background: #555;
+}
+
+.action-btn.inactive {
+  background: #222;
+  color: #aaa;
+  border: 3px solid #555;
+  filter: none;
+  opacity: 0.9;
 }
 
 .action-btn.active {
@@ -353,11 +376,12 @@ body {
 
 .message-body-panel {
   background: #111;
-  border: 4px solid #555;
-  border-radius: 16px;
-  padding: 20px 24px;
+  border: 3px solid #555;
+  border-radius: 14px;
+  padding: 14px 18px;
   overflow-y: auto;
   text-align: left;
+  min-height: 0;
 }
 
 .message-body-panel.selected {
@@ -367,8 +391,8 @@ body {
 }
 
 .message-body {
-  font-size: 38px;
-  line-height: 1.36;
+  font-size: 34px;
+  line-height: 1.32;
   white-space: pre-wrap;
 }
 
@@ -603,7 +627,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.0.2 spatial</div>
+    <div class="version-label">Fire TV Home v1.0.3 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -668,7 +692,7 @@ textarea:focus {
 
   <!-- MESSAGE DETAIL VIEW -->
   <section id="messageDetailView" class="view">
-    <div class="view-title-row">
+    <div class="view-title-row message-detail-title-row">
       <div class="view-title">MESSAGE</div>
       <button class="nav-button spatial-item" data-nav-group="messageActions" data-action="close">MESSAGE LIST</button>
     </div>
@@ -754,7 +778,7 @@ const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.0.2";
+const PAGE_VERSION = "v1.0.3";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1271,8 +1295,29 @@ function renderMessageDetail() {
   const readBtn = document.querySelector('[data-nav-group="messageActions"][data-action="read"]');
   const likeBtn = document.querySelector('[data-nav-group="messageActions"][data-action="like"]');
 
-  if (msg.read_at && readBtn) readBtn.classList.add("active");
-  if (msg.liked_at && likeBtn) likeBtn.classList.add("active");
+  if (readBtn) {
+    readBtn.disabled = false;
+    readBtn.classList.remove("active", "inactive");
+    readBtn.textContent = "✔ READ";
+  }
+
+  if (likeBtn) {
+    likeBtn.disabled = false;
+    likeBtn.classList.remove("active", "inactive");
+    likeBtn.textContent = "👍 LIKE";
+  }
+
+  if (msg.read_at && readBtn) {
+    readBtn.classList.add("inactive");
+    readBtn.disabled = true;
+    readBtn.textContent = "✔ READ DONE";
+  }
+
+  if (msg.liked_at && likeBtn) {
+    likeBtn.classList.add("inactive");
+    likeBtn.disabled = true;
+    likeBtn.textContent = "👍 LIKED";
+  }
 
   selected.messageActions = 0;
   setSelected("messageActions", 0);
