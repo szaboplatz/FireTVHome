@@ -137,12 +137,13 @@ body {
 
 .spatial-item.selected {
   outline: 6px solid var(--focus);
-  outline-offset: -6px;
-  transform: scale(1);
-  filter: brightness(1.12);
+  outline-offset: -7px;
+  transform: scale(1.018);
+  transform-origin: center;
+  filter: brightness(1.14);
   box-shadow:
-    inset 0 0 0 3px rgba(255,212,0,0.35),
-    0 12px 28px rgba(0,0,0,0.60);
+    inset 0 0 0 4px rgba(255,212,0,0.42),
+    0 14px 30px rgba(0,0,0,0.65);
   z-index: 3;
 }
 
@@ -249,7 +250,7 @@ body {
   flex-direction: column;
   gap: 14px;
   overflow: hidden;
-  padding: 4px 8px;
+  padding: 8px 14px;
 }
 
 .message-card {
@@ -325,7 +326,7 @@ body {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: 10px;
-  height: calc(var(--app-height) - 112px);
+  height: calc(var(--app-height) - 124px);
   min-height: 0;
 }
 
@@ -399,28 +400,43 @@ body {
 .message-body-panel {
   max-height: 100%;
   background: #111;
-  border: 5px solid #777;
+  border: 6px solid #9a9a9a;
   border-radius: 14px;
-  padding: 14px 18px 28px 18px;
+  padding: 14px 18px 44px 18px;
   overflow-y: auto;
   text-align: left;
   min-height: 0;
-  box-shadow: inset 0 -10px 0 rgba(255,255,255,0.06);
+  box-shadow:
+    inset 0 -18px 0 rgba(255,212,0,0.10),
+    0 0 0 2px rgba(255,255,255,0.08);
 }
 
 .message-body-panel.selected {
   outline: 6px solid var(--focus);
-  outline-offset: -6px;
+  outline-offset: -8px;
+  transform: scale(1.006);
   filter: brightness(1.12);
   box-shadow:
-    inset 0 0 0 3px rgba(255,212,0,0.35),
-    inset 0 -10px 0 rgba(255,255,255,0.08);
+    inset 0 0 0 4px rgba(255,212,0,0.42),
+    inset 0 -18px 0 rgba(255,212,0,0.14),
+    0 10px 26px rgba(0,0,0,0.55);
 }
 
 .message-body {
   font-size: 34px;
   line-height: 1.32;
   white-space: pre-wrap;
+}
+
+.message-end-marker {
+  margin-top: 28px;
+  padding-top: 14px;
+  border-top: 4px solid #777;
+  color: #ffd400;
+  font-size: 24px;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: 1px;
 }
 
 /* VIDEOS VIEW */
@@ -449,7 +465,7 @@ body {
   flex-direction: column;
   gap: 14px;
   overflow: hidden;
-  padding: 4px 8px;
+  padding: 8px 14px;
 }
 
 .video-card {
@@ -655,7 +671,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.0.8 spatial</div>
+    <div class="version-label">Fire TV Home v1.0.9 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -806,7 +822,7 @@ const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.0.8";
+const PAGE_VERSION = "v1.0.9";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1335,7 +1351,7 @@ function renderMessageDetail() {
     <div class="message-detail-line"><span class="field-label">SUBJECT:</span> ${msg.subject}</div>
   `;
 
-  messageDetailBody.innerHTML = `<span class="field-label">BODY:</span> ${msg.body}`;
+  messageDetailBody.innerHTML = `<span class="field-label">BODY:</span> ${msg.body}<div class="message-end-marker">END OF MESSAGE</div>`;
 
   const actions = getItems("messageActions");
   actions.forEach(btn => btn.classList.remove("active"));
