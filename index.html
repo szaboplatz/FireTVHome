@@ -340,6 +340,18 @@ body {
   margin-bottom: 4px;
 }
 
+.message-detail-topline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.message-detail-topline .right {
+  white-space: nowrap;
+}
+
 .detail-actions {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -627,7 +639,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.0.4 spatial</div>
+    <div class="version-label">Fire TV Home v1.0.5 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -778,7 +790,7 @@ const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.0.4";
+const PAGE_VERSION = "v1.0.5";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1300,8 +1312,10 @@ function renderMessageDetail() {
   const msgDate = msg.created_at ? formatHeaderDate(new Date(msg.created_at)) : "";
 
   messageDetailHeader.innerHTML = `
-    <div class="message-detail-line"><span class="field-label">FROM:</span> ${msg.from_name || "Family"}</div>
-    <div class="message-detail-line"><span class="field-label">DATE:</span> ${msgDate}</div>
+    <div class="message-detail-topline">
+      <div class="left"><span class="field-label">FROM:</span> ${msg.from_name || "Family"}</div>
+      <div class="right"><span class="field-label">DATE:</span> ${msgDate}</div>
+    </div>
     <div class="message-detail-line"><span class="field-label">SUBJECT:</span> ${msg.subject}</div>
   `;
 
