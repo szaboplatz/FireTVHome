@@ -391,7 +391,7 @@ textarea:focus {
 /* COLLAPSED MESSAGE ROW */
 .message-row {
   display: grid;
-  grid-template-columns: 72px 1fr 88px;
+  grid-template-columns: 72px 1fr;
   gap: 6px;
   align-items: stretch;
 }
@@ -488,10 +488,10 @@ textarea:focus {
 }
 
 .message-archive-button {
+  display: none !important;
   width: 88px;
   min-width: 88px;
   border-radius: 14px;
-  display: flex;
   align-items: center;
   justify-content: center;
   font-size: 38px;
@@ -552,6 +552,8 @@ textarea:focus {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 10px;
+  margin: 18px 0 24px 0;
+  scroll-margin-top: 80px;
 }
 
 .action-btn {
@@ -846,7 +848,7 @@ textarea.active-box,
 
 <div class="top-status-bar">
   <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-  <div class="version-label">Fire TV Home v0.9.2</div>
+  <div class="version-label">Fire TV Home v0.9.3</div>
 </div>
 
 <div class="container">
@@ -940,6 +942,13 @@ textarea.active-box,
 </div>
 
 <script>
+if ("scrollRestoration" in history) {
+  history.scrollRestoration = "manual";
+}
+window.addEventListener("pageshow", () => {
+  window.scrollTo(0, 0);
+});
+
 const TEST_MODE = false;
 const MESSAGE_REFRESH_INTERVAL_MS = 60 * 60 * 1000;       // 1 hour
 const VIDEO_REFRESH_INTERVAL_MS = 4 * 60 * 60 * 1000;       // 4 hours
@@ -961,7 +970,7 @@ const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v0.9.2";
+const PAGE_VERSION = "v0.9.3";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 let cachedPublicIp = localStorage.getItem(PUBLIC_IP_STORAGE_KEY) || "";
@@ -1412,11 +1421,69 @@ function focusFirstMessageSummary() {
 function focusExpandedMessage() {
   setTimeout(() => {
     const expanded = messagesList.querySelector(".message-expanded");
-    if (expanded) {
-      expanded.scrollIntoView({ behavior: "auto", block: "start" });
-      expanded.focus({ preventScroll: true });
+    if (!expanded) return;
+
+    expanded.scrollIntoView({ behavior: "auto", block: "start" });
+
+    const firstAction = expanded.querySelector(".action-btn");
+    if (firstAction) {
+      firstAction.focus({ preventScroll: true });
     }
   }, 80);
+}
+
+function getMessageSummaryButtons() {
+  return Array.from(messagesList.querySelectorAll(".message-summary-button"));
+}
+
+function focusMessageSummaryAt(index) {
+  const buttons = getMessageSummaryButtons();
+  if (!buttons.length) return;
+
+  const boundedIndex = Math.max(0, Math.min(index, buttons.length - 1));
+  const target = buttons[boundedIndex];
+
+  target.scrollIntoView({ behavior: "auto", block: "nearest" });
+  target.focus({ preventScroll: true });
+}
+
+function handleExpandedActionKeydown(event) {
+  const row = event.currentTarget.closest(".action-row");
+  if (!row) return;
+
+  const buttons = Array.from(row.querySelectorAll(".action-btn"));
+  const index = buttons.indexOf(event.currentTarget);
+
+  if (event.key === "ArrowRight") {
+    event.preventDefault();
+    event.stopPropagation();
+    const next = buttons[Math.min(index + 1, buttons.length - 1)];
+    if (next) next.focus({ preventScroll: true });
+  }
+
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    event.stopPropagation();
+    const prev = buttons[Math.max(index - 1, 0)];
+    if (prev) prev.focus({ preventScroll: true });
+  }
+}
+
+function handleMessageSummaryKeydown(event) {
+  const buttons = getMessageSummaryButtons();
+  const index = buttons.indexOf(event.currentTarget);
+
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    event.stopPropagation();
+    focusMessageSummaryAt(index + 1);
+  }
+
+  if (event.key === "ArrowUp") {
+    event.preventDefault();
+    event.stopPropagation();
+    focusMessageSummaryAt(index - 1);
+  }
 }
 
 function renderMessages(messages) {
@@ -1439,7 +1506,6 @@ function renderMessages(messages) {
       expanded.innerHTML = `
         <div class="message-expanded-line"><span class="field-label">FROM:</span> ${msg.from_name || "Family"}</div>
         <div class="message-expanded-line"><span class="field-label">SUBJECT:</span> ${msg.subject}</div>
-        <div class="message-expanded-body"><span class="field-label">BODY:</span> ${msg.body}</div>
       `;
 
       const actions = document.createElement("div");
@@ -1541,11 +1607,21 @@ function renderMessages(messages) {
         focusFirstMessageSummary();
       });
 
+      [readBtn, likeBtn, archiveActionBtn, closeBtn].forEach((btn) => {
+        btn.addEventListener("keydown", handleExpandedActionKeydown);
+      });
+
       actions.appendChild(readBtn);
       actions.appendChild(likeBtn);
       actions.appendChild(archiveActionBtn);
       actions.appendChild(closeBtn);
       expanded.appendChild(actions);
+
+      const bodyDiv = document.createElement("div");
+      bodyDiv.className = "message-expanded-body";
+      bodyDiv.innerHTML = `<span class="field-label">BODY:</span> ${msg.body}`;
+      expanded.appendChild(bodyDiv);
+
       messagesList.appendChild(expanded);
       return;
     }
@@ -1588,6 +1664,8 @@ function renderMessages(messages) {
       </div>
       <div class="message-summary-subject"><span class="field-label">SUBJECT:</span> ${msg.subject}</div>
     `;
+
+    summaryButton.addEventListener("keydown", handleMessageSummaryKeydown);
 
     summaryButton.addEventListener("click", async () => {
       logEvent("message_open", msg.subject || msg.id, { id: msg.id });
@@ -1830,6 +1908,7 @@ function syncPointerFocus() {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
+  window.scrollTo(0, 0);
   applyManualUpdateUI();
   updateDateTimeBar();
   setInterval(updateDateTimeBar, 1000);
