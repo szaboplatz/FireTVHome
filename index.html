@@ -519,9 +519,6 @@ textarea:focus {
 
 /* EXPANDED VIEW */
 .message-expanded {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
-  gap: 18px;
   padding: 24px;
   border: 4px solid #777;
   border-radius: 12px;
@@ -532,23 +529,6 @@ textarea:focus {
 
 .message-expanded-main {
   min-width: 0;
-}
-
-.message-expanded-main:focus {
-  outline: 6px solid #ffffff;
-  outline-offset: 4px;
-  box-shadow:
-    0 0 0 4px rgba(255,255,255,0.22),
-    0 14px 36px rgba(0,0,0,0.55);
-}
-
-.message-expanded-actions {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  align-self: start;
-  position: sticky;
-  top: 80px;
 }
 
 .message-expanded-line {
@@ -566,15 +546,15 @@ textarea:focus {
 
 .action-row {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  margin: 0;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 10px;
+  margin: 16px 0 22px 0;
   scroll-margin-top: 80px;
 }
 
 .action-btn {
-  padding: 18px 12px;
-  font-size: 28px;
+  padding: 18px;
+  font-size: 30px;
   border-radius: 10px;
   border: none;
   cursor: pointer;
@@ -864,7 +844,7 @@ textarea.active-box,
 
 <div class="top-status-bar">
   <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-  <div class="version-label">Fire TV Home v0.9.4</div>
+  <div class="version-label">Fire TV Home v0.9.5</div>
 </div>
 
 <div class="container">
@@ -986,7 +966,7 @@ const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v0.9.4";
+const PAGE_VERSION = "v0.9.5";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 let cachedPublicIp = localStorage.getItem(PUBLIC_IP_STORAGE_KEY) || "";
@@ -1439,9 +1419,9 @@ function focusExpandedMessage() {
 
     expanded.scrollIntoView({ behavior: "auto", block: "start" });
 
-    const main = expanded.querySelector(".message-expanded-main");
-    if (main) {
-      main.focus({ preventScroll: true });
+    const firstAction = expanded.querySelector(".action-btn");
+    if (firstAction) {
+      firstAction.focus({ preventScroll: true });
     }
   }, 120);
 }
@@ -1469,39 +1449,37 @@ function handleExpandedActionKeydown(event) {
   const buttons = Array.from(row.querySelectorAll(".action-btn"));
   const index = buttons.indexOf(event.currentTarget);
 
-  if (event.key === "ArrowDown") {
+  if (event.key === "ArrowRight") {
     event.preventDefault();
     event.stopPropagation();
     const next = buttons[Math.min(index + 1, buttons.length - 1)];
     if (next) next.focus({ preventScroll: true });
   }
 
-  if (event.key === "ArrowUp") {
+  if (event.key === "ArrowLeft") {
     event.preventDefault();
     event.stopPropagation();
     const prev = buttons[Math.max(index - 1, 0)];
     if (prev) prev.focus({ preventScroll: true });
   }
 
-  if (event.key === "ArrowLeft") {
+  if (event.key === "ArrowDown") {
     event.preventDefault();
     event.stopPropagation();
-    const main = expanded.querySelector(".message-expanded-main");
-    if (main) main.focus({ preventScroll: true });
+    const body = expanded.querySelector(".message-expanded-body");
+    if (body) {
+      body.scrollIntoView({ behavior: "auto", block: "start" });
+    }
+  }
+
+  if (event.key === "ArrowUp") {
+    event.preventDefault();
+    event.stopPropagation();
+    expanded.scrollIntoView({ behavior: "auto", block: "start" });
   }
 }
 
 function handleExpandedMainKeydown(event) {
-  const expanded = event.currentTarget.closest(".message-expanded");
-  if (!expanded) return;
-
-  if (event.key === "ArrowRight") {
-    event.preventDefault();
-    event.stopPropagation();
-    const firstAction = expanded.querySelector(".action-btn");
-    if (firstAction) firstAction.focus({ preventScroll: true });
-  }
-
   if (event.key === "ArrowDown") {
     event.preventDefault();
     event.stopPropagation();
@@ -1557,9 +1535,6 @@ function renderMessages(messages) {
         <div class="message-expanded-line"><span class="field-label">SUBJECT:</span> ${msg.subject}</div>
       `;
       main.addEventListener("keydown", handleExpandedMainKeydown);
-
-      const actionsWrap = document.createElement("div");
-      actionsWrap.className = "message-expanded-actions";
 
       const actions = document.createElement("div");
       actions.className = "action-row";
@@ -1669,14 +1644,13 @@ function renderMessages(messages) {
       actions.appendChild(archiveActionBtn);
       actions.appendChild(closeBtn);
 
+      main.appendChild(actions);
+
       const bodyDiv = document.createElement("div");
       bodyDiv.className = "message-expanded-body";
       bodyDiv.innerHTML = `<span class="field-label">BODY:</span> ${msg.body}`;
       main.appendChild(bodyDiv);
-
-      actionsWrap.appendChild(actions);
       expanded.appendChild(main);
-      expanded.appendChild(actionsWrap);
 
       messagesList.appendChild(expanded);
       return;
