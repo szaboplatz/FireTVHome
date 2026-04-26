@@ -589,10 +589,10 @@ textarea:focus {
 
 .player-close-overlay {
   position: fixed;
-  top: 14px;
-  right: 14px;
+  left: 18px;
+  bottom: 18px;
   z-index: 10000;
-  background: rgba(120,0,0,0.8);
+  background: rgba(120,0,0,0.86);
   color: white;
   border: 3px solid #ff8888;
   border-radius: 14px;
@@ -655,7 +655,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.0.7 spatial</div>
+    <div class="version-label">Fire TV Home v1.0.8 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -806,7 +806,7 @@ const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.0.7";
+const PAGE_VERSION = "v1.0.8";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1662,6 +1662,8 @@ function playEmbeddedVideo(videoId) {
 
   const embedUrl = new URL(`https://www.youtube.com/embed/${videoId}`);
   embedUrl.searchParams.set("autoplay", "1");
+  embedUrl.searchParams.set("mute", "0");
+  embedUrl.searchParams.set("controls", "1");
   embedUrl.searchParams.set("playsinline", "1");
   embedUrl.searchParams.set("rel", "0");
 
