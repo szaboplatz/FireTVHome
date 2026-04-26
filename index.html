@@ -627,7 +627,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.0.3 spatial</div>
+    <div class="version-label">Fire TV Home v1.0.4 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -778,7 +778,7 @@ const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.0.3";
+const PAGE_VERSION = "v1.0.4";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -789,8 +789,8 @@ let currentMessage = null;
 let currentView = "home";
 let selected = {};
 let listState = {
-  messages: { index: 0, offset: 0, pageSize: 4 },
-  videos: { index: 0, offset: 0, pageSize: 5 }
+  messages: { index: 0, offset: 0, pageSize: 3 },
+  videos: { index: 0, offset: 0, pageSize: 4 }
 };
 let loadedVideos = [];
 let lastPageActivityAt = Date.now();
@@ -1190,7 +1190,25 @@ async function loadMessages() {
   }
 }
 
+function measureListPageSize(container, sampleMinHeight, gap, minRows, maxRows) {
+  if (!container) return minRows;
+
+  const rect = container.getBoundingClientRect();
+  const available = Math.max(0, rect.height);
+
+  if (!available) return minRows;
+
+  const rows = Math.floor((available + gap) / (sampleMinHeight + gap));
+  return Math.max(minRows, Math.min(maxRows, rows));
+}
+
+function updateMeasuredPageSizes() {
+  listState.messages.pageSize = measureListPageSize(messagesList, 105, 14, 2, 5);
+  listState.videos.pageSize = measureListPageSize(ytList, 88, 14, 2, 6);
+}
+
 function renderMessagesList() {
+  updateMeasuredPageSizes();
   messagesList.innerHTML = "";
   updateUnreadBadge(cachedMessages);
 
@@ -1525,6 +1543,7 @@ function openVideosView() {
 }
 
 function renderVideosList() {
+  updateMeasuredPageSizes();
   ytList.innerHTML = "";
 
   if (!loadedVideos.length) {
@@ -1953,13 +1972,26 @@ document.addEventListener("DOMContentLoaded", function() {
   updateDateTimeBar();
   setInterval(updateDateTimeBar, 1000);
 
+  updateMeasuredPageSizes();
+
   refreshPublicIp().then(() => {
-    logEvent("page_load", "Fire TV Home loaded");
+    logEvent("page_load", "Fire TV Home loaded", {
+      messages_page_size: listState.messages.pageSize,
+      videos_page_size: listState.videos.pageSize,
+      viewport_height: window.innerHeight,
+      viewport_width: window.innerWidth
+    });
   });
 
   loadMessages();
   loadVideos();
   startPeriodicRefresh();
+
+  window.addEventListener("resize", () => {
+    updateMeasuredPageSizes();
+    if (currentView === "messages") renderMessagesList();
+    if (currentView === "videos") renderVideosList();
+  });
 
   selected.home = 0;
   setSelected("home", 0);
