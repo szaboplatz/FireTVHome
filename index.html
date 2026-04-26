@@ -134,9 +134,9 @@ body {
 }
 
 .spatial-item.selected {
-  outline: 7px solid var(--focus);
-  outline-offset: 4px;
-  transform: scale(1.025);
+  outline: 5px solid var(--focus);
+  outline-offset: -2px;
+  transform: scale(1.01);
   filter: brightness(1.16);
   box-shadow:
     0 0 0 4px rgba(255,255,255,0.25),
@@ -247,6 +247,7 @@ body {
   flex-direction: column;
   gap: 14px;
   overflow: hidden;
+  padding: 4px 8px;
 }
 
 .message-card {
@@ -355,8 +356,14 @@ body {
   border: 4px solid #555;
   border-radius: 16px;
   padding: 20px 24px;
-  overflow: hidden;
+  overflow-y: auto;
   text-align: left;
+}
+
+.message-body-panel.selected {
+  outline: 5px solid var(--focus);
+  outline-offset: -2px;
+  filter: brightness(1.12);
 }
 
 .message-body {
@@ -596,7 +603,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.0.1 spatial</div>
+    <div class="version-label">Fire TV Home v1.0.2 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -676,7 +683,7 @@ textarea:focus {
         <button class="action-btn action-close spatial-item" data-nav-group="messageActions" data-action="close">CLOSE</button>
       </div>
 
-      <div class="message-body-panel">
+      <div class="message-body-panel spatial-item" id="messageBodyPanel" data-nav-group="messageActions" data-action="body">
         <div id="messageDetailBody" class="message-body"></div>
       </div>
     </div>
@@ -747,7 +754,7 @@ const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.0.1";
+const PAGE_VERSION = "v1.0.2";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -791,6 +798,7 @@ const messagesPageInfo = document.getElementById("messagesPageInfo");
 
 const messageDetailHeader = document.getElementById("messageDetailHeader");
 const messageDetailBody = document.getElementById("messageDetailBody");
+const messageBodyPanel = document.getElementById("messageBodyPanel");
 
 const ytHeaderTitle = document.getElementById("ytHeaderTitle");
 const ytManualUpdateText = document.getElementById("ytManualUpdateText");
@@ -953,6 +961,7 @@ function showView(name) {
     setSelected("messages", Math.max(0, listState.messages.index - listState.messages.offset));
   }
   if (name === "messageDetail") {
+    if (messageBodyPanel) messageBodyPanel.scrollTop = 0;
     setSelected("messageActions", selected.messageActions || 0);
   }
   if (name === "videos") {
@@ -1285,6 +1294,10 @@ async function activateMessageAction() {
 
   const action = item.dataset.action;
   const msg = currentMessage;
+
+  if (action === "body") {
+    return;
+  }
 
   if (action === "close") {
     logEvent("message_close", msg.subject || msg.id, { id: msg.id });
@@ -1760,9 +1773,33 @@ document.addEventListener("keydown", function(event) {
   }
 
   if (currentView === "messageDetail") {
-    if (key === "ArrowLeft" || key === "ArrowRight") moveLinear("messageActions", key);
-    if (key === "ArrowDown") window.scrollBy({ top: 220, behavior: "auto" });
-    if (key === "ArrowUp") window.scrollBy({ top: -220, behavior: "auto" });
+    const item = getSelectedItem("messageActions");
+    const action = item ? item.dataset.action : "";
+
+    if (action === "body") {
+      if (key === "ArrowDown") {
+        messageBodyPanel.scrollTop += 220;
+        return;
+      }
+      if (key === "ArrowUp") {
+        if (messageBodyPanel.scrollTop > 0) {
+          messageBodyPanel.scrollTop -= 220;
+          return;
+        }
+        moveLinear("messageActions", "ArrowUp");
+        return;
+      }
+      if (key === "ArrowLeft" || key === "ArrowRight") {
+        moveLinear("messageActions", key);
+        return;
+      }
+    }
+
+    if (key === "ArrowLeft" || key === "ArrowRight" || key === "ArrowUp" || key === "ArrowDown") {
+      moveLinear("messageActions", key);
+      return;
+    }
+
     if (isActivationKey(key)) activateMessageAction();
     return;
   }
