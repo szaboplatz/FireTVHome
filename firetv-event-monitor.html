@@ -64,6 +64,13 @@ select {
   color: #fff4b1;
 }
 
+.last-refreshed {
+  align-self: center;
+  color: #b8d7e5;
+  font-size: 17px;
+  padding-left: 8px;
+}
+
 .table-wrap {
   padding: 0 22px 30px;
   overflow-x: auto;
@@ -138,7 +145,7 @@ tr:nth-child(even) {
 
 <body>
 <div class="header">
-  <div class="title">Fire TV Event Monitor v0.2</div>
+  <div class="title">Fire TV Event Monitor v0.3</div>
   <div class="sub">View page loads, clicks, message actions, videos opened, and device/browser details.</div>
 </div>
 
@@ -155,13 +162,23 @@ tr:nth-child(even) {
   <select id="eventFilter">
     <option value="">All events</option>
     <option value="page_load">Page loads</option>
+    <option value="auto_reload">Auto reloads</option>
+    <option value="auto_reload_skipped">Skipped reloads</option>
     <option value="tile_click">Tile clicks</option>
     <option value="open_family_messages">Family messages opened</option>
+    <option value="close_family_messages">Family messages closed</option>
+    <option value="message_open">Message opened</option>
+    <option value="message_mark_read">Message marked read</option>
+    <option value="message_like">Message liked</option>
+    <option value="message_archive">Message archived</option>
     <option value="youtube_video_open">YouTube videos opened</option>
+    <option value="video_close">Video closed</option>
     <option value="send_message_attempt">Send attempts</option>
     <option value="send_message_success">Send successes</option>
-    <option value="auto_reload">Auto reloads</option>
+    <option value="send_message_error">Send errors</option>
   </select>
+
+  <span id="lastRefreshed" class="last-refreshed">Not refreshed yet</span>
 </div>
 
 <div id="status" class="status">Loading events…</div>
@@ -192,6 +209,7 @@ const bodyEl = document.getElementById("eventsBody");
 const refreshBtn = document.getElementById("refreshBtn");
 const limitSelect = document.getElementById("limitSelect");
 const eventFilter = document.getElementById("eventFilter");
+const lastRefreshedEl = document.getElementById("lastRefreshed");
 
 function loadJsonp(baseUrl, params = {}) {
   return new Promise((resolve, reject) => {
@@ -317,6 +335,7 @@ async function loadEvents() {
     }
 
     renderEvents(data.events || []);
+    lastRefreshedEl.textContent = "Last refreshed: " + new Date().toLocaleString();
   } catch (e) {
     console.error(e);
     statusEl.textContent = "Could not load events. Check Apps Script and deployment permissions.";
@@ -328,7 +347,6 @@ limitSelect.addEventListener("change", loadEvents);
 eventFilter.addEventListener("change", loadEvents);
 
 loadEvents();
-setInterval(loadEvents, 60 * 1000);
 </script>
 </body>
 </html>
