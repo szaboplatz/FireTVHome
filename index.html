@@ -8,18 +8,18 @@
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 
-<style>
-html {
-  scroll-behavior: smooth;
-}
+<title>Fire TV Home</title>
 
-body {
-  background: #000;
-  color: white;
-  font-family: Arial, sans-serif;
-  text-align: center;
-  margin: 0;
-  overflow-x: hidden;
+<style>
+:root {
+  --bg: #000;
+  --panel: #111;
+  --panel2: #1a1a1a;
+  --text: #fff;
+  --muted: #b8d7e5;
+  --label: #8fe8ff;
+  --focus: #fff;
+  --yellow: #ffd400;
 }
 
 *,
@@ -28,25 +28,48 @@ body {
   box-sizing: border-box;
 }
 
-/* TOP BAR */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+body {
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Never let browser focus styling drive the UI. */
+*:focus {
+  outline: none;
+}
+
+.app {
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+}
+
 .top-status-bar {
-  position: sticky;
-  top: 0;
-  z-index: 20000;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  padding: 8px 22px;
+  gap: 18px;
+  padding: 10px 24px;
   background: rgba(17, 17, 17, 0.98);
   border-bottom: 3px solid #333;
 }
 
 .datetime-bar {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: bold;
   color: #d8f6ff;
-  text-align: left;
   white-space: nowrap;
 }
 
@@ -55,171 +78,140 @@ body {
   color: #9aa3aa;
   letter-spacing: 1px;
   white-space: nowrap;
-  text-align: right;
 }
 
-/* GRID */
-.container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  padding: 14px 30px 34px 30px;
-  overflow-x: hidden;
+.view {
+  display: none;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: 24px 36px 34px;
 }
 
-/* MAIN BUTTONS */
-a.button,
-button.button-tile,
-a.jump-button {
+.view.active {
+  display: block;
+}
+
+.view-title-row {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 28px;
-  font-size: 44px;
-  color: white;
-  text-decoration: none;
-  border-radius: 14px;
-  min-height: 100px;
-  text-align: center;
-  border: none;
-  cursor: pointer;
-  font-family: Arial, sans-serif;
-  position: relative;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.view-title {
+  font-size: 52px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.view-subtitle {
+  font-size: 24px;
+  color: var(--muted);
+}
+
+.back-hint {
+  font-size: 22px;
+  color: #cfcfcf;
+}
+
+/* Spatial focus model */
+.spatial-item {
+  border: 4px solid rgba(255,255,255,0.14);
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,0.05),
+    0 12px 26px rgba(0,0,0,0.45);
   transform: scale(1);
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease,
-    filter 0.12s ease,
-    outline-color 0.12s ease;
 }
 
-a.jump-button {
-  background: #444444;
-}
-
-/* EXPLICIT TILE COLORS */
-.button-main-photos-loop { background: #1f77b4; }
-.button-main-photos      { background: #2ca02c; }
-.button-latest-photos    { background: #d62728; }
-.button-videos           { background: #9467bd; }
-
-#familyMessagesButton {
-  background: #00a6c7;
-  position: relative;
-}
-
-/* SILK SPATIAL NAVIGATION LAYOUT TUNING */
-.button,
-.button-tile,
-.jump-button,
-.youtube-video-button,
-.message-summary-button,
-.message-archive-button,
-.action-btn,
-.submit-button,
-.youtube-playlist-link {
-  scroll-margin-top: 72px;
-  scroll-margin-bottom: 28px;
-}
-
-/* SILK SPATIAL NAVIGATION SUPPORT
-   The goal is for Silk's spatial navigation to land only on real controls.
-   Decorative badges and labels are marked aria-hidden/tabindex=-1 in the HTML.
-*/
-*:focus {
-  outline: none;
-}
-
-/* NETFLIX-LIKE TILE BEHAVIOR */
-a.button,
-button.button-tile,
-a.jump-button,
-.youtube-video-button,
-.submit-button,
-.message-summary-button,
-.message-archive-button,
-.action-btn,
-.youtube-playlist-link,
-.player-close-button,
-.messages-close-button {
-  box-shadow: 0 0 0 0 rgba(255,255,255,0);
-}
-
-a.button:hover,
-a.button:focus,
-button.button-tile:hover,
-button.button-tile:focus,
-a.jump-button:hover,
-a.jump-button:focus,
-.youtube-video-button:hover,
-.youtube-video-button:focus,
-.submit-button:hover,
-.submit-button:focus,
-.message-summary-button:hover,
-.message-summary-button:focus,
-.message-archive-button:hover,
-.message-archive-button:focus,
-.action-btn:hover,
-.action-btn:focus,
-.youtube-playlist-link:hover,
-.youtube-playlist-link:focus,
-.player-close-button:hover,
-.player-close-button:focus,
-.messages-close-button:hover,
-.messages-close-button:focus {
-  outline: 6px solid #ffffff;
-  outline-offset: 2px;
+.spatial-item.selected {
+  outline: 7px solid var(--focus);
+  outline-offset: 4px;
   transform: scale(1.025);
   filter: brightness(1.16);
   box-shadow:
     0 0 0 4px rgba(255,255,255,0.25),
-    0 14px 36px rgba(0,0,0,0.55);
-  z-index: 5;
+    0 16px 36px rgba(0,0,0,0.65);
+  z-index: 3;
 }
 
-.youtube-video-button:hover,
-.youtube-video-button:focus {
-  border-color: #ffffff;
+/* HOME VIEW */
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  height: calc(100vh - 120px);
 }
 
-.youtube-video-button.watched:hover,
-.youtube-video-button.watched:focus {
-  border-color: #ffffff;
-}
-
-textarea:focus {
-  outline: none;
-}
-
-/* TILE UPDATE SUPPORT */
-.tile-button {
-  position: relative;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.tile-main-label {
-  display: block;
+.home-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 128px;
+  border-radius: 20px;
+  padding: 28px;
+  font-size: 48px;
   line-height: 1.05;
+  font-weight: 900;
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  position: relative;
+  user-select: none;
+}
+
+.home-tile.small-label {
+  font-size: 42px;
+}
+
+.tile-family { background: #00a6c7; }
+.tile-photos-loop { background: #1f77b4; }
+.tile-main-photos { background: #2ca02c; }
+.tile-latest-photos { background: #d62728; }
+.tile-videos { background: #9467bd; }
+.tile-send { background: #444; }
+
+.unread-badge {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  min-width: 58px;
+  height: 58px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #c40000;
+  color: white;
+  border: 4px solid #ff8a8a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.hidden {
+  display: none !important;
 }
 
 .tile-update-badge {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 12px;
+  left: 12px;
   background: #c40000;
   color: white;
   border: 4px solid #ff8a8a;
   border-radius: 999px;
   padding: 6px 14px;
-  font-size: 19px;
+  font-size: 20px;
   font-weight: bold;
   line-height: 1;
 }
 
 .tile-update-text {
   position: absolute;
-  bottom: 10px;
+  bottom: 12px;
   left: 14px;
   right: 14px;
   font-size: 20px;
@@ -228,409 +220,157 @@ textarea:focus {
   line-height: 1.1;
 }
 
-.hidden {
-  display: none !important;
-}
-
-/* UNREAD BADGE */
-.unread-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  min-width: 56px;
-  height: 56px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: #c40000;
-  color: white;
-  border: 4px solid #ff8a8a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  font-weight: bold;
-  line-height: 1;
-}
-
-/* PLAYER OVERLAY */
-.player-panel {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: rgba(0, 0, 0, 0.99);
-  padding: 0;
-  overflow: hidden;
-}
-
-.player-panel.show {
-  display: block;
-}
-
-.player-frame-wrap {
-  position: relative;
-  width: 100%;
-  height: 96vh;
-  min-height: 320px;
-  max-height: 100vh;
-  background: #000;
-  overflow: hidden;
-}
-
-#youtube-player-host {
-  position: absolute;
-  inset: 0 110px 0 0;
-}
-
-#youtube-player-host iframe {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  display: block;
-}
-
-/* CLOSE BAR */
-.player-close-button {
-  position: absolute;
-  top: 0;
-  right: -20px;
-  width: 132px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 34px;
-  font-weight: bold;
-  color: white;
-  background: rgba(120, 0, 0, 0.72);
-  border: none;
-  border-left: 4px solid rgba(255, 102, 102, 0.9);
-  cursor: pointer;
-  z-index: 2;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  letter-spacing: 4px;
-}
-
-/* FAMILY MESSAGES SECTION */
-.messages-panel {
-  display: none;
-  grid-column: span 2;
-  width: 100%;
-  background: rgba(0, 0, 0, 0.99);
-  border: 4px solid #555;
-  border-radius: 14px;
-  padding: 0;
-  text-align: left;
-  overflow: hidden;
-}
-
-.messages-panel.show {
-  display: block;
-}
-
-.messages-inner {
-  width: 100%;
-  margin: 0 auto;
-  position: relative;
-  padding-right: 132px;
-}
-
-.messages-close-button {
-  position: absolute;
-  top: 0;
-  right: -20px;
-  width: 132px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 34px;
-  font-weight: bold;
-  color: white;
-  background: rgba(120, 0, 0, 0.72);
-  border: none;
-  border-left: 4px solid rgba(255, 102, 102, 0.9);
-  cursor: pointer;
-  z-index: 3;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  letter-spacing: 4px;
-}
-
-.messages-content {
-  padding: 24px;
-}
-
-.messages-title {
-  font-size: 58px;
-  font-weight: bold;
-  text-align: center;
-  margin: 0 0 28px 0;
+/* MESSAGES LIST VIEW */
+.messages-list-shell {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: calc(100vh - 130px);
+  gap: 12px;
 }
 
 .messages-status {
-  font-size: 34px;
-  text-align: center;
-  margin-bottom: 24px;
-  min-height: 44px;
+  font-size: 28px;
+  color: #fff4b1;
+  min-height: 36px;
 }
 
 .messages-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  overflow: hidden;
 }
 
-/* LABELS */
-.field-label {
-  color: #8fe8ff;
-  font-weight: bold;
-}
-
-/* COLLAPSED MESSAGE ROW */
-.message-row {
-  display: grid;
-  grid-template-columns: 72px 1fr;
-  gap: 6px;
-  align-items: stretch;
-}
-
-.message-indicator-stack {
-  display: grid;
-  grid-template-rows: 1fr 1fr;
-  gap: 6px;
-}
-
-.message-summary-button {
-  width: 100%;
-  padding: 16px 20px;
-  font-size: 31px;
-  line-height: 1.22;
-  font-weight: bold;
-  border: 4px solid #4fc46a;
-  border-radius: 14px;
+.message-card {
+  border-radius: 18px;
+  padding: 16px 22px;
   background: #1f6f2a;
-  color: white;
+  border: 4px solid #4fc46a;
+  min-height: 105px;
   text-align: left;
-  cursor: pointer;
+  color: white;
 }
 
-.message-summary-button.opened {
+.message-card.opened {
   background: #2b4b73;
   border-color: #79b4ff;
 }
 
-.message-summary-button.read {
+.message-card.read {
   background: #2a2a2a;
-  border-color: #777777;
+  border-color: #777;
 }
 
-.message-summary-button.liked {
+.message-card.liked {
   box-shadow: inset 0 0 0 4px #4d7cff;
 }
 
-.message-summary-topline {
+.message-topline {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
-  gap: 14px;
-  margin-bottom: 6px;
-}
-
-.message-summary-topline .left,
-.message-summary-topline .right {
+  gap: 18px;
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 8px;
   white-space: nowrap;
 }
 
-.message-summary-subject {
-  display: block;
-}
-
-.message-indicator,
-.message-like-indicator {
-  width: 72px;
-  min-width: 72px;
-  height: 72px;
-  border-radius: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  border: 4px solid #666;
-  background: #111;
-}
-
-.message-indicator {
-  color: #768089;
-}
-
-.message-like-indicator {
-  color: #768089;
-}
-
-.message-indicator.read,
-.message-like-indicator.liked {
-  background: #4d7cff;
-  border-color: #9cb6ff;
-  color: white;
-}
-
-.message-check-icon {
-  font-size: 44px;
-  line-height: 1;
+.message-subject {
+  font-size: 34px;
+  line-height: 1.14;
   font-weight: 900;
 }
 
-.message-like-icon {
-  font-size: 32px;
-  line-height: 1;
+.field-label {
+  color: var(--label);
+  font-weight: 900;
 }
 
-.message-archive-button {
-  display: none !important;
-  width: 88px;
-  min-width: 88px;
-  border-radius: 14px;
-  align-items: center;
-  justify-content: center;
-  font-size: 38px;
-  font-weight: bold;
-  border: none;
-  background: #666;
-  color: white;
-  cursor: pointer;
+.list-footer {
+  display: flex;
+  justify-content: space-between;
+  color: #bbb;
+  font-size: 22px;
+  margin-top: 12px;
 }
 
-.message-archive-button:disabled {
-  background: #303030;
-  color: #666;
-  cursor: not-allowed;
-  opacity: 0.8;
-}
-
-.message-archive-button:disabled:hover,
-.message-archive-button:disabled:focus {
-  transform: none;
-  outline: none;
-  box-shadow: none;
-  filter: none;
-}
-
-/* EXPANDED VIEW */
-.message-expanded {
-  padding: 24px;
-  border: 4px solid #777;
-  border-radius: 12px;
-  background: #111;
-  text-align: left;
-  scroll-margin-top: 72px;
-}
-
-.message-expanded-main {
-  min-width: 0;
-}
-
-.message-expanded-line {
-  font-size: 40px;
-  line-height: 1.38;
-  margin-bottom: 16px;
-}
-
-.message-expanded-body {
-  font-size: 44px;
-  line-height: 1.42;
-  margin-bottom: 24px;
-  white-space: pre-wrap;
-}
-
-.action-row {
+/* MESSAGE DETAIL VIEW */
+.message-detail-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  gap: 10px;
-  margin: 16px 0 22px 0;
-  scroll-margin-top: 80px;
+  grid-template-rows: auto auto 1fr;
+  gap: 14px;
+  height: calc(100vh - 130px);
+}
+
+.message-detail-header {
+  background: #111;
+  border: 4px solid #555;
+  border-radius: 16px;
+  padding: 16px 20px;
+  text-align: left;
+}
+
+.message-detail-line {
+  font-size: 34px;
+  line-height: 1.25;
+  margin-bottom: 8px;
+}
+
+.detail-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
 }
 
 .action-btn {
-  padding: 18px;
-  font-size: 30px;
-  border-radius: 10px;
   border: none;
-  cursor: pointer;
-  font-weight: bold;
+  border-radius: 16px;
+  min-height: 78px;
+  padding: 12px;
+  font-size: 28px;
+  font-weight: 900;
+  color: white;
+  background: #555;
 }
 
-.read-btn {
-  background: #444;
-  color: #ddd;
-}
-
-.like-btn {
-  background: #444;
-  color: #ddd;
-}
-
-.read-btn.active,
-.like-btn.active {
+.action-btn.active {
   background: #4d7cff;
-  color: white;
 }
 
-.archive-action-btn {
-  background: #666;
-  color: white;
-}
+.action-read { background: #444; }
+.action-like { background: #444; }
+.action-archive { background: #666; }
+.action-close { background: #777; }
 
-.close-btn {
-  background: #666;
-  color: white;
-}
-
-/* YOUTUBE PLAYLIST PANEL */
-.youtube-playlist-panel {
-  grid-column: span 2;
-  width: 100%;
+.message-body-panel {
+  background: #111;
+  border: 4px solid #555;
+  border-radius: 16px;
+  padding: 20px 24px;
+  overflow: hidden;
   text-align: left;
 }
 
-.youtube-section-header {
-  margin-bottom: 14px;
-}
-
-.youtube-section-title-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin-bottom: 6px;
-}
-
-.youtube-section-title {
+.message-body {
   font-size: 38px;
-  font-weight: bold;
-  color: white;
+  line-height: 1.36;
+  white-space: pre-wrap;
 }
 
-.youtube-section-badge {
-  background: #c40000;
-  color: white;
-  border: 4px solid #ff8a8a;
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 20px;
-  font-weight: bold;
-  line-height: 1;
+/* VIDEOS VIEW */
+.videos-shell {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: calc(100vh - 130px);
+  gap: 12px;
 }
 
-.youtube-section-subtitle {
+.youtube-header-meta {
   display: flex;
-  flex-wrap: wrap;
   gap: 18px;
-  align-items: center;
+  color: var(--muted);
   font-size: 22px;
-  color: #b7d8e6;
-  min-height: 30px;
+  flex-wrap: wrap;
 }
 
 .youtube-manual-update {
@@ -638,180 +378,103 @@ textarea:focus {
   font-weight: bold;
 }
 
-.youtube-playlist-status {
-  font-size: 30px;
-  padding: 10px 0;
-  text-align: center;
-  min-height: 52px;
-}
-
-.youtube-playlist-list {
+.youtube-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  width: 100%;
+  gap: 14px;
+  overflow: hidden;
 }
 
-.youtube-video-button {
+.video-card {
   width: 100%;
-  padding: 20px;
-  font-size: 36px;
-  line-height: 1.2;
+  border-radius: 18px;
+  padding: 20px 24px;
+  min-height: 88px;
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1.15;
   background: #1f6f2a;
   color: white;
-  border: 3px solid #4fc46a;
-  border-radius: 12px;
+  border: 4px solid #4fc46a;
   text-align: left;
-  cursor: pointer;
-  white-space: normal;
-  word-break: break-word;
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease,
-    filter 0.12s ease,
-    border-color 0.12s ease;
 }
 
-.youtube-video-button.watched {
+.video-card.watched {
   background: #2a2a2a;
-  border-color: #777777;
-  color: #ffffff;
+  border-color: #777;
 }
 
-.youtube-playlist-link-wrap {
-  grid-column: span 2;
-  text-align: center;
-  margin-top: 6px;
-}
-
-.youtube-playlist-link {
-  display: inline-block;
-  font-size: 34px;
-  color: #88cfff;
-  text-decoration: underline;
-  opacity: 0.82;
-  border-radius: 8px;
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease,
-    filter 0.12s ease,
-    opacity 0.12s ease;
-}
-
-/* SEND MESSAGE PANEL */
-.message-panel {
-  grid-column: span 2;
-  background: #111;
-  border: 4px solid #00bcd4;
-  border-radius: 12px;
-  padding: 30px;
-  text-align: left;
-  scroll-margin-top: 20px;
-}
-
-.message-title {
-  color: #00bcd4;
-  font-size: 38px;
+.advanced-link-card {
+  border-radius: 16px;
+  background: #333;
+  color: #9ad8ff;
+  font-size: 30px;
   font-weight: bold;
+  padding: 16px 20px;
   text-align: center;
-  margin-bottom: 20px;
+}
+
+/* SEND MESSAGE VIEW */
+.send-layout {
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  gap: 16px;
+  height: calc(100vh - 130px);
 }
 
 .message-help {
   color: white;
-  font-size: 22px;
+  font-size: 28px;
   text-align: center;
-  margin-bottom: 25px;
 }
 
 textarea {
   width: 100%;
-  font-size: 38px;
+  height: 100%;
+  font-size: 44px;
   line-height: 1.3;
-  padding: 25px;
-  border-radius: 12px;
+  padding: 24px;
+  border-radius: 16px;
   border: 4px solid #555;
   background: #111;
   color: white;
-  min-height: 240px;
-  resize: vertical;
+  resize: none;
   font-family: Arial, sans-serif;
-  font-weight: 500;
-  outline: none;
-  transition: font-size 0.15s ease, min-height 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  font-weight: 700;
 }
 
-textarea:focus,
-textarea.active-box,
-.message-panel.keep-textarea-active textarea {
-  font-size: 56px;
-  min-height: 300px;
-  background: #222;
-  color: white;
-  font-weight: 900;
-  border: 4px solid yellow;
+textarea.selected,
+textarea:focus {
+  border-color: #fff;
+  box-shadow:
+    0 0 0 4px rgba(255,255,255,0.25),
+    0 16px 36px rgba(0,0,0,0.65);
 }
 
 .submit-button {
-  margin-top: 25px;
   width: 100%;
-  padding: 30px;
-  font-size: 44px;
-  font-weight: bold;
+  min-height: 90px;
+  padding: 18px;
+  font-size: 42px;
+  font-weight: 900;
   border: none;
-  border-radius: 12px;
+  border-radius: 16px;
   background: #00bcd4;
   color: black;
-  cursor: pointer;
-  outline: none;
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease,
-    filter 0.12s ease;
 }
 
 .submit-button:disabled {
   opacity: 0.6;
 }
 
-.jump-top {
-  grid-column: span 2;
-  justify-self: center;
-  margin-top: 10px;
-}
-
-@media (max-height: 720px) {
-  .container {
-    gap: 18px;
-    padding-top: 10px;
-  }
-
-  a.button,
-  button.button-tile,
-  a.jump-button {
-    min-height: 88px;
-    padding: 22px;
-    font-size: 38px;
-  }
-
-  .top-status-bar {
-    padding-top: 6px;
-    padding-bottom: 6px;
-  }
-}
-
-/* SEND STATUS */
 #status {
   text-align: center;
-  font-size: 40px;
-  margin-top: 10px;
-  margin-bottom: 20px;
+  font-size: 36px;
   min-height: 56px;
   font-weight: bold;
   opacity: 0;
-  transition: opacity 0.35s ease;
   border-radius: 12px;
-  padding: 12px 16px;
+  padding: 10px 14px;
 }
 
 #status.show {
@@ -833,143 +496,318 @@ textarea.active-box,
   color: #ff6666;
 }
 
-/* keep pointer-based browsers visually synced */
-.pointer-focus,
-.pointer-focus * {
-  cursor: pointer;
+/* PLAYER OVERLAY */
+.player-panel {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000;
+}
+
+.player-panel.show {
+  display: block;
+}
+
+#youtube-player-host {
+  position: absolute;
+  inset: 0;
+}
+
+#youtube-player-host iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.player-close-overlay {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 10000;
+  background: rgba(120,0,0,0.8);
+  color: white;
+  border: 3px solid #ff8888;
+  border-radius: 14px;
+  padding: 12px 18px;
+  font-size: 26px;
+  font-weight: 900;
+}
+
+/* Small-screen / zoomed fallback */
+@media (max-height: 720px) {
+  .top-status-bar {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .datetime-bar {
+    font-size: 22px;
+  }
+
+  .version-label {
+    font-size: 17px;
+  }
+
+  .view {
+    padding: 16px 28px 26px;
+  }
+
+  .home-grid {
+    gap: 20px;
+    height: calc(100vh - 95px);
+  }
+
+  .home-tile {
+    min-height: 98px;
+    font-size: 38px;
+    padding: 20px;
+  }
+
+  .view-title {
+    font-size: 42px;
+  }
+
+  .message-card {
+    min-height: 86px;
+    padding: 12px 18px;
+  }
+
+  .message-topline {
+    font-size: 24px;
+  }
+
+  .message-subject {
+    font-size: 29px;
+  }
 }
 </style>
 </head>
-<body id="topOfPage">
 
-<div class="top-status-bar">
-  <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-  <div class="version-label">Fire TV Home v0.9.5</div>
-</div>
-
-<div class="container">
-  <button class="button-tile pointer-focus" id="familyMessagesButton" type="button" tabindex="0">
-    FAMILY MESSAGES
-    <span id="unreadBadge" class="unread-badge hidden" tabindex="-1" aria-hidden="true">0</span>
-  </button>
-
-  <a class="jump-button pointer-focus" href="#messagePanel" tabindex="0">JUMP TO SEND MESSAGE</a>
-
-  <a class="button tile-button button-main-photos-loop pointer-focus" id="tileMainPhotosLoop" tabindex="0" href="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">
-    <span class="tile-main-label" tabindex="-1" aria-hidden="true">MAIN PHOTOS LOOP</span>
-    <span class="tile-update-badge hidden" tabindex="-1" aria-hidden="true">UPDATED</span>
-    <span class="tile-update-text hidden" tabindex="-1" aria-hidden="true"></span>
-  </a>
-
-  <a class="button tile-button button-main-photos pointer-focus" id="tileMainPhotos" tabindex="0" href="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">
-    <span class="tile-main-label" tabindex="-1" aria-hidden="true">MAIN PHOTOS</span>
-    <span class="tile-update-badge hidden" tabindex="-1" aria-hidden="true">UPDATED</span>
-    <span class="tile-update-text hidden" tabindex="-1" aria-hidden="true"></span>
-  </a>
-
-  <a class="button tile-button button-latest-photos pointer-focus" id="tileLatestPhotos" tabindex="0" href="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">
-    <span class="tile-main-label" tabindex="-1" aria-hidden="true">LATEST PHOTOS</span>
-    <span class="tile-update-badge hidden" tabindex="-1" aria-hidden="true">UPDATED</span>
-    <span class="tile-update-text hidden" tabindex="-1" aria-hidden="true"></span>
-  </a>
-
-  <a class="button tile-button button-videos pointer-focus" id="tileVideos" tabindex="0" href="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">
-    <span class="tile-main-label" tabindex="-1" aria-hidden="true">VIDEOS</span>
-    <span class="tile-update-badge hidden" tabindex="-1" aria-hidden="true">UPDATED</span>
-    <span class="tile-update-text hidden" tabindex="-1" aria-hidden="true"></span>
-  </a>
-
-  <section id="messagesPanel" class="messages-panel">
-    <div class="messages-inner">
-      <button id="closeMessagesButton" class="messages-close-button" type="button" tabindex="-1" aria-hidden="true" aria-label="Close messages">CLOSE</button>
-      <div class="messages-content">
-        <div class="messages-title">FAMILY MESSAGES</div>
-        <div id="messagesStatus" class="messages-status">Loading messages…</div>
-        <div id="messagesList" class="messages-list"></div>
-      </div>
-    </div>
-  </section>
-
-  <section id="playerPanel" class="player-panel">
-    <div class="player-frame-wrap">
-      <div id="youtube-player-host"></div>
-      <button id="closeVideoButton" class="player-close-button" type="button" tabindex="-1" aria-hidden="true" aria-label="Close video">CLOSE</button>
-    </div>
-  </section>
-
-  <section id="playlistPanel" class="youtube-playlist-panel">
-    <div class="youtube-section-header">
-      <div class="youtube-section-title-row">
-        <div class="youtube-section-title" id="ytHeaderTitle">WRESTLING VIDEOS (0)</div>
-        <span id="ytManualBadge" class="youtube-section-badge hidden">UPDATED</span>
-      </div>
-      <div class="youtube-section-subtitle">
-        <span id="ytManualUpdateText" class="youtube-manual-update hidden"></span>
-        <span id="ytLastChecked">Last checked: --</span>
-      </div>
-    </div>
-
-    <div id="ytStatus" class="youtube-playlist-status">Loading videos…</div>
-    <div id="ytList" class="youtube-playlist-list"></div>
-  </section>
-
-  <div class="youtube-playlist-link-wrap">
-    <a class="youtube-playlist-link pointer-focus" tabindex="0" href="https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi">
-      Open YouTube playlist (advanced)
-    </a>
+<body>
+<div class="app">
+  <div class="top-status-bar">
+    <div class="datetime-bar" id="datetimeBar">Loading time…</div>
+    <div class="version-label">Fire TV Home v1.0.0 spatial</div>
   </div>
 
-  <div class="message-panel" id="messagePanel">
-    <div class="message-title">SEND MESSAGE</div>
-    <div class="message-help">Click the box, then hold the mic button and speak. When finished, press SEND.</div>
+  <!-- HOME VIEW -->
+  <section id="homeView" class="view active">
+    <div class="home-grid" id="homeGrid">
+      <div class="home-tile tile-family spatial-item" data-nav-group="home" data-action="messages">
+        FAMILY MESSAGES
+        <span id="unreadBadge" class="unread-badge hidden" aria-hidden="true">0</span>
+      </div>
 
-    <form action="https://formspree.io/f/xzdyznda" method="POST" onsubmit="handleSubmit(event)">
-      <textarea name="message" id="messageBox" placeholder="Type or speak your message here" required></textarea>
+      <div class="home-tile tile-send spatial-item" data-nav-group="home" data-action="send">SEND MESSAGE</div>
+
+      <div class="home-tile tile-photos-loop spatial-item" id="tileMainPhotosLoop" data-nav-group="home" data-action="link" data-url="https://dakboard.com/loop/uuid/69dcebfb-14e487-873c-fa42eb9f9f65">
+        <span class="tile-main-label">MAIN PHOTOS LOOP</span>
+        <span class="tile-update-badge hidden">UPDATED</span>
+        <span class="tile-update-text hidden"></span>
+      </div>
+
+      <div class="home-tile tile-main-photos spatial-item" id="tileMainPhotos" data-nav-group="home" data-action="link" data-url="https://dakboard.com/screen/uuid/69dacf8a-14e487-cb76-551d2767950e">
+        <span class="tile-main-label">MAIN PHOTOS</span>
+        <span class="tile-update-badge hidden">UPDATED</span>
+        <span class="tile-update-text hidden"></span>
+      </div>
+
+      <div class="home-tile tile-latest-photos spatial-item" id="tileLatestPhotos" data-nav-group="home" data-action="link" data-url="https://dakboard.com/screen/uuid/69dcf7fb-14e487-d0d9-b46b5725b21e">
+        <span class="tile-main-label">LATEST PHOTOS</span>
+        <span class="tile-update-badge hidden">UPDATED</span>
+        <span class="tile-update-text hidden"></span>
+      </div>
+
+      <div class="home-tile tile-videos spatial-item" id="tileVideos" data-nav-group="home" data-action="link" data-url="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">
+        <span class="tile-main-label">VIDEOS</span>
+        <span class="tile-update-badge hidden">UPDATED</span>
+        <span class="tile-update-text hidden"></span>
+      </div>
+
+      <div class="home-tile tile-videos spatial-item small-label" data-nav-group="home" data-action="videos">WRESTLING VIDEOS</div>
+
+      <div class="home-tile tile-send spatial-item small-label" data-nav-group="home" data-action="playlist-link">YOUTUBE PLAYLIST LINK</div>
+    </div>
+  </section>
+
+  <!-- MESSAGES LIST VIEW -->
+  <section id="messagesView" class="view">
+    <div class="view-title-row">
+      <div>
+        <div class="view-title">FAMILY MESSAGES</div>
+        <div class="view-subtitle">Use up/down. Press Select to open.</div>
+      </div>
+      <div class="back-hint">BACK = Home</div>
+    </div>
+
+    <div class="messages-list-shell">
+      <div id="messagesStatus" class="messages-status">Loading messages…</div>
+      <div id="messagesList" class="messages-list"></div>
+      <div class="list-footer">
+        <span id="messagesPageInfo"></span>
+        <span>BACK returns Home</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- MESSAGE DETAIL VIEW -->
+  <section id="messageDetailView" class="view">
+    <div class="view-title-row">
+      <div class="view-title">MESSAGE</div>
+      <div class="back-hint">BACK = Message List</div>
+    </div>
+
+    <div class="message-detail-layout">
+      <div id="messageDetailHeader" class="message-detail-header"></div>
+
+      <div class="detail-actions" id="messageDetailActions">
+        <button class="action-btn action-read spatial-item" data-nav-group="messageActions" data-action="read">✔ READ</button>
+        <button class="action-btn action-like spatial-item" data-nav-group="messageActions" data-action="like">👍 LIKE</button>
+        <button class="action-btn action-archive spatial-item" data-nav-group="messageActions" data-action="archive">📥 ARCHIVE</button>
+        <button class="action-btn action-close spatial-item" data-nav-group="messageActions" data-action="close">CLOSE</button>
+      </div>
+
+      <div class="message-body-panel">
+        <div id="messageDetailBody" class="message-body"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VIDEOS VIEW -->
+  <section id="videosView" class="view">
+    <div class="view-title-row">
+      <div>
+        <div class="view-title" id="ytHeaderTitle">WRESTLING VIDEOS</div>
+        <div class="youtube-header-meta">
+          <span id="ytManualUpdateText" class="youtube-manual-update hidden"></span>
+          <span id="ytLastChecked">Last checked: --</span>
+        </div>
+      </div>
+      <div class="back-hint">BACK = Home</div>
+    </div>
+
+    <div class="videos-shell">
+      <div id="ytStatus" class="messages-status">Loading videos…</div>
+      <div id="ytList" class="youtube-list"></div>
+      <div class="list-footer">
+        <span id="videosPageInfo"></span>
+        <span>BACK returns Home</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEND MESSAGE VIEW -->
+  <section id="sendView" class="view">
+    <div class="view-title-row">
+      <div class="view-title">SEND MESSAGE</div>
+      <div class="back-hint">BACK = Home</div>
+    </div>
+
+    <form class="send-layout" action="https://formspree.io/f/xzdyznda" method="POST" onsubmit="handleSubmit(event)">
+      <div class="message-help">Click the box, then hold the mic button and speak. When finished, press SEND.</div>
+
+      <textarea class="spatial-item" data-nav-group="send" data-action="textarea" name="message" id="messageBox" placeholder="Type or speak your message here" required></textarea>
 
       <input type="hidden" name="_subject" value="Message from Dad's Fire TV">
 
       <div id="status"></div>
 
-      <button class="submit-button pointer-focus" id="sendButton" type="submit" tabindex="0">SEND</button>
+      <button class="submit-button spatial-item" data-nav-group="send" data-action="submit" id="sendButton" type="submit">SEND</button>
     </form>
-  </div>
-
-  <a class="jump-button jump-top pointer-focus" href="#topOfPage" tabindex="0">JUMP TO TOP</a>
+  </section>
 </div>
+
+<section id="playerPanel" class="player-panel">
+  <div id="youtube-player-host"></div>
+  <button id="closeVideoButton" class="player-close-overlay" type="button">CLOSE VIDEO</button>
+</section>
 
 <script>
 if ("scrollRestoration" in history) {
   history.scrollRestoration = "manual";
 }
-window.addEventListener("pageshow", () => {
-  window.scrollTo(0, 0);
-});
+window.addEventListener("pageshow", () => window.scrollTo(0, 0));
 
 const TEST_MODE = false;
-const MESSAGE_REFRESH_INTERVAL_MS = 60 * 60 * 1000;       // 1 hour
-const VIDEO_REFRESH_INTERVAL_MS = 4 * 60 * 60 * 1000;       // 4 hours
-const PAGE_RELOAD_CHECK_INTERVAL_MS = 60 * 60 * 1000;       // check hourly
-const PAGE_RELOAD_IDLE_MS = 12 * 60 * 60 * 1000;              // reload only after 12 idle hours
-
-let lastPageActivityAt = Date.now();
-let lastPageActivityType = "page_start";
-
-function formatActivityTime_(ms) {
-  try {
-    return new Date(ms).toISOString();
-  } catch (e) {
-    return "";
-  }
-}
+const MESSAGE_REFRESH_INTERVAL_MS = 60 * 60 * 1000;
+const VIDEO_REFRESH_INTERVAL_MS = 4 * 60 * 60 * 1000;
+const PAGE_RELOAD_CHECK_INTERVAL_MS = 60 * 60 * 1000;
+const PAGE_RELOAD_IDLE_MS = 12 * 60 * 60 * 1000;
 
 const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v0.9.5";
+const PAGE_VERSION = "v1.0.0";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
+
 let cachedPublicIp = localStorage.getItem(PUBLIC_IP_STORAGE_KEY) || "";
+let statusTimeout;
+let cachedMessages = [];
+let currentMessage = null;
+let currentView = "home";
+let selected = {};
+let listState = {
+  messages: { index: 0, offset: 0, pageSize: 4 },
+  videos: { index: 0, offset: 0, pageSize: 5 }
+};
+let loadedVideos = [];
+let lastPageActivityAt = Date.now();
+let lastPageActivityType = "page_start";
+
+/* MANUAL UPDATE FLAGS */
+const MANUAL_UPDATES = {
+  mainPhotosLoop: { badge: false, text: "" },
+  mainPhotos:     { badge: false, text: "" },
+  latestPhotos:   { badge: false, text: "" },
+  videos:         { badge: false, text: "" },
+  youtubeList:    { badge: false, text: "" }
+};
+
+const views = {
+  home: document.getElementById("homeView"),
+  messages: document.getElementById("messagesView"),
+  messageDetail: document.getElementById("messageDetailView"),
+  videos: document.getElementById("videosView"),
+  send: document.getElementById("sendView")
+};
+
+const datetimeBar = document.getElementById("datetimeBar");
+const unreadBadge = document.getElementById("unreadBadge");
+
+const messagesStatus = document.getElementById("messagesStatus");
+const messagesList = document.getElementById("messagesList");
+const messagesPageInfo = document.getElementById("messagesPageInfo");
+
+const messageDetailHeader = document.getElementById("messageDetailHeader");
+const messageDetailBody = document.getElementById("messageDetailBody");
+
+const ytHeaderTitle = document.getElementById("ytHeaderTitle");
+const ytManualUpdateText = document.getElementById("ytManualUpdateText");
+const ytLastChecked = document.getElementById("ytLastChecked");
+const ytStatus = document.getElementById("ytStatus");
+const ytList = document.getElementById("ytList");
+const videosPageInfo = document.getElementById("videosPageInfo");
+
+const panel = document.getElementById("sendView");
+const textarea = document.getElementById("messageBox");
+const statusBox = document.getElementById("status");
+const sendButton = document.getElementById("sendButton");
+
+const playerPanel = document.getElementById("playerPanel");
+const closeVideoButton = document.getElementById("closeVideoButton");
+const playerHost = document.getElementById("youtube-player-host");
+
+function markPageActivity(event) {
+  lastPageActivityAt = Date.now();
+  lastPageActivityType = event && event.type ? event.type : "unknown";
+}
+
+function formatActivityTime_(ms) {
+  try { return new Date(ms).toISOString(); } catch (e) { return ""; }
+}
 
 function getBrowserDeviceInfo() {
   return {
@@ -1001,9 +839,7 @@ async function refreshPublicIp() {
       cachedPublicIp = data.ip;
       localStorage.setItem(PUBLIC_IP_STORAGE_KEY, cachedPublicIp);
     }
-  } catch (e) {
-    /* IP lookup is helpful but should never interrupt the TV page */
-  }
+  } catch (e) {}
 }
 
 function logEvent(eventType, eventLabel = "", extra = {}) {
@@ -1021,48 +857,9 @@ function logEvent(eventType, eventLabel = "", extra = {}) {
       query_string: getUrlEntryInfo().query_string,
       device_info: JSON.stringify(getBrowserDeviceInfo()),
       extra: JSON.stringify(extra)
-    }).catch(() => {
-      /* monitoring should never interrupt the TV page */
-    });
-  } catch (e) {
-    /* monitoring should never interrupt the TV page */
-  }
+    }).catch(() => {});
+  } catch (e) {}
 }
-
-/* MANUAL UPDATE FLAGS */
-const MANUAL_UPDATES = {
-  mainPhotosLoop: { badge: false, text: "" },
-  mainPhotos:     { badge: false, text: "" },
-  latestPhotos:   { badge: false, text: "" },
-  videos:         { badge: false, text: "" },
-  youtubeList:    { badge: false, text: "" }
-};
-
-let statusTimeout;
-let cachedMessages = [];
-let expandedMessageId = null;
-
-const panel = document.getElementById("messagePanel");
-const textarea = document.getElementById("messageBox");
-const statusBox = document.getElementById("status");
-const sendButton = document.getElementById("sendButton");
-
-const playerPanel = document.getElementById("playerPanel");
-const closeVideoButton = document.getElementById("closeVideoButton");
-const playerHost = document.getElementById("youtube-player-host");
-
-const familyMessagesButton = document.getElementById("familyMessagesButton");
-const unreadBadge = document.getElementById("unreadBadge");
-const messagesPanel = document.getElementById("messagesPanel");
-const closeMessagesButton = document.getElementById("closeMessagesButton");
-const messagesStatus = document.getElementById("messagesStatus");
-const messagesList = document.getElementById("messagesList");
-const datetimeBar = document.getElementById("datetimeBar");
-
-const ytHeaderTitle = document.getElementById("ytHeaderTitle");
-const ytManualBadge = document.getElementById("ytManualBadge");
-const ytManualUpdateText = document.getElementById("ytManualUpdateText");
-const ytLastChecked = document.getElementById("ytLastChecked");
 
 function formatHeaderDate(dateObj) {
   return dateObj.toLocaleDateString(undefined, {
@@ -1085,252 +882,6 @@ function updateDateTimeBar() {
     minute: "2-digit"
   });
   datetimeBar.textContent = `${datePart}   ${timePart}`;
-}
-
-function updateUnreadBadge(messages) {
-  const unreadCount = (messages || []).filter(msg => !msg.read_at).length;
-  unreadBadge.textContent = String(unreadCount);
-  unreadBadge.classList.toggle("hidden", unreadCount === 0);
-}
-
-function applyTileUpdate(tileId, cfg) {
-  const tile = document.getElementById(tileId);
-  if (!tile) return;
-
-  const badge = tile.querySelector(".tile-update-badge");
-  const text = tile.querySelector(".tile-update-text");
-
-  if (cfg && cfg.badge) {
-    badge.classList.remove("hidden");
-  } else {
-    badge.classList.add("hidden");
-  }
-
-  if (cfg && cfg.text) {
-    text.textContent = cfg.text;
-    text.classList.remove("hidden");
-  } else {
-    text.textContent = "";
-    text.classList.add("hidden");
-  }
-}
-
-function applyManualUpdateUI() {
-  applyTileUpdate("tileMainPhotosLoop", MANUAL_UPDATES.mainPhotosLoop);
-  applyTileUpdate("tileMainPhotos", MANUAL_UPDATES.mainPhotos);
-  applyTileUpdate("tileLatestPhotos", MANUAL_UPDATES.latestPhotos);
-  applyTileUpdate("tileVideos", MANUAL_UPDATES.videos);
-
-  if (MANUAL_UPDATES.youtubeList && MANUAL_UPDATES.youtubeList.badge) {
-    ytManualBadge.classList.remove("hidden");
-  } else {
-    ytManualBadge.classList.add("hidden");
-  }
-
-  if (MANUAL_UPDATES.youtubeList && MANUAL_UPDATES.youtubeList.text) {
-    ytManualUpdateText.textContent = MANUAL_UPDATES.youtubeList.text;
-    ytManualUpdateText.classList.remove("hidden");
-  } else {
-    ytManualUpdateText.textContent = "";
-    ytManualUpdateText.classList.add("hidden");
-  }
-}
-
-function updateYoutubeLastChecked() {
-  const now = new Date();
-  const datePart = now.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric"
-  });
-  const timePart = now.toLocaleTimeString(undefined, {
-    hour: "numeric",
-    minute: "2-digit"
-  });
-  ytLastChecked.textContent = `Last checked: ${datePart} ${timePart}`;
-}
-
-function updateYoutubeHeaderCount(count) {
-  ytHeaderTitle.textContent = `WRESTLING VIDEOS (${count})`;
-}
-
-function getWatchedVideos() {
-  try {
-    const raw = localStorage.getItem(WATCHED_STORAGE_KEY);
-    if (!raw) return {};
-    return JSON.parse(raw);
-  } catch (e) {
-    return {};
-  }
-}
-
-function saveWatchedVideos(watchedMap) {
-  try {
-    localStorage.setItem(WATCHED_STORAGE_KEY, JSON.stringify(watchedMap));
-  } catch (e) {
-    console.error("Could not save watched videos", e);
-  }
-}
-
-function markVideoWatched(videoId) {
-  const watched = getWatchedVideos();
-  watched[videoId] = true;
-  saveWatchedVideos(watched);
-
-  const btn = document.querySelector(`[data-video-id="${videoId}"]`);
-  if (btn) btn.classList.add("watched");
-}
-
-function clearTextareaVisual() {
-  textarea.classList.remove("active-box");
-  panel.classList.remove("keep-textarea-active");
-}
-
-function setTextareaVisual() {
-  textarea.classList.add("active-box");
-  panel.classList.remove("keep-textarea-active");
-}
-
-function showStatus(text, mode) {
-  statusBox.textContent = text;
-  statusBox.className = "";
-  statusBox.id = "status";
-  statusBox.classList.add("show", mode);
-}
-
-function clearStatus() {
-  statusBox.textContent = "";
-  statusBox.className = "";
-  statusBox.id = "status";
-}
-
-function handleSubmit(event) {
-  event.preventDefault();
-
-  const form = event.target;
-  clearTimeout(statusTimeout);
-
-  textarea.classList.remove("active-box");
-  panel.classList.add("keep-textarea-active");
-
-  sendButton.disabled = true;
-  sendButton.blur();
-
-  showStatus("SENDING...", "sending");
-  logEvent("send_message_attempt", "Send Message");
-
-  if (TEST_MODE) {
-    setTimeout(() => {
-      form.reset();
-      panel.classList.add("keep-textarea-active");
-      showStatus("MESSAGE SENT ✓", "sent");
-      sendButton.disabled = false;
-
-      statusTimeout = setTimeout(() => {
-        clearStatus();
-        clearTextareaVisual();
-      }, 5000);
-    }, 900);
-    return;
-  }
-
-  const data = new FormData(form);
-
-  fetch(form.action, {
-    method: form.method,
-    body: data,
-    headers: { 'Accept': 'application/json' }
-  })
-  .then((response) => {
-    if (!response.ok) throw new Error("Send failed");
-    form.reset();
-    panel.classList.add("keep-textarea-active");
-    showStatus("MESSAGE SENT ✓", "sent");
-    logEvent("send_message_success", "Send Message");
-    sendButton.disabled = false;
-
-    statusTimeout = setTimeout(() => {
-      clearStatus();
-      clearTextareaVisual();
-    }, 5000);
-  })
-  .catch(() => {
-    panel.classList.remove("keep-textarea-active");
-    textarea.classList.add("active-box");
-    showStatus("ERROR SENDING", "error");
-    logEvent("send_message_error", "Send Message");
-    sendButton.disabled = false;
-  });
-}
-
-async function fetchPlaylistVideos(playlistId, apiKey) {
-  let nextPageToken = "";
-  const videos = [];
-
-  do {
-    const url = new URL("https://www.googleapis.com/youtube/v3/playlistItems");
-    url.searchParams.set("part", "snippet,status");
-    url.searchParams.set("playlistId", playlistId);
-    url.searchParams.set("maxResults", "50");
-    url.searchParams.set("key", apiKey);
-
-    if (nextPageToken) url.searchParams.set("pageToken", nextPageToken);
-
-    const response = await fetch(url.toString());
-    if (!response.ok) throw new Error(`YouTube API request failed: ${response.status}`);
-
-    const data = await response.json();
-
-    for (const item of data.items || []) {
-      const title = item?.snippet?.title;
-      const videoId = item?.snippet?.resourceId?.videoId;
-      const privacyStatus = item?.status?.privacyStatus;
-
-      if (!videoId) continue;
-      if (privacyStatus === "private") continue;
-      if (!title) continue;
-      if (title.trim().toLowerCase() === "private video") continue;
-
-      videos.push({ title, videoId });
-    }
-
-    nextPageToken = data.nextPageToken || "";
-  } while (nextPageToken);
-
-  return videos;
-}
-
-function destroyEmbeddedPlayer() {
-  playerHost.innerHTML = "";
-}
-
-function showPlayerPanel() {
-  playerPanel.classList.add("show");
-}
-
-function hidePlayerPanel() {
-  destroyEmbeddedPlayer();
-  playerPanel.classList.remove("show");
-}
-
-function playEmbeddedVideo(videoId) {
-  logEvent("youtube_video_open", videoId);
-  showPlayerPanel();
-  destroyEmbeddedPlayer();
-  markVideoWatched(videoId);
-
-  const iframe = document.createElement("iframe");
-  iframe.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
-  iframe.allowFullscreen = true;
-  iframe.referrerPolicy = "strict-origin-when-cross-origin";
-
-  const embedUrl = new URL(`https://www.youtube.com/embed/${videoId}`);
-  embedUrl.searchParams.set("autoplay", "1");
-  embedUrl.searchParams.set("playsinline", "1");
-  embedUrl.searchParams.set("rel", "0");
-
-  iframe.src = embedUrl.toString();
-  playerHost.appendChild(iframe);
 }
 
 function loadJsonp(baseUrl, params = {}) {
@@ -1375,24 +926,336 @@ function loadJsonp(baseUrl, params = {}) {
   });
 }
 
-function openMessagesPanel() {
-  messagesPanel.classList.add("show");
-  messagesPanel.scrollIntoView({ behavior: "auto", block: "start" });
+/* ---------- VIEW + SELECTION ---------- */
 
-  if (cachedMessages.length) {
-    renderMessages(cachedMessages);
-    focusFirstMessageSummary();
-  } else {
-    loadMessages().then(() => {
-      focusFirstMessageSummary();
-    });
+function showView(name) {
+  Object.keys(views).forEach(key => {
+    views[key].classList.toggle("active", key === name);
+  });
+
+  currentView = name;
+  window.scrollTo(0, 0);
+
+  if (name === "home") {
+    setSelected("home", selected.home || 0);
+  }
+  if (name === "messages") {
+    renderMessagesList();
+    setSelected("messages", listState.messages.index);
+  }
+  if (name === "messageDetail") {
+    setSelected("messageActions", selected.messageActions || 0);
+  }
+  if (name === "videos") {
+    renderVideosList();
+    setSelected("videos", listState.videos.index);
+  }
+  if (name === "send") {
+    setSelected("send", selected.send || 0);
   }
 }
 
-function closeMessagesPanelFn() {
-  messagesPanel.classList.remove("show");
-  expandedMessageId = null;
-  window.scrollTo({ top: 0, behavior: "auto" });
+function getItems(group) {
+  return Array.from(document.querySelectorAll(`[data-nav-group="${group}"]`))
+    .filter(el => !el.disabled && el.offsetParent !== null);
+}
+
+function clearGroupSelection(group) {
+  getItems(group).forEach(el => el.classList.remove("selected"));
+}
+
+function setSelected(group, index) {
+  const items = getItems(group);
+  if (!items.length) return;
+
+  const bounded = Math.max(0, Math.min(index, items.length - 1));
+  selected[group] = bounded;
+
+  items.forEach((el, i) => {
+    el.classList.toggle("selected", i === bounded);
+  });
+
+  if (document.activeElement !== items[bounded] && items[bounded].focus) {
+    items[bounded].focus({ preventScroll: true });
+  }
+}
+
+function getSelectedItem(group) {
+  const items = getItems(group);
+  return items[selected[group] || 0];
+}
+
+function moveGrid(group, cols, key) {
+  const items = getItems(group);
+  if (!items.length) return;
+
+  let index = selected[group] || 0;
+  const row = Math.floor(index / cols);
+  const col = index % cols;
+  let next = index;
+
+  if (key === "ArrowLeft" && col > 0) next = index - 1;
+  if (key === "ArrowRight" && col < cols - 1 && index + 1 < items.length) next = index + 1;
+  if (key === "ArrowUp" && row > 0) next = index - cols;
+  if (key === "ArrowDown" && index + cols < items.length) next = index + cols;
+
+  setSelected(group, next);
+}
+
+function moveLinear(group, key) {
+  const items = getItems(group);
+  if (!items.length) return;
+
+  let index = selected[group] || 0;
+  let next = index;
+
+  if (key === "ArrowUp" || key === "ArrowLeft") next = index - 1;
+  if (key === "ArrowDown" || key === "ArrowRight") next = index + 1;
+
+  setSelected(group, Math.max(0, Math.min(next, items.length - 1)));
+}
+
+/* ---------- HOME ACTIONS ---------- */
+
+function activateHomeItem() {
+  const item = getSelectedItem("home");
+  if (!item) return;
+
+  const action = item.dataset.action;
+  const url = item.dataset.url;
+
+  if (action === "messages") {
+    logEvent("open_family_messages", "Family Messages");
+    openMessagesView();
+    return;
+  }
+
+  if (action === "send") {
+    logEvent("open_send_message", "Send Message");
+    showView("send");
+    return;
+  }
+
+  if (action === "videos") {
+    logEvent("open_wrestling_videos", "Wrestling Videos");
+    openVideosView();
+    return;
+  }
+
+  if (action === "playlist-link") {
+    logEvent("youtube_playlist_link_click", "Open YouTube playlist advanced");
+    window.location.href = "https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
+    return;
+  }
+
+  if (action === "link" && url) {
+    const label = item.textContent.trim().replace(/\s+/g, " ");
+    logEvent("tile_click", label);
+    window.location.href = url;
+  }
+}
+
+/* ---------- TILE UPDATE UI ---------- */
+
+function applyTileUpdate(tileId, cfg) {
+  const tile = document.getElementById(tileId);
+  if (!tile) return;
+
+  const badge = tile.querySelector(".tile-update-badge");
+  const text = tile.querySelector(".tile-update-text");
+
+  if (cfg && cfg.badge) {
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
+
+  if (cfg && cfg.text) {
+    text.textContent = cfg.text;
+    text.classList.remove("hidden");
+  } else {
+    text.textContent = "";
+    text.classList.add("hidden");
+  }
+}
+
+function applyManualUpdateUI() {
+  applyTileUpdate("tileMainPhotosLoop", MANUAL_UPDATES.mainPhotosLoop);
+  applyTileUpdate("tileMainPhotos", MANUAL_UPDATES.mainPhotos);
+  applyTileUpdate("tileLatestPhotos", MANUAL_UPDATES.latestPhotos);
+  applyTileUpdate("tileVideos", MANUAL_UPDATES.videos);
+
+  if (MANUAL_UPDATES.youtubeList && MANUAL_UPDATES.youtubeList.text) {
+    ytManualUpdateText.textContent = MANUAL_UPDATES.youtubeList.text;
+    ytManualUpdateText.classList.remove("hidden");
+  } else {
+    ytManualUpdateText.textContent = "";
+    ytManualUpdateText.classList.add("hidden");
+  }
+}
+
+/* ---------- MESSAGES ---------- */
+
+function updateUnreadBadge(messages) {
+  const unreadCount = (messages || []).filter(msg => !msg.read_at).length;
+  unreadBadge.textContent = String(unreadCount);
+  unreadBadge.classList.toggle("hidden", unreadCount === 0);
+}
+
+function sortMessages_(a, b) {
+  const aUnread = !a.read_at;
+  const bUnread = !b.read_at;
+  if (aUnread !== bUnread) return aUnread ? -1 : 1;
+
+  const aUnopened = !a.opened_at;
+  const bUnopened = !b.opened_at;
+  if (aUnopened !== bUnopened) return aUnopened ? -1 : 1;
+
+  return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+}
+
+function openMessagesView() {
+  showView("messages");
+
+  if (cachedMessages.length) {
+    renderMessagesList();
+    return;
+  }
+
+  loadMessages().then(() => {
+    renderMessagesList();
+  });
+}
+
+async function loadMessages() {
+  messagesStatus.textContent = "Loading messages…";
+
+  try {
+    const data = await loadJsonp(MESSAGES_API_URL, { action: "list" });
+    if (!data || !data.ok) {
+      messagesStatus.textContent = "Could not load messages.";
+      return;
+    }
+
+    cachedMessages = (data.messages || []).sort(sortMessages_);
+    updateUnreadBadge(cachedMessages);
+    messagesStatus.textContent = "";
+  } catch (e) {
+    console.error(e);
+    messagesStatus.textContent = "Could not load messages.";
+  }
+}
+
+function renderMessagesList() {
+  messagesList.innerHTML = "";
+  updateUnreadBadge(cachedMessages);
+
+  if (!cachedMessages.length) {
+    messagesStatus.textContent = "No messages right now.";
+    messagesPageInfo.textContent = "";
+    return;
+  }
+
+  messagesStatus.textContent = "";
+
+  const state = listState.messages;
+  state.index = Math.max(0, Math.min(state.index, cachedMessages.length - 1));
+
+  if (state.index < state.offset) state.offset = state.index;
+  if (state.index >= state.offset + state.pageSize) state.offset = state.index - state.pageSize + 1;
+  state.offset = Math.max(0, Math.min(state.offset, Math.max(0, cachedMessages.length - state.pageSize)));
+
+  const visible = cachedMessages.slice(state.offset, state.offset + state.pageSize);
+
+  visible.forEach((msg, visibleIndex) => {
+    const actualIndex = state.offset + visibleIndex;
+    const card = document.createElement("div");
+    card.className = "message-card spatial-item";
+    card.dataset.navGroup = "messages";
+    card.dataset.index = String(actualIndex);
+
+    if (msg.opened_at) card.classList.add("opened");
+    if (msg.read_at) card.classList.add("read");
+    if (msg.liked_at) card.classList.add("liked");
+
+    const msgDate = msg.created_at ? formatHeaderDate(new Date(msg.created_at)) : "";
+
+    card.innerHTML = `
+      <div class="message-topline">
+        <span><span class="field-label">FROM:</span> ${msg.from_name || "Family"}</span>
+        <span><span class="field-label">DATE:</span> ${msgDate}</span>
+      </div>
+      <div class="message-subject"><span class="field-label">SUBJECT:</span> ${msg.subject}</div>
+    `;
+
+    messagesList.appendChild(card);
+  });
+
+  messagesPageInfo.textContent = `Message ${state.index + 1} of ${cachedMessages.length}`;
+  setSelected("messages", state.index - state.offset);
+}
+
+function moveMessages(key) {
+  const state = listState.messages;
+
+  if (key === "ArrowDown") {
+    state.index = Math.min(state.index + 1, cachedMessages.length - 1);
+  }
+
+  if (key === "ArrowUp") {
+    state.index = Math.max(state.index - 1, 0);
+  }
+
+  renderMessagesList();
+}
+
+async function activateMessage() {
+  const msg = cachedMessages[listState.messages.index];
+  if (!msg) return;
+
+  currentMessage = msg;
+  logEvent("message_open", msg.subject || msg.id, { id: msg.id });
+
+  if (!msg.opened_at) {
+    try {
+      const result = await runMessageAction("mark_opened", msg.id);
+      if (result.ok) {
+        msg.opened_at = result.opened_at || new Date().toISOString();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  renderMessageDetail();
+  showView("messageDetail");
+}
+
+function renderMessageDetail() {
+  if (!currentMessage) return;
+
+  const msg = currentMessage;
+  const msgDate = msg.created_at ? formatHeaderDate(new Date(msg.created_at)) : "";
+
+  messageDetailHeader.innerHTML = `
+    <div class="message-detail-line"><span class="field-label">FROM:</span> ${msg.from_name || "Family"}</div>
+    <div class="message-detail-line"><span class="field-label">DATE:</span> ${msgDate}</div>
+    <div class="message-detail-line"><span class="field-label">SUBJECT:</span> ${msg.subject}</div>
+  `;
+
+  messageDetailBody.innerHTML = `<span class="field-label">BODY:</span> ${msg.body}`;
+
+  const actions = getItems("messageActions");
+  actions.forEach(btn => btn.classList.remove("active"));
+
+  const readBtn = document.querySelector('[data-nav-group="messageActions"][data-action="read"]');
+  const likeBtn = document.querySelector('[data-nav-group="messageActions"][data-action="like"]');
+
+  if (msg.read_at && readBtn) readBtn.classList.add("active");
+  if (msg.liked_at && likeBtn) likeBtn.classList.add("active");
+
+  selected.messageActions = 0;
+  setSelected("messageActions", 0);
 }
 
 async function runMessageAction(action, id) {
@@ -1403,467 +1266,362 @@ function findCachedMessage(id) {
   return cachedMessages.find(msg => msg.id === id);
 }
 
-function focusFirstMessageSummary() {
-  setTimeout(() => {
-    const first = messagesList.querySelector(".message-summary-button");
-    if (first) {
-      first.focus({ preventScroll: true });
-    }
-  }, 80);
-}
+async function activateMessageAction() {
+  if (!currentMessage) return;
 
-function focusExpandedMessage() {
-  setTimeout(() => {
-    const expanded = messagesList.querySelector(".message-expanded");
-    if (!expanded) return;
+  const item = getSelectedItem("messageActions");
+  if (!item) return;
 
-    expanded.scrollIntoView({ behavior: "auto", block: "start" });
+  const action = item.dataset.action;
+  const msg = currentMessage;
 
-    const firstAction = expanded.querySelector(".action-btn");
-    if (firstAction) {
-      firstAction.focus({ preventScroll: true });
-    }
-  }, 120);
-}
-
-function getMessageSummaryButtons() {
-  return Array.from(messagesList.querySelectorAll(".message-summary-button"));
-}
-
-function focusMessageSummaryAt(index) {
-  const buttons = getMessageSummaryButtons();
-  if (!buttons.length) return;
-
-  const boundedIndex = Math.max(0, Math.min(index, buttons.length - 1));
-  const target = buttons[boundedIndex];
-
-  target.scrollIntoView({ behavior: "auto", block: "nearest" });
-  target.focus({ preventScroll: true });
-}
-
-function handleExpandedActionKeydown(event) {
-  const expanded = event.currentTarget.closest(".message-expanded");
-  const row = event.currentTarget.closest(".action-row");
-  if (!expanded || !row) return;
-
-  const buttons = Array.from(row.querySelectorAll(".action-btn"));
-  const index = buttons.indexOf(event.currentTarget);
-
-  if (event.key === "ArrowRight") {
-    event.preventDefault();
-    event.stopPropagation();
-    const next = buttons[Math.min(index + 1, buttons.length - 1)];
-    if (next) next.focus({ preventScroll: true });
-  }
-
-  if (event.key === "ArrowLeft") {
-    event.preventDefault();
-    event.stopPropagation();
-    const prev = buttons[Math.max(index - 1, 0)];
-    if (prev) prev.focus({ preventScroll: true });
-  }
-
-  if (event.key === "ArrowDown") {
-    event.preventDefault();
-    event.stopPropagation();
-    const body = expanded.querySelector(".message-expanded-body");
-    if (body) {
-      body.scrollIntoView({ behavior: "auto", block: "start" });
-    }
-  }
-
-  if (event.key === "ArrowUp") {
-    event.preventDefault();
-    event.stopPropagation();
-    expanded.scrollIntoView({ behavior: "auto", block: "start" });
-  }
-}
-
-function handleExpandedMainKeydown(event) {
-  if (event.key === "ArrowDown") {
-    event.preventDefault();
-    event.stopPropagation();
-    window.scrollBy({ top: 180, behavior: "auto" });
-  }
-
-  if (event.key === "ArrowUp") {
-    event.preventDefault();
-    event.stopPropagation();
-    window.scrollBy({ top: -180, behavior: "auto" });
-  }
-}
-
-function handleMessageSummaryKeydown(event) {
-  const buttons = getMessageSummaryButtons();
-  const index = buttons.indexOf(event.currentTarget);
-
-  if (event.key === "ArrowDown") {
-    event.preventDefault();
-    event.stopPropagation();
-    focusMessageSummaryAt(index + 1);
-  }
-
-  if (event.key === "ArrowUp") {
-    event.preventDefault();
-    event.stopPropagation();
-    focusMessageSummaryAt(index - 1);
-  }
-}
-
-function renderMessages(messages) {
-  messagesList.innerHTML = "";
-  updateUnreadBadge(messages);
-
-  if (!messages || !messages.length) {
-    messagesStatus.textContent = "No messages right now.";
+  if (action === "close") {
+    logEvent("message_close", msg.subject || msg.id, { id: msg.id });
+    showView("messages");
     return;
   }
 
-  messagesStatus.textContent = "";
-
-  messages.forEach((msg) => {
-    if (expandedMessageId === msg.id) {
-      const expanded = document.createElement("div");
-      expanded.className = "message-expanded pointer-focus";
-      expanded.tabIndex = 0;
-
-      const main = document.createElement("div");
-      main.className = "message-expanded-main pointer-focus";
-      main.tabIndex = 0;
-      main.innerHTML = `
-        <div class="message-expanded-line"><span class="field-label">FROM:</span> ${msg.from_name || "Family"}</div>
-        <div class="message-expanded-line"><span class="field-label">SUBJECT:</span> ${msg.subject}</div>
-      `;
-      main.addEventListener("keydown", handleExpandedMainKeydown);
-
-      const actions = document.createElement("div");
-      actions.className = "action-row";
-
-      const readBtn = document.createElement("button");
-      readBtn.className = "action-btn read-btn pointer-focus" + (msg.read_at ? " active" : "");
-      readBtn.type = "button";
-      readBtn.tabIndex = 0;
-      readBtn.textContent = "✔ READ";
-      readBtn.addEventListener("click", async () => {
-        logEvent("message_mark_read", msg.subject || msg.id, { id: msg.id });
-        messagesStatus.textContent = "Marking as read…";
-        try {
-          const result = await runMessageAction("mark_read", msg.id);
-          if (!result.ok) {
-            messagesStatus.textContent = "Could not mark message as read.";
-            return;
-          }
-
-          const cached = findCachedMessage(msg.id);
-          if (cached) cached.read_at = result.read_at || new Date().toISOString();
-
-          expandedMessageId = null;
-          messagesStatus.textContent = "";
-          renderMessages(cachedMessages);
-        } catch (e) {
-          console.error(e);
-          messagesStatus.textContent = "Could not mark message as read.";
-        }
-      });
-
-      const likeBtn = document.createElement("button");
-      likeBtn.className = "action-btn like-btn pointer-focus" + (msg.liked_at ? " active" : "");
-      likeBtn.type = "button";
-      likeBtn.tabIndex = 0;
-      likeBtn.textContent = "👍 LIKE";
-      likeBtn.addEventListener("click", async () => {
-        logEvent("message_like", msg.subject || msg.id, { id: msg.id });
-        messagesStatus.textContent = "Saving like…";
-        try {
-          const result = await runMessageAction("like_message", msg.id);
-          if (!result.ok) {
-            messagesStatus.textContent = "Could not like message.";
-            return;
-          }
-
-          const cached = findCachedMessage(msg.id);
-          if (cached) {
-            cached.liked_at = result.liked_at || new Date().toISOString();
-            cached.read_at = result.read_at || cached.read_at || new Date().toISOString();
-            cached.opened_at = result.opened_at || cached.opened_at || new Date().toISOString();
-          }
-
-          expandedMessageId = null;
-          messagesStatus.textContent = "";
-          renderMessages(cachedMessages);
-        } catch (e) {
-          console.error(e);
-          messagesStatus.textContent = "Could not like message.";
-        }
-      });
-
-      const archiveActionBtn = document.createElement("button");
-      archiveActionBtn.className = "action-btn archive-action-btn pointer-focus";
-      archiveActionBtn.type = "button";
-      archiveActionBtn.tabIndex = 0;
-      archiveActionBtn.textContent = "📥 ARCHIVE";
-      archiveActionBtn.addEventListener("click", async () => {
-        logEvent("message_archive", msg.subject || msg.id, { id: msg.id });
-        messagesStatus.textContent = "Archiving…";
-        try {
-          const result = await runMessageAction("archive_message", msg.id);
-          if (!result.ok) {
-            messagesStatus.textContent = "Could not archive message.";
-            return;
-          }
-
-          cachedMessages = cachedMessages.filter(m => m.id !== msg.id);
-          expandedMessageId = null;
-          messagesStatus.textContent = "";
-          renderMessages(cachedMessages);
-          focusFirstMessageSummary();
-        } catch (e) {
-          console.error(e);
-          messagesStatus.textContent = "Could not archive message.";
-        }
-      });
-
-      const closeBtn = document.createElement("button");
-      closeBtn.className = "action-btn close-btn pointer-focus";
-      closeBtn.type = "button";
-      closeBtn.tabIndex = 0;
-      closeBtn.textContent = "CLOSE";
-      closeBtn.addEventListener("click", () => {
-        logEvent("message_close", msg.subject || msg.id, { id: msg.id });
-        expandedMessageId = null;
-        renderMessages(cachedMessages);
-        focusFirstMessageSummary();
-      });
-
-      [readBtn, likeBtn, archiveActionBtn, closeBtn].forEach((btn) => {
-        btn.addEventListener("keydown", handleExpandedActionKeydown);
-      });
-
-      actions.appendChild(readBtn);
-      actions.appendChild(likeBtn);
-      actions.appendChild(archiveActionBtn);
-      actions.appendChild(closeBtn);
-
-      main.appendChild(actions);
-
-      const bodyDiv = document.createElement("div");
-      bodyDiv.className = "message-expanded-body";
-      bodyDiv.innerHTML = `<span class="field-label">BODY:</span> ${msg.body}`;
-      main.appendChild(bodyDiv);
-      expanded.appendChild(main);
-
-      messagesList.appendChild(expanded);
-      return;
-    }
-
-    const row = document.createElement("div");
-    row.className = "message-row";
-
-    const indicatorStack = document.createElement("div");
-    indicatorStack.className = "message-indicator-stack";
-
-    const readIndicator = document.createElement("div");
-    readIndicator.className = "message-indicator" + (msg.read_at ? " read" : "");
-    readIndicator.tabIndex = -1;
-    readIndicator.setAttribute("aria-hidden", "true");
-    readIndicator.innerHTML = '<span class="message-check-icon" tabindex="-1" aria-hidden="true">✔</span>';
-
-    const likeIndicator = document.createElement("div");
-    likeIndicator.className = "message-like-indicator" + (msg.liked_at ? " liked" : "");
-    likeIndicator.tabIndex = -1;
-    likeIndicator.setAttribute("aria-hidden", "true");
-    likeIndicator.innerHTML = '<span class="message-like-icon" tabindex="-1" aria-hidden="true">👍</span>';
-
-    indicatorStack.appendChild(readIndicator);
-    indicatorStack.appendChild(likeIndicator);
-
-    const summaryButton = document.createElement("button");
-    summaryButton.className = "message-summary-button pointer-focus";
-    if (msg.opened_at) summaryButton.classList.add("opened");
-    if (msg.read_at) summaryButton.classList.add("read");
-    if (msg.liked_at) summaryButton.classList.add("liked");
-    summaryButton.type = "button";
-    summaryButton.tabIndex = 0;
-
-    const msgDate = msg.created_at ? formatHeaderDate(new Date(msg.created_at)) : "";
-
-    summaryButton.innerHTML = `
-      <div class="message-summary-topline">
-        <span class="left"><span class="field-label">FROM:</span> ${msg.from_name || "Family"}</span>
-        <span class="right"><span class="field-label">DATE:</span> ${msgDate}</span>
-      </div>
-      <div class="message-summary-subject"><span class="field-label">SUBJECT:</span> ${msg.subject}</div>
-    `;
-
-    summaryButton.addEventListener("keydown", handleMessageSummaryKeydown, true);
-
-    summaryButton.addEventListener("click", async () => {
-      logEvent("message_open", msg.subject || msg.id, { id: msg.id });
-      expandedMessageId = msg.id;
-
-      if (!msg.opened_at) {
-        try {
-          const result = await runMessageAction("mark_opened", msg.id);
-          if (result.ok) {
-            const cached = findCachedMessage(msg.id);
-            if (cached) cached.opened_at = result.opened_at || new Date().toISOString();
-          }
-        } catch (e) {
-          console.error(e);
-        }
+  if (action === "read") {
+    logEvent("message_mark_read", msg.subject || msg.id, { id: msg.id });
+    messagesStatus.textContent = "Marking as read…";
+    try {
+      const result = await runMessageAction("mark_read", msg.id);
+      if (result.ok) {
+        msg.read_at = result.read_at || new Date().toISOString();
+        const cached = findCachedMessage(msg.id);
+        if (cached) cached.read_at = msg.read_at;
+        renderMessageDetail();
       }
+    } catch (e) {
+      console.error(e);
+    }
+    messagesStatus.textContent = "";
+    return;
+  }
 
-      renderMessages(cachedMessages);
-      focusExpandedMessage();
-    });
+  if (action === "like") {
+    logEvent("message_like", msg.subject || msg.id, { id: msg.id });
+    try {
+      const result = await runMessageAction("like_message", msg.id);
+      if (result.ok) {
+        msg.liked_at = result.liked_at || new Date().toISOString();
+        msg.read_at = result.read_at || msg.read_at || new Date().toISOString();
+        msg.opened_at = result.opened_at || msg.opened_at || new Date().toISOString();
 
-    const archiveButton = document.createElement("button");
-    archiveButton.className = "message-archive-button";
-    archiveButton.type = "button";
-    archiveButton.tabIndex = -1;
-    archiveButton.setAttribute("aria-hidden", "true");
-    archiveButton.textContent = "📥";
-    archiveButton.setAttribute("aria-label", "Archive message");
-
-    if (!msg.opened_at) {
-      archiveButton.disabled = true;
-      archiveButton.tabIndex = -1;
-      archiveButton.setAttribute("aria-hidden", "true");
-      archiveButton.title = "Open message before archiving";
-    } else {
-      archiveButton.addEventListener("click", async () => {
-        logEvent("message_archive", msg.subject || msg.id, { id: msg.id });
-        messagesStatus.textContent = "Archiving…";
-        try {
-          const result = await runMessageAction("archive_message", msg.id);
-          if (!result.ok) {
-            messagesStatus.textContent = "Could not archive message.";
-            return;
-          }
-
-          cachedMessages = cachedMessages.filter(m => m.id !== msg.id);
-          messagesStatus.textContent = "";
-          renderMessages(cachedMessages);
-        } catch (e) {
-          console.error(e);
-          messagesStatus.textContent = "Could not archive message.";
+        const cached = findCachedMessage(msg.id);
+        if (cached) {
+          cached.liked_at = msg.liked_at;
+          cached.read_at = msg.read_at;
+          cached.opened_at = msg.opened_at;
         }
-      });
+        renderMessageDetail();
+      }
+    } catch (e) {
+      console.error(e);
     }
+    return;
+  }
 
-    row.appendChild(indicatorStack);
-    row.appendChild(summaryButton);
-    row.appendChild(archiveButton);
-
-    messagesList.appendChild(row);
-  });
-}
-
-async function loadMessages() {
-  messagesStatus.textContent = "Loading messages…";
-  messagesList.innerHTML = "";
-
-  try {
-    const data = await loadJsonp(MESSAGES_API_URL, { action: "list" });
-    if (!data || !data.ok) {
-      messagesStatus.textContent = "Could not load messages.";
-      return;
+  if (action === "archive") {
+    logEvent("message_archive", msg.subject || msg.id, { id: msg.id });
+    try {
+      const result = await runMessageAction("archive_message", msg.id);
+      if (result.ok) {
+        cachedMessages = cachedMessages.filter(m => m.id !== msg.id);
+        currentMessage = null;
+        listState.messages.index = Math.min(listState.messages.index, Math.max(0, cachedMessages.length - 1));
+        showView("messages");
+      }
+    } catch (e) {
+      console.error(e);
     }
-
-    cachedMessages = data.messages || [];
-    renderMessages(cachedMessages);
-  } catch (e) {
-    console.error(e);
-    messagesStatus.textContent = "Could not load messages.";
   }
 }
 
 async function refreshMessages() {
-  try {
-    const data = await loadJsonp(MESSAGES_API_URL, { action: "list" });
-    if (data && data.ok) {
-      cachedMessages = data.messages || [];
-      if (expandedMessageId && !cachedMessages.some(m => m.id === expandedMessageId)) {
-        expandedMessageId = null;
-      }
-      updateUnreadBadge(cachedMessages);
-      if (!messagesPanel.classList.contains("show")) {
-        renderMessages(cachedMessages);
-      }
-    }
-  } catch (e) {
-    console.error(e);
+  if (currentView === "messages" || currentView === "messageDetail") {
     updateUnreadBadge(cachedMessages);
+    return;
+  }
+
+  await loadMessages();
+}
+
+/* ---------- VIDEOS ---------- */
+
+function getWatchedVideos() {
+  try {
+    const raw = localStorage.getItem(WATCHED_STORAGE_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw);
+  } catch (e) {
+    return {};
   }
 }
 
-async function preloadMessagesForBadge() {
+function saveWatchedVideos(watchedMap) {
   try {
-    const data = await loadJsonp(MESSAGES_API_URL, { action: "list" });
-    if (data && data.ok) {
-      cachedMessages = data.messages || [];
-      updateUnreadBadge(cachedMessages);
-      /* Do not re-render the open messages panel here; it can steal focus during spatial navigation. */
-    } else {
-      updateUnreadBadge([]);
-    }
+    localStorage.setItem(WATCHED_STORAGE_KEY, JSON.stringify(watchedMap));
   } catch (e) {
-    console.error(e);
-    updateUnreadBadge([]);
+    console.error("Could not save watched videos", e);
   }
+}
+
+function markVideoWatched(videoId) {
+  const watched = getWatchedVideos();
+  watched[videoId] = true;
+  saveWatchedVideos(watched);
+}
+
+async function fetchPlaylistVideos(playlistId, apiKey) {
+  let nextPageToken = "";
+  const videos = [];
+
+  do {
+    const url = new URL("https://www.googleapis.com/youtube/v3/playlistItems");
+    url.searchParams.set("part", "snippet,status");
+    url.searchParams.set("playlistId", playlistId);
+    url.searchParams.set("maxResults", "50");
+    url.searchParams.set("key", apiKey);
+
+    if (nextPageToken) url.searchParams.set("pageToken", nextPageToken);
+
+    const response = await fetch(url.toString());
+    if (!response.ok) throw new Error(`YouTube API request failed: ${response.status}`);
+
+    const data = await response.json();
+
+    for (const item of data.items || []) {
+      const title = item?.snippet?.title;
+      const videoId = item?.snippet?.resourceId?.videoId;
+      const privacyStatus = item?.status?.privacyStatus;
+
+      if (!videoId) continue;
+      if (privacyStatus === "private") continue;
+      if (!title) continue;
+      if (title.trim().toLowerCase() === "private video") continue;
+
+      videos.push({ title, videoId });
+    }
+
+    nextPageToken = data.nextPageToken || "";
+  } while (nextPageToken);
+
+  return videos;
 }
 
 async function loadVideos() {
-  const status = document.getElementById("ytStatus");
-  const list = document.getElementById("ytList");
-  const watched = getWatchedVideos();
-
   try {
-    const videos = await fetchPlaylistVideos(PLAYLIST_ID, API_KEY);
-
-    list.innerHTML = "";
-
-    if (!videos.length) {
-      updateYoutubeHeaderCount(0);
-      updateYoutubeLastChecked();
-      status.style.display = "block";
-      status.textContent = "No videos found.";
-      return;
-    }
-
-    videos.forEach((video) => {
-      const btn = document.createElement("button");
-      btn.className = "youtube-video-button pointer-focus";
-      btn.textContent = video.title;
-      btn.type = "button";
-      btn.tabIndex = 0;
-      btn.dataset.videoId = video.videoId;
-
-      if (watched[video.videoId]) {
-        btn.classList.add("watched");
-      }
-
-      btn.addEventListener("click", () => {
-        playEmbeddedVideo(video.videoId);
-      });
-
-      list.appendChild(btn);
-    });
-
-    updateYoutubeHeaderCount(videos.length);
+    loadedVideos = await fetchPlaylistVideos(PLAYLIST_ID, API_KEY);
+    updateYoutubeHeaderCount(loadedVideos.length);
     updateYoutubeLastChecked();
-    status.style.display = "none";
+
+    if (currentView === "videos") {
+      renderVideosList();
+    }
   } catch (e) {
     console.error(e);
+    ytStatus.textContent = "Error loading videos";
     updateYoutubeLastChecked();
-    status.style.display = "block";
-    status.textContent = "Error loading videos";
   }
 }
 
+function updateYoutubeLastChecked() {
+  const now = new Date();
+  const datePart = now.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  });
+  const timePart = now.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit"
+  });
+  ytLastChecked.textContent = `Last checked: ${datePart} ${timePart}`;
+}
+
+function updateYoutubeHeaderCount(count) {
+  ytHeaderTitle.textContent = `WRESTLING VIDEOS (${count})`;
+}
+
+function openVideosView() {
+  showView("videos");
+
+  if (!loadedVideos.length) {
+    ytStatus.textContent = "Loading videos…";
+    loadVideos();
+  } else {
+    renderVideosList();
+  }
+}
+
+function renderVideosList() {
+  ytList.innerHTML = "";
+
+  if (!loadedVideos.length) {
+    ytStatus.textContent = "No videos found.";
+    videosPageInfo.textContent = "";
+    return;
+  }
+
+  ytStatus.textContent = "";
+
+  const watched = getWatchedVideos();
+  const state = listState.videos;
+  state.index = Math.max(0, Math.min(state.index, loadedVideos.length - 1));
+
+  if (state.index < state.offset) state.offset = state.index;
+  if (state.index >= state.offset + state.pageSize) state.offset = state.index - state.pageSize + 1;
+  state.offset = Math.max(0, Math.min(state.offset, Math.max(0, loadedVideos.length - state.pageSize)));
+
+  const visible = loadedVideos.slice(state.offset, state.offset + state.pageSize);
+
+  visible.forEach((video, visibleIndex) => {
+    const actualIndex = state.offset + visibleIndex;
+    const card = document.createElement("div");
+    card.className = "video-card spatial-item";
+    card.dataset.navGroup = "videos";
+    card.dataset.index = String(actualIndex);
+    card.dataset.videoId = video.videoId;
+
+    if (watched[video.videoId]) {
+      card.classList.add("watched");
+    }
+
+    card.textContent = video.title;
+    ytList.appendChild(card);
+  });
+
+  videosPageInfo.textContent = `Video ${state.index + 1} of ${loadedVideos.length}`;
+  setSelected("videos", state.index - state.offset);
+}
+
+function moveVideos(key) {
+  const state = listState.videos;
+
+  if (key === "ArrowDown") {
+    state.index = Math.min(state.index + 1, loadedVideos.length - 1);
+  }
+
+  if (key === "ArrowUp") {
+    state.index = Math.max(state.index - 1, 0);
+  }
+
+  renderVideosList();
+}
+
+function activateVideo() {
+  const video = loadedVideos[listState.videos.index];
+  if (!video) return;
+
+  playEmbeddedVideo(video.videoId);
+}
+
+function destroyEmbeddedPlayer() {
+  playerHost.innerHTML = "";
+}
+
+function showPlayerPanel() {
+  playerPanel.classList.add("show");
+}
+
+function hidePlayerPanel() {
+  logEvent("video_close", "Close video");
+  destroyEmbeddedPlayer();
+  playerPanel.classList.remove("show");
+}
+
+function playEmbeddedVideo(videoId) {
+  logEvent("youtube_video_open", videoId);
+  showPlayerPanel();
+  destroyEmbeddedPlayer();
+  markVideoWatched(videoId);
+
+  const iframe = document.createElement("iframe");
+  iframe.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
+  iframe.allowFullscreen = true;
+  iframe.referrerPolicy = "strict-origin-when-cross-origin";
+
+  const embedUrl = new URL(`https://www.youtube.com/embed/${videoId}`);
+  embedUrl.searchParams.set("autoplay", "1");
+  embedUrl.searchParams.set("playsinline", "1");
+  embedUrl.searchParams.set("rel", "0");
+
+  iframe.src = embedUrl.toString();
+  playerHost.appendChild(iframe);
+}
+
+/* ---------- SEND MESSAGE ---------- */
+
+function showStatus(text, mode) {
+  statusBox.textContent = text;
+  statusBox.className = "";
+  statusBox.id = "status";
+  statusBox.classList.add("show", mode);
+}
+
+function clearStatus() {
+  statusBox.textContent = "";
+  statusBox.className = "";
+  statusBox.id = "status";
+}
+
+function handleSubmit(event) {
+  event.preventDefault();
+
+  const form = event.target;
+  clearTimeout(statusTimeout);
+
+  sendButton.disabled = true;
+  sendButton.blur();
+
+  showStatus("SENDING...", "sending");
+  logEvent("send_message_attempt", "Send Message");
+
+  if (TEST_MODE) {
+    setTimeout(() => {
+      form.reset();
+      showStatus("MESSAGE SENT ✓", "sent");
+      logEvent("send_message_success", "Send Message");
+      sendButton.disabled = false;
+
+      statusTimeout = setTimeout(() => {
+        clearStatus();
+      }, 5000);
+    }, 900);
+    return;
+  }
+
+  const data = new FormData(form);
+
+  fetch(form.action, {
+    method: form.method,
+    body: data,
+    headers: { 'Accept': 'application/json' }
+  })
+  .then((response) => {
+    if (!response.ok) throw new Error("Send failed");
+    form.reset();
+    showStatus("MESSAGE SENT ✓", "sent");
+    logEvent("send_message_success", "Send Message");
+    sendButton.disabled = false;
+
+    statusTimeout = setTimeout(() => {
+      clearStatus();
+    }, 5000);
+  })
+  .catch(() => {
+    showStatus("ERROR SENDING", "error");
+    logEvent("send_message_error", "Send Message");
+    sendButton.disabled = false;
+  });
+}
+
+/* ---------- REFRESH / AUTO RELOAD ---------- */
+
 function startPeriodicRefresh() {
   setInterval(async () => {
-    await preloadMessagesForBadge();
+    await refreshMessages();
   }, MESSAGE_REFRESH_INTERVAL_MS);
 
   setInterval(async () => {
@@ -1875,25 +1633,19 @@ function startPeriodicRefresh() {
   }, PAGE_RELOAD_CHECK_INTERVAL_MS);
 }
 
-function markPageActivity(event) {
-  lastPageActivityAt = Date.now();
-  lastPageActivityType = event && event.type ? event.type : "unknown";
-}
-
 function maybeReloadPage() {
   const videoIsOpen = playerPanel.classList.contains("show");
-  const messagesAreOpen = messagesPanel.classList.contains("show");
   const textBoxActive = document.activeElement === textarea;
   const idleMs = Date.now() - lastPageActivityAt;
 
-  if (videoIsOpen || messagesAreOpen || textBoxActive) {
+  if (videoIsOpen || textBoxActive || currentView !== "home") {
     logEvent("auto_reload_skipped", "Page reload skipped because page was in use", {
       idle_ms: idleMs,
       idle_hours: Math.round((idleMs / (60 * 60 * 1000)) * 100) / 100,
       last_activity_at: formatActivityTime_(lastPageActivityAt),
       last_activity_type: lastPageActivityType,
       video_is_open: videoIsOpen,
-      messages_are_open: messagesAreOpen,
+      current_view: currentView,
       text_box_active: textBoxActive
     });
     return;
@@ -1909,34 +1661,130 @@ function maybeReloadPage() {
     last_activity_at: formatActivityTime_(lastPageActivityAt),
     last_activity_type: lastPageActivityType
   });
+
   window.location.reload();
 }
 
-/* Keep hover and focus visually synced in pointer-based TV browsers */
-function syncPointerFocus() {
-  const selector = '.pointer-focus, .pointer-focus *';
+/* ---------- KEY HANDLING ---------- */
 
-  document.addEventListener('mousemove', function(e) {
-    const target = e.target.closest('.pointer-focus');
-    if (target && typeof target.focus === 'function') {
-      target.focus({ preventScroll: true });
-    }
-  });
-
-  document.addEventListener('mouseover', function(e) {
-    const target = e.target.closest('.pointer-focus');
-    if (target && typeof target.focus === 'function') {
-      target.focus({ preventScroll: true });
-    }
-  });
-
-  document.addEventListener('click', function(e) {
-    const target = e.target.closest('.pointer-focus');
-    if (target && typeof target.focus === 'function') {
-      target.focus({ preventScroll: true });
-    }
-  });
+function isActivationKey(key) {
+  return key === "Enter" || key === "OK" || key === "Select";
 }
+
+document.addEventListener("keydown", function(event) {
+  markPageActivity(event);
+
+  if (playerPanel.classList.contains("show")) {
+    if (event.key === "Escape" || event.key === "Backspace" || isActivationKey(event.key)) {
+      event.preventDefault();
+      hidePlayerPanel();
+    }
+    return;
+  }
+
+  if (document.activeElement === textarea) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      showView("home");
+    }
+    return;
+  }
+
+  const key = event.key;
+
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", "OK", "Select", "Escape", "Backspace"].includes(key)) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  if (key === "Escape" || key === "Backspace") {
+    if (currentView === "home") return;
+    if (currentView === "messageDetail") {
+      showView("messages");
+      return;
+    }
+    showView("home");
+    return;
+  }
+
+  if (currentView === "home") {
+    if (key.startsWith("Arrow")) moveGrid("home", 2, key);
+    if (isActivationKey(key)) activateHomeItem();
+    return;
+  }
+
+  if (currentView === "messages") {
+    if (key === "ArrowDown" || key === "ArrowUp") moveMessages(key);
+    if (isActivationKey(key)) activateMessage();
+    return;
+  }
+
+  if (currentView === "messageDetail") {
+    if (key === "ArrowLeft" || key === "ArrowRight") moveLinear("messageActions", key);
+    if (key === "ArrowDown") window.scrollBy({ top: 220, behavior: "auto" });
+    if (key === "ArrowUp") window.scrollBy({ top: -220, behavior: "auto" });
+    if (isActivationKey(key)) activateMessageAction();
+    return;
+  }
+
+  if (currentView === "videos") {
+    if (key === "ArrowDown" || key === "ArrowUp") moveVideos(key);
+    if (isActivationKey(key)) activateVideo();
+    return;
+  }
+
+  if (currentView === "send") {
+    if (key === "ArrowUp" || key === "ArrowDown") moveLinear("send", key);
+    if (isActivationKey(key)) {
+      const item = getSelectedItem("send");
+      if (!item) return;
+
+      if (item.dataset.action === "textarea") {
+        textarea.focus();
+      }
+
+      if (item.dataset.action === "submit") {
+        sendButton.click();
+      }
+    }
+  }
+});
+
+/* Pointer/click fallback for testing and mouse-style browsers */
+document.addEventListener("click", function(event) {
+  markPageActivity(event);
+
+  const item = event.target.closest(".spatial-item");
+  if (!item) return;
+
+  const group = item.dataset.navGroup;
+  if (group) {
+    const items = getItems(group);
+    const index = items.indexOf(item);
+    if (index >= 0) setSelected(group, index);
+  }
+
+  if (group === "home") activateHomeItem();
+  if (group === "messages") {
+    const actualIndex = Number(item.dataset.index || "0");
+    listState.messages.index = actualIndex;
+    activateMessage();
+  }
+  if (group === "messageActions") activateMessageAction();
+  if (group === "videos") {
+    const actualIndex = Number(item.dataset.index || "0");
+    listState.videos.index = actualIndex;
+    activateVideo();
+  }
+});
+
+closeVideoButton.addEventListener("click", hidePlayerPanel);
+
+["click", "keydown", "touchstart", "mousemove", "input", "focus"].forEach((eventName) => {
+  document.addEventListener(eventName, markPageActivity, true);
+});
+
+/* ---------- INIT ---------- */
 
 document.addEventListener("DOMContentLoaded", function() {
   window.scrollTo(0, 0);
@@ -1944,83 +1792,17 @@ document.addEventListener("DOMContentLoaded", function() {
   updateDateTimeBar();
   setInterval(updateDateTimeBar, 1000);
 
-  textarea.addEventListener("focus", () => {
-    clearTimeout(statusTimeout);
-    clearStatus();
-    setTextareaVisual();
-  });
-
-  textarea.addEventListener("click", () => {
-    clearTimeout(statusTimeout);
-    clearStatus();
-    setTextareaVisual();
-  });
-
-  textarea.addEventListener("input", () => {
-    clearTimeout(statusTimeout);
-    clearStatus();
-    setTextareaVisual();
-  });
-
-  sendButton.addEventListener("focus", () => {
-    clearTextareaVisual();
-  });
-
-  sendButton.addEventListener("mouseover", () => {
-    clearTextareaVisual();
-  });
-
-  closeVideoButton.addEventListener("click", () => {
-    logEvent("video_close", "Close video");
-    hidePlayerPanel();
-  });
-
-  familyMessagesButton.addEventListener("click", () => {
-    logEvent("open_family_messages", "Family Messages");
-    openMessagesPanel();
-  });
-
-  closeMessagesButton.addEventListener("click", () => {
-    logEvent("close_family_messages", "Close Family Messages");
-    closeMessagesPanelFn();
-  });
-
-  document.getElementById("tileMainPhotosLoop").addEventListener("click", () => {
-    logEvent("tile_click", "Main Photos Loop");
-  });
-
-  document.getElementById("tileMainPhotos").addEventListener("click", () => {
-    logEvent("tile_click", "Main Photos");
-  });
-
-  document.getElementById("tileLatestPhotos").addEventListener("click", () => {
-    logEvent("tile_click", "Latest Photos");
-  });
-
-  document.getElementById("tileVideos").addEventListener("click", () => {
-    logEvent("tile_click", "Videos");
-  });
-
-  const playlistLink = document.querySelector(".youtube-playlist-link");
-  if (playlistLink) {
-    playlistLink.addEventListener("click", () => {
-      logEvent("youtube_playlist_link_click", "Open YouTube playlist advanced");
-    });
-  }
-
-  ["click", "keydown", "touchstart", "mousemove", "input", "focus"].forEach((eventName) => {
-    document.addEventListener(eventName, markPageActivity, true);
-  });
-
-  syncPointerFocus();
   refreshPublicIp().then(() => {
     logEvent("page_load", "Fire TV Home loaded");
   });
+
+  loadMessages();
   loadVideos();
-  preloadMessagesForBadge();
   startPeriodicRefresh();
+
+  selected.home = 0;
+  setSelected("home", 0);
 });
 </script>
-
 </body>
 </html>
