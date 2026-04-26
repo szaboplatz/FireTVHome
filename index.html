@@ -111,9 +111,17 @@ body {
   color: var(--muted);
 }
 
-.back-hint {
-  font-size: 22px;
-  color: #cfcfcf;
+.nav-button {
+  min-width: 210px;
+  min-height: 68px;
+  padding: 14px 22px;
+  border-radius: 16px;
+  border: 4px solid rgba(255,255,255,0.14);
+  background: #444;
+  color: white;
+  font-size: 28px;
+  font-weight: 900;
+  text-align: center;
 }
 
 /* Spatial focus model */
@@ -588,7 +596,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.0.0 spatial</div>
+    <div class="version-label">Fire TV Home v1.0.1 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -638,7 +646,7 @@ textarea:focus {
         <div class="view-title">FAMILY MESSAGES</div>
         <div class="view-subtitle">Use up/down. Press Select to open.</div>
       </div>
-      <div class="back-hint">BACK = Home</div>
+      <button class="nav-button spatial-item" data-nav-group="messagesHeader" data-action="home">HOME</button>
     </div>
 
     <div class="messages-list-shell">
@@ -646,7 +654,7 @@ textarea:focus {
       <div id="messagesList" class="messages-list"></div>
       <div class="list-footer">
         <span id="messagesPageInfo"></span>
-        <span>BACK returns Home</span>
+        <span>Use HOME button to return</span>
       </div>
     </div>
   </section>
@@ -655,7 +663,7 @@ textarea:focus {
   <section id="messageDetailView" class="view">
     <div class="view-title-row">
       <div class="view-title">MESSAGE</div>
-      <div class="back-hint">BACK = Message List</div>
+      <button class="nav-button spatial-item" data-nav-group="messageActions" data-action="close">MESSAGE LIST</button>
     </div>
 
     <div class="message-detail-layout">
@@ -684,7 +692,7 @@ textarea:focus {
           <span id="ytLastChecked">Last checked: --</span>
         </div>
       </div>
-      <div class="back-hint">BACK = Home</div>
+      <button class="nav-button spatial-item" data-nav-group="videosHeader" data-action="home">HOME</button>
     </div>
 
     <div class="videos-shell">
@@ -692,7 +700,7 @@ textarea:focus {
       <div id="ytList" class="youtube-list"></div>
       <div class="list-footer">
         <span id="videosPageInfo"></span>
-        <span>BACK returns Home</span>
+        <span>Use HOME button to return</span>
       </div>
     </div>
   </section>
@@ -701,7 +709,7 @@ textarea:focus {
   <section id="sendView" class="view">
     <div class="view-title-row">
       <div class="view-title">SEND MESSAGE</div>
-      <div class="back-hint">BACK = Home</div>
+      <button class="nav-button spatial-item" data-nav-group="sendHeader" data-action="home">HOME</button>
     </div>
 
     <form class="send-layout" action="https://formspree.io/f/xzdyznda" method="POST" onsubmit="handleSubmit(event)">
@@ -739,7 +747,7 @@ const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
 const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.0.0";
+const PAGE_VERSION = "v1.0.1";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -940,17 +948,20 @@ function showView(name) {
     setSelected("home", selected.home || 0);
   }
   if (name === "messages") {
+    clearGroupSelection("messagesHeader");
     renderMessagesList();
-    setSelected("messages", listState.messages.index);
+    setSelected("messages", Math.max(0, listState.messages.index - listState.messages.offset));
   }
   if (name === "messageDetail") {
     setSelected("messageActions", selected.messageActions || 0);
   }
   if (name === "videos") {
+    clearGroupSelection("videosHeader");
     renderVideosList();
-    setSelected("videos", listState.videos.index);
+    setSelected("videos", Math.max(0, listState.videos.index - listState.videos.offset));
   }
   if (name === "send") {
+    clearGroupSelection("sendHeader");
     setSelected("send", selected.send || 0);
   }
 }
@@ -1665,6 +1676,16 @@ function maybeReloadPage() {
   window.location.reload();
 }
 
+function activateHeaderHome() {
+  logEvent("nav_home", "On-screen HOME button", { from_view: currentView });
+  showView("home");
+}
+
+function activateMessageListButton() {
+  logEvent("nav_message_list", "On-screen MESSAGE LIST button");
+  showView("messages");
+}
+
 /* ---------- KEY HANDLING ---------- */
 
 function isActivationKey(key) {
@@ -1714,6 +1735,25 @@ document.addEventListener("keydown", function(event) {
   }
 
   if (currentView === "messages") {
+    const headerSelected = getSelectedItem("messagesHeader")?.classList.contains("selected");
+
+    if (key === "ArrowUp" && listState.messages.index === 0) {
+      clearGroupSelection("messages");
+      setSelected("messagesHeader", 0);
+      return;
+    }
+
+    if (key === "ArrowDown" && headerSelected) {
+      clearGroupSelection("messagesHeader");
+      setSelected("messages", Math.max(0, listState.messages.index - listState.messages.offset));
+      return;
+    }
+
+    if (headerSelected) {
+      if (isActivationKey(key)) activateHeaderHome();
+      return;
+    }
+
     if (key === "ArrowDown" || key === "ArrowUp") moveMessages(key);
     if (isActivationKey(key)) activateMessage();
     return;
@@ -1728,12 +1768,50 @@ document.addEventListener("keydown", function(event) {
   }
 
   if (currentView === "videos") {
+    const headerSelected = getSelectedItem("videosHeader")?.classList.contains("selected");
+
+    if (key === "ArrowUp" && listState.videos.index === 0) {
+      clearGroupSelection("videos");
+      setSelected("videosHeader", 0);
+      return;
+    }
+
+    if (key === "ArrowDown" && headerSelected) {
+      clearGroupSelection("videosHeader");
+      setSelected("videos", Math.max(0, listState.videos.index - listState.videos.offset));
+      return;
+    }
+
+    if (headerSelected) {
+      if (isActivationKey(key)) activateHeaderHome();
+      return;
+    }
+
     if (key === "ArrowDown" || key === "ArrowUp") moveVideos(key);
     if (isActivationKey(key)) activateVideo();
     return;
   }
 
   if (currentView === "send") {
+    const headerSelected = getSelectedItem("sendHeader")?.classList.contains("selected");
+
+    if (key === "ArrowUp" && (selected.send || 0) === 0) {
+      clearGroupSelection("send");
+      setSelected("sendHeader", 0);
+      return;
+    }
+
+    if (key === "ArrowDown" && headerSelected) {
+      clearGroupSelection("sendHeader");
+      setSelected("send", 0);
+      return;
+    }
+
+    if (headerSelected) {
+      if (isActivationKey(key)) activateHeaderHome();
+      return;
+    }
+
     if (key === "ArrowUp" || key === "ArrowDown") moveLinear("send", key);
     if (isActivationKey(key)) {
       const item = getSelectedItem("send");
@@ -1765,6 +1843,7 @@ document.addEventListener("click", function(event) {
   }
 
   if (group === "home") activateHomeItem();
+  if (group === "messagesHeader" || group === "videosHeader" || group === "sendHeader") activateHeaderHome();
   if (group === "messages") {
     const actualIndex = Number(item.dataset.index || "0");
     listState.messages.index = actualIndex;
