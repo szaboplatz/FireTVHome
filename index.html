@@ -181,6 +181,7 @@ body {
 .tile-main-photos { background: #2ca02c; }
 .tile-latest-photos { background: #d62728; }
 .tile-videos { background: #9467bd; }
+.tile-misc-videos { background: #5f7f1f; }
 .tile-send { background: #444; }
 
 .unread-badge {
@@ -476,6 +477,18 @@ body {
   font-weight: bold;
 }
 
+.youtube-update-badge {
+  display: inline-block;
+  background: #c40000;
+  color: white;
+  border: 4px solid #ff8a8a;
+  border-radius: 999px;
+  padding: 5px 13px;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+}
+
 .youtube-list {
   display: flex;
   flex-direction: column;
@@ -699,7 +712,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.1.2 spatial</div>
+    <div class="version-label">Fire TV Home v1.2.0 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -736,9 +749,17 @@ textarea:focus {
         <span class="tile-update-text hidden"></span>
       </div>
 
-      <div class="home-tile tile-videos spatial-item small-label" data-nav-group="home" data-action="videos">WRESTLING VIDEOS</div>
+      <div class="home-tile tile-videos spatial-item small-label" id="tileWrestlingVideos" data-nav-group="home" data-action="videos" data-playlist-key="wrestling">
+        <span class="tile-main-label">WRESTLING VIDEOS</span>
+        <span class="tile-update-badge hidden">UPDATED</span>
+        <span class="tile-update-text hidden"></span>
+      </div>
 
-      <div class="home-tile tile-send spatial-item small-label" data-nav-group="home" data-action="playlist-link">YOUTUBE PLAYLIST LINK</div>
+      <div class="home-tile tile-misc-videos spatial-item small-label" id="tileMiscVideos" data-nav-group="home" data-action="videos" data-playlist-key="misc">
+        <span class="tile-main-label">MISC VIDEOS</span>
+        <span class="tile-update-badge hidden">UPDATED</span>
+        <span class="tile-update-text hidden"></span>
+      </div>
     </div>
   </section>
 
@@ -790,6 +811,7 @@ textarea:focus {
     <div class="view-title-row">
       <div>
         <div class="view-title" id="ytHeaderTitle">WRESTLING VIDEOS</div>
+        <span id="ytManualBadge" class="youtube-update-badge hidden">UPDATED</span>
         <div class="view-subtitle">Use up/down. Press Left for HOME. Press Select to play.</div>
         <div class="youtube-header-meta">
           <span id="ytManualUpdateText" class="youtube-manual-update hidden"></span>
@@ -848,10 +870,19 @@ const PAGE_RELOAD_CHECK_INTERVAL_MS = 60 * 60 * 1000;
 const PAGE_RELOAD_IDLE_MS = 12 * 60 * 60 * 1000;
 
 const API_KEY = "AIzaSyDhn_iGCs_y-xrx6AvCUbyylLWntuwTaTI";
-const PLAYLIST_ID = "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
+const VIDEO_PLAYLISTS = {
+  wrestling: {
+    title: "WRESTLING VIDEOS",
+    playlistId: "PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi"
+  },
+  misc: {
+    title: "MISC VIDEOS",
+    playlistId: "PLZkdVGOBHvXMs_M4zGngYyLBtEeJfBUcF"
+  }
+};
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.1.2";
+const PAGE_VERSION = "v1.2.0";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -865,17 +896,19 @@ let listState = {
   messages: { index: 0, offset: 0, pageSize: 3, homeSelected: false },
   videos: { index: 0, offset: 0, pageSize: 4, homeSelected: false }
 };
-let loadedVideos = [];
+let currentVideoPlaylistKey = "wrestling";
+let loadedVideosByKey = { wrestling: [], misc: [] };
 let lastPageActivityAt = Date.now();
 let lastPageActivityType = "page_start";
 
 /* MANUAL UPDATE FLAGS */
 const MANUAL_UPDATES = {
-  mainPhotosLoop: { badge: false, text: "" },
-  mainPhotos:     { badge: false, text: "" },
-  latestPhotos:   { badge: false, text: "" },
-  videos:         { badge: false, text: "" },
-  youtubeList:    { badge: true, text: "Sunday May 3rd" }
+  mainPhotosLoop:   { badge: false, text: "" },
+  mainPhotos:       { badge: false, text: "" },
+  latestPhotos:     { badge: false, text: "" },
+  videos:           { badge: false, text: "" },
+  wrestlingVideos:  { badge: true, text: "updated today" },
+  miscVideos:       { badge: true, text: "new tile" }
 };
 
 const views = {
@@ -898,6 +931,7 @@ const messageDetailBody = document.getElementById("messageDetailBody");
 const messageBodyPanel = document.getElementById("messageBodyPanel");
 
 const ytHeaderTitle = document.getElementById("ytHeaderTitle");
+const ytManualBadge = document.getElementById("ytManualBadge");
 const ytManualUpdateText = document.getElementById("ytManualUpdateText");
 const ytLastChecked = document.getElementById("ytLastChecked");
 const ytStatus = document.getElementById("ytStatus");
@@ -1154,14 +1188,10 @@ function activateHomeItem() {
   }
 
   if (action === "videos") {
-    logEvent("open_wrestling_videos", "Wrestling Videos");
-    openVideosView();
-    return;
-  }
-
-  if (action === "playlist-link") {
-    logEvent("youtube_playlist_link_click", "Open YouTube playlist advanced");
-    window.location.href = "https://www.youtube.com/playlist?list=PLZkdVGOBHvXOU4aXtZ8892qSg4hZfysZi";
+    const playlistKey = item.dataset.playlistKey || "wrestling";
+    const playlist = VIDEO_PLAYLISTS[playlistKey] || VIDEO_PLAYLISTS.wrestling;
+    logEvent("open_video_playlist", playlist.title, { playlist_key: playlistKey });
+    openVideosView(playlistKey);
     return;
   }
 
@@ -1196,19 +1226,36 @@ function applyTileUpdate(tileId, cfg) {
   }
 }
 
-function applyManualUpdateUI() {
-  applyTileUpdate("tileMainPhotosLoop", MANUAL_UPDATES.mainPhotosLoop);
-  applyTileUpdate("tileMainPhotos", MANUAL_UPDATES.mainPhotos);
-  applyTileUpdate("tileLatestPhotos", MANUAL_UPDATES.latestPhotos);
-  applyTileUpdate("tileVideos", MANUAL_UPDATES.videos);
+function getManualVideoUpdateConfig(key) {
+  return key === "misc" ? MANUAL_UPDATES.miscVideos : MANUAL_UPDATES.wrestlingVideos;
+}
 
-  if (MANUAL_UPDATES.youtubeList && MANUAL_UPDATES.youtubeList.text) {
-    ytManualUpdateText.textContent = MANUAL_UPDATES.youtubeList.text;
+function applyVideoHeaderUpdateUI(key) {
+  const cfg = getManualVideoUpdateConfig(key);
+
+  if (cfg && cfg.badge) {
+    ytManualBadge.classList.remove("hidden");
+  } else {
+    ytManualBadge.classList.add("hidden");
+  }
+
+  if (cfg && cfg.text) {
+    ytManualUpdateText.textContent = cfg.text;
     ytManualUpdateText.classList.remove("hidden");
   } else {
     ytManualUpdateText.textContent = "";
     ytManualUpdateText.classList.add("hidden");
   }
+}
+
+function applyManualUpdateUI() {
+  applyTileUpdate("tileMainPhotosLoop", MANUAL_UPDATES.mainPhotosLoop);
+  applyTileUpdate("tileMainPhotos", MANUAL_UPDATES.mainPhotos);
+  applyTileUpdate("tileLatestPhotos", MANUAL_UPDATES.latestPhotos);
+  applyTileUpdate("tileVideos", MANUAL_UPDATES.videos);
+  applyTileUpdate("tileWrestlingVideos", MANUAL_UPDATES.wrestlingVideos);
+  applyTileUpdate("tileMiscVideos", MANUAL_UPDATES.miscVideos);
+  applyVideoHeaderUpdateUI(currentVideoPlaylistKey);
 }
 
 /* ---------- MESSAGES ---------- */
@@ -1616,20 +1663,32 @@ async function fetchPlaylistVideos(playlistId, apiKey) {
   return videos;
 }
 
-async function loadVideos() {
-  try {
-    loadedVideos = await fetchPlaylistVideos(PLAYLIST_ID, API_KEY);
-    updateYoutubeHeaderCount(loadedVideos.length);
-    updateYoutubeLastChecked();
+async function loadVideos(key = currentVideoPlaylistKey) {
+  const playlist = VIDEO_PLAYLISTS[key] || VIDEO_PLAYLISTS.wrestling;
 
-    if (currentView === "videos") {
-      renderVideosList();
+  try {
+    loadedVideosByKey[key] = await fetchPlaylistVideos(playlist.playlistId, API_KEY);
+
+    if (key === currentVideoPlaylistKey) {
+      updateYoutubeHeaderCount(loadedVideosByKey[key].length);
+      updateYoutubeLastChecked();
+      applyVideoHeaderUpdateUI(key);
+
+      if (currentView === "videos") {
+        renderVideosList();
+      }
     }
   } catch (e) {
     console.error(e);
-    ytStatus.textContent = "Error loading videos";
-    updateYoutubeLastChecked();
+    if (key === currentVideoPlaylistKey) {
+      ytStatus.textContent = "Error loading videos";
+      updateYoutubeLastChecked();
+    }
   }
+}
+
+async function loadAllVideoPlaylists() {
+  await Promise.all(Object.keys(VIDEO_PLAYLISTS).map(key => loadVideos(key)));
 }
 
 function updateYoutubeLastChecked() {
@@ -1647,16 +1706,22 @@ function updateYoutubeLastChecked() {
 }
 
 function updateYoutubeHeaderCount(count) {
-  ytHeaderTitle.textContent = `WRESTLING VIDEOS (${count})`;
+  const playlist = VIDEO_PLAYLISTS[currentVideoPlaylistKey] || VIDEO_PLAYLISTS.wrestling;
+  ytHeaderTitle.textContent = `${playlist.title} (${count})`;
 }
 
-function openVideosView() {
+function openVideosView(key = "wrestling") {
+  currentVideoPlaylistKey = VIDEO_PLAYLISTS[key] ? key : "wrestling";
+  listState.videos.index = 0;
+  listState.videos.offset = 0;
   listState.videos.homeSelected = false;
+  applyVideoHeaderUpdateUI(currentVideoPlaylistKey);
+  updateYoutubeHeaderCount((loadedVideosByKey[currentVideoPlaylistKey] || []).length);
   showView("videos");
 
-  if (!loadedVideos.length) {
+  if (!(loadedVideosByKey[currentVideoPlaylistKey] || []).length) {
     ytStatus.textContent = "Loading videos…";
-    loadVideos();
+    loadVideos(currentVideoPlaylistKey);
   } else {
     renderVideosList();
   }
@@ -1666,9 +1731,12 @@ function renderVideosList() {
   updateMeasuredPageSizes();
   ytList.innerHTML = "";
 
-  if (!loadedVideos.length) {
+  const currentVideos = loadedVideosByKey[currentVideoPlaylistKey] || [];
+
+  if (!currentVideos.length) {
     ytStatus.textContent = "No videos found.";
     videosPageInfo.textContent = "";
+    updateYoutubeHeaderCount(0);
     return;
   }
 
@@ -1676,13 +1744,13 @@ function renderVideosList() {
 
   const watched = getWatchedVideos();
   const state = listState.videos;
-  state.index = Math.max(0, Math.min(state.index, loadedVideos.length - 1));
+  state.index = Math.max(0, Math.min(state.index, currentVideos.length - 1));
 
   if (state.index < state.offset) state.offset = state.index;
   if (state.index >= state.offset + state.pageSize) state.offset = state.index - state.pageSize + 1;
-  state.offset = Math.max(0, Math.min(state.offset, Math.max(0, loadedVideos.length - state.pageSize)));
+  state.offset = Math.max(0, Math.min(state.offset, Math.max(0, currentVideos.length - state.pageSize)));
 
-  const visible = loadedVideos.slice(state.offset, state.offset + state.pageSize);
+  const visible = currentVideos.slice(state.offset, state.offset + state.pageSize);
 
   visible.forEach((video, visibleIndex) => {
     const actualIndex = state.offset + visibleIndex;
@@ -1701,7 +1769,7 @@ function renderVideosList() {
     ytList.appendChild(card);
   });
 
-  const isFinalPage = state.offset + visible.length >= loadedVideos.length;
+  const isFinalPage = state.offset + visible.length >= currentVideos.length;
 
   if (isFinalPage) {
     const homeCard = document.createElement("div");
@@ -1718,7 +1786,7 @@ function renderVideosList() {
 
   videosPageInfo.textContent = state.homeSelected
     ? `HOME selected — press Select to return`
-    : `Video ${state.index + 1} of ${loadedVideos.length}`;
+    : `Video ${state.index + 1} of ${currentVideos.length}`;
 
   const selectedIndex = state.homeSelected && isFinalPage ? visible.length : state.index - state.offset;
   setSelected("videos", selectedIndex);
@@ -1733,10 +1801,11 @@ function moveVideos(key) {
       return;
     }
 
-    if (state.index >= loadedVideos.length - 1) {
+    const currentVideos = loadedVideosByKey[currentVideoPlaylistKey] || [];
+    if (state.index >= currentVideos.length - 1) {
       state.homeSelected = true;
     } else {
-      state.index = Math.min(state.index + 1, loadedVideos.length - 1);
+      state.index = Math.min(state.index + 1, currentVideos.length - 1);
       state.homeSelected = false;
     }
   }
@@ -1744,7 +1813,7 @@ function moveVideos(key) {
   if (key === "ArrowUp") {
     if (state.homeSelected) {
       state.homeSelected = false;
-      state.index = loadedVideos.length - 1;
+      state.index = (loadedVideosByKey[currentVideoPlaylistKey] || []).length - 1;
     } else {
       state.index = Math.max(state.index - 1, 0);
     }
@@ -1760,7 +1829,7 @@ function activateVideo() {
     return;
   }
 
-  const video = loadedVideos[listState.videos.index];
+  const video = (loadedVideosByKey[currentVideoPlaylistKey] || [])[listState.videos.index];
   if (!video) return;
 
   playEmbeddedVideo(video.videoId);
@@ -1876,7 +1945,7 @@ function startPeriodicRefresh() {
   }, MESSAGE_REFRESH_INTERVAL_MS);
 
   setInterval(async () => {
-    await loadVideos();
+    await loadAllVideoPlaylists();
   }, VIDEO_REFRESH_INTERVAL_MS);
 
   setInterval(() => {
@@ -2183,7 +2252,7 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 
   loadMessages();
-  loadVideos();
+  loadAllVideoPlaylists();
   startPeriodicRefresh();
 
   window.addEventListener("resize", () => {
