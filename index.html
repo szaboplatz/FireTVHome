@@ -740,7 +740,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.3.0 spatial</div>
+    <div class="version-label">Fire TV Home v1.3.1 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -933,7 +933,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.3.0";
+const PAGE_VERSION = "v1.3.1";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1168,25 +1168,33 @@ function showView(name) {
   }
 }
 
+function getAllItems(group) {
+  return Array.from(document.querySelectorAll(`[data-nav-group="${group}"]`));
+}
+
 function getItems(group) {
-  return Array.from(document.querySelectorAll(`[data-nav-group="${group}"]`))
+  return getAllItems(group)
     .filter(el => !el.disabled && el.offsetParent !== null);
 }
 
 function clearGroupSelection(group) {
-  getItems(group).forEach(el => el.classList.remove("selected"));
+  getAllItems(group).forEach(el => el.classList.remove("selected"));
 }
 
 function setSelected(group, index) {
   const items = getItems(group);
+
+  // Important: clear every item in the group, including disabled items.
+  // Otherwise a button that becomes disabled, such as DONE: REPLIED, can
+  // keep an old yellow selected outline even though real focus moved away.
+  clearGroupSelection(group);
+
   if (!items.length) return;
 
   const bounded = Math.max(0, Math.min(index, items.length - 1));
   selected[group] = bounded;
 
-  items.forEach((el, i) => {
-    el.classList.toggle("selected", i === bounded);
-  });
+  items[bounded].classList.add("selected");
 
   if (document.activeElement !== items[bounded] && items[bounded].focus) {
     items[bounded].focus({ preventScroll: true });
@@ -1534,8 +1542,8 @@ function renderMessageDetail() {
 
   messageDetailBody.innerHTML = `<span class="field-label">BODY:</span> ${msg.body}<div class="message-end-marker">END OF MESSAGE</div>`;
 
-  const actions = getItems("messageActions");
-  actions.forEach(btn => btn.classList.remove("active"));
+  const actions = getAllItems("messageActions");
+  actions.forEach(btn => btn.classList.remove("active", "selected"));
 
   const readBtn = document.querySelector('[data-nav-group="messageActions"][data-action="read"]');
   const likeBtn = document.querySelector('[data-nav-group="messageActions"][data-action="like"]');
@@ -2014,6 +2022,9 @@ async function submitReply() {
     logEvent("message_reply_success", currentMessage.subject || currentMessage.id, { id: currentMessage.id });
 
     setTimeout(() => {
+      clearGroupSelection("reply");
+      clearGroupSelection("replyHeader");
+      selected.messageActions = 0;
       renderMessageDetail();
       showView("messageDetail");
     }, 900);
