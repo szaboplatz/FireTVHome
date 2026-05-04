@@ -378,8 +378,8 @@ body {
 
 .detail-actions {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
 }
 
 .action-btn {
@@ -411,6 +411,7 @@ body {
 
 .action-read { background: #444; }
 .action-like { background: #444; }
+.action-reply { background: #6b4aa0; }
 .action-archive { background: #666; }
 .action-close { background: #777; }
 
@@ -536,6 +537,33 @@ body {
   font-weight: bold;
   padding: 16px 20px;
   text-align: center;
+}
+
+
+.message-card.replied {
+  box-shadow: inset 0 0 0 4px #b58cff;
+}
+
+.reply-context-panel {
+  background: #111;
+  border: 4px solid #6b4aa0;
+  border-radius: 16px;
+  padding: 14px 18px;
+  text-align: left;
+}
+
+.reply-context-line {
+  font-size: 30px;
+  line-height: 1.22;
+  margin-bottom: 6px;
+  font-weight: 900;
+}
+
+.reply-status-note {
+  font-size: 24px;
+  color: #fff4b1;
+  text-align: center;
+  min-height: 32px;
 }
 
 /* SEND MESSAGE VIEW */
@@ -712,7 +740,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.2.0 spatial</div>
+    <div class="version-label">Fire TV Home v1.3.0 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -796,6 +824,7 @@ textarea:focus {
       <div class="detail-actions" id="messageDetailActions">
         <button class="action-btn action-read spatial-item" data-nav-group="messageActions" data-action="read">✔ READ</button>
         <button class="action-btn action-like spatial-item" data-nav-group="messageActions" data-action="like">👍 LIKE</button>
+        <button class="action-btn action-reply spatial-item" data-nav-group="messageActions" data-action="reply">↩ REPLY</button>
         <button class="action-btn action-archive spatial-item" data-nav-group="messageActions" data-action="archive">📥 ARCHIVE</button>
         <button class="action-btn action-close spatial-item" data-nav-group="messageActions" data-action="close">CLOSE</button>
       </div>
@@ -828,6 +857,28 @@ textarea:focus {
         <span id="videosPageInfo"></span>
         <span>Use HOME button to return</span>
       </div>
+    </div>
+  </section>
+
+
+  <!-- REPLY VIEW -->
+  <section id="replyView" class="view">
+    <div class="view-title-row">
+      <div class="view-title">REPLY</div>
+      <button class="nav-button spatial-item" data-nav-group="replyHeader" data-action="close">MESSAGE</button>
+    </div>
+
+    <div class="send-layout">
+      <div class="reply-context-panel" id="replyContextPanel">
+        <div class="reply-context-line"><span class="field-label">REPLYING TO:</span> <span id="replyToText">Family</span></div>
+        <div class="reply-context-line"><span class="field-label">SUBJECT:</span> <span id="replySubjectText"></span></div>
+      </div>
+
+      <textarea class="spatial-item" data-nav-group="reply" data-action="textarea" id="replyBox" placeholder="Type or speak your reply here" required></textarea>
+
+      <div id="replyStatus" class="reply-status-note"></div>
+
+      <button class="submit-button spatial-item" data-nav-group="reply" data-action="submit" id="replySendButton" type="button">SEND REPLY</button>
     </div>
   </section>
 
@@ -882,7 +933,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.2.0";
+const PAGE_VERSION = "v1.3.0";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -915,6 +966,7 @@ const views = {
   home: document.getElementById("homeView"),
   messages: document.getElementById("messagesView"),
   messageDetail: document.getElementById("messageDetailView"),
+  reply: document.getElementById("replyView"),
   videos: document.getElementById("videosView"),
   send: document.getElementById("sendView")
 };
@@ -942,6 +994,12 @@ const panel = document.getElementById("sendView");
 const textarea = document.getElementById("messageBox");
 const statusBox = document.getElementById("status");
 const sendButton = document.getElementById("sendButton");
+
+const replyBox = document.getElementById("replyBox");
+const replySendButton = document.getElementById("replySendButton");
+const replyStatus = document.getElementById("replyStatus");
+const replyToText = document.getElementById("replyToText");
+const replySubjectText = document.getElementById("replySubjectText");
 
 const playerPanel = document.getElementById("playerPanel");
 const closeVideoButton = document.getElementById("closeVideoButton");
@@ -1099,6 +1157,10 @@ function showView(name) {
     clearGroupSelection("videosHeader");
     renderVideosList();
     setSelected("videos", Math.max(0, listState.videos.index - listState.videos.offset));
+  }
+  if (name === "reply") {
+    clearGroupSelection("replyHeader");
+    setSelected("reply", selected.reply || 0);
   }
   if (name === "send") {
     clearGroupSelection("sendHeader");
@@ -1361,6 +1423,7 @@ function renderMessagesList() {
     if (msg.opened_at) card.classList.add("opened");
     if (msg.read_at) card.classList.add("read");
     if (msg.liked_at) card.classList.add("liked");
+    if (msg.replied_at) card.classList.add("replied");
 
     const msgDate = msg.created_at ? formatHeaderDate(new Date(msg.created_at)) : "";
 
@@ -1476,6 +1539,7 @@ function renderMessageDetail() {
 
   const readBtn = document.querySelector('[data-nav-group="messageActions"][data-action="read"]');
   const likeBtn = document.querySelector('[data-nav-group="messageActions"][data-action="like"]');
+  const replyBtn = document.querySelector('[data-nav-group="messageActions"][data-action="reply"]');
 
   if (readBtn) {
     readBtn.disabled = false;
@@ -1489,6 +1553,12 @@ function renderMessageDetail() {
     likeBtn.textContent = "👍 LIKE";
   }
 
+  if (replyBtn) {
+    replyBtn.disabled = false;
+    replyBtn.classList.remove("active", "inactive");
+    replyBtn.textContent = "↩ REPLY";
+  }
+
   if (msg.read_at && readBtn) {
     readBtn.classList.add("inactive");
     readBtn.disabled = true;
@@ -1499,6 +1569,12 @@ function renderMessageDetail() {
     likeBtn.classList.add("inactive");
     likeBtn.disabled = true;
     likeBtn.textContent = "DONE: LIKED";
+  }
+
+  if (msg.replied_at && replyBtn) {
+    replyBtn.classList.add("inactive");
+    replyBtn.disabled = true;
+    replyBtn.textContent = "DONE: REPLIED";
   }
 
   selected.messageActions = 0;
@@ -1571,6 +1647,12 @@ async function activateMessageAction() {
     } catch (e) {
       console.error(e);
     }
+    return;
+  }
+
+  if (action === "reply") {
+    logEvent("message_reply_start", msg.subject || msg.id, { id: msg.id });
+    openReplyView();
     return;
   }
 
@@ -1871,6 +1953,79 @@ function playEmbeddedVideo(videoId) {
   playerHost.appendChild(iframe);
 }
 
+
+/* ---------- REPLY ---------- */
+
+function openReplyView() {
+  if (!currentMessage) return;
+  replyToText.textContent = currentMessage.from_name || "Family";
+  replySubjectText.textContent = currentMessage.subject || "";
+  replyBox.value = "";
+  replyStatus.textContent = "";
+  showView("reply");
+}
+
+function showReplyStatus(text, mode) {
+  replyStatus.textContent = text;
+  replyStatus.className = "reply-status-note";
+  if (mode) replyStatus.classList.add(mode);
+}
+
+async function submitReply() {
+  if (!currentMessage) return;
+
+  const body = replyBox.value.trim();
+  if (!body) {
+    showReplyStatus("Please enter a reply.", "error");
+    return;
+  }
+
+  replySendButton.disabled = true;
+  showReplyStatus("SENDING REPLY...", "sending");
+  logEvent("message_reply_attempt", currentMessage.subject || currentMessage.id, { id: currentMessage.id });
+
+  try {
+    const formData = new URLSearchParams();
+    formData.set("action", "add_reply");
+    formData.set("id", currentMessage.id);
+    formData.set("reply_body", body);
+
+    const response = await fetch(MESSAGES_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      body: formData.toString()
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.ok) {
+      throw new Error(result && result.error ? result.error : "Reply failed");
+    }
+
+    currentMessage.replied_at = result.replied_at || new Date().toISOString();
+    currentMessage.reply_body = body;
+
+    const cached = findCachedMessage(currentMessage.id);
+    if (cached) {
+      cached.replied_at = currentMessage.replied_at;
+      cached.reply_body = body;
+    }
+
+    showReplyStatus("REPLY SENT ✓", "sent");
+    logEvent("message_reply_success", currentMessage.subject || currentMessage.id, { id: currentMessage.id });
+
+    setTimeout(() => {
+      renderMessageDetail();
+      showView("messageDetail");
+    }, 900);
+  } catch (e) {
+    console.error(e);
+    showReplyStatus("ERROR SENDING REPLY", "error");
+    logEvent("message_reply_error", currentMessage.subject || currentMessage.id, { id: currentMessage.id });
+  } finally {
+    replySendButton.disabled = false;
+  }
+}
+
 /* ---------- SEND MESSAGE ---------- */
 
 function showStatus(text, mode) {
@@ -1955,7 +2110,7 @@ function startPeriodicRefresh() {
 
 function maybeReloadPage() {
   const videoIsOpen = playerPanel.classList.contains("show");
-  const textBoxActive = document.activeElement === textarea;
+  const textBoxActive = document.activeElement === textarea || document.activeElement === replyBox;
   const idleMs = Date.now() - lastPageActivityAt;
 
   if (videoIsOpen || textBoxActive || currentView !== "home") {
@@ -2016,6 +2171,15 @@ document.addEventListener("keydown", function(event) {
     if (event.key === "Escape") {
       event.preventDefault();
       showView("home");
+    }
+    return;
+  }
+
+  if (document.activeElement === replyBox) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      renderMessageDetail();
+      showView("messageDetail");
     }
     return;
   }
@@ -2139,6 +2303,46 @@ document.addEventListener("keydown", function(event) {
     return;
   }
 
+
+  if (currentView === "reply") {
+    const headerSelected = getSelectedItem("replyHeader")?.classList.contains("selected");
+
+    if (key === "ArrowUp" && (selected.reply || 0) === 0) {
+      clearGroupSelection("reply");
+      setSelected("replyHeader", 0);
+      return;
+    }
+
+    if (key === "ArrowDown" && headerSelected) {
+      clearGroupSelection("replyHeader");
+      setSelected("reply", 0);
+      return;
+    }
+
+    if (headerSelected) {
+      if (isActivationKey(key)) {
+        renderMessageDetail();
+        showView("messageDetail");
+      }
+      return;
+    }
+
+    if (key === "ArrowUp" || key === "ArrowDown") moveLinear("reply", key);
+    if (isActivationKey(key)) {
+      const item = getSelectedItem("reply");
+      if (!item) return;
+
+      if (item.dataset.action === "textarea") {
+        replyBox.focus();
+      }
+
+      if (item.dataset.action === "submit") {
+        submitReply();
+      }
+    }
+    return;
+  }
+
   if (currentView === "send") {
     const headerSelected = getSelectedItem("sendHeader")?.classList.contains("selected");
 
@@ -2191,6 +2395,10 @@ document.addEventListener("click", function(event) {
 
   if (group === "home") activateHomeItem();
   if (group === "messagesHeader" || group === "videosHeader" || group === "sendHeader") activateHeaderHome();
+  if (group === "replyHeader") {
+    renderMessageDetail();
+    showView("messageDetail");
+  }
   if (group === "messages") {
     if (item.dataset.action === "home") {
       listState.messages.homeSelected = true;
@@ -2215,6 +2423,10 @@ document.addEventListener("click", function(event) {
     listState.videos.index = actualIndex;
     listState.videos.homeSelected = false;
     activateVideo();
+  }
+  if (group === "reply") {
+    if (item.dataset.action === "textarea") replyBox.focus();
+    if (item.dataset.action === "submit") submitReply();
   }
 });
 
