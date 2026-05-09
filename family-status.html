@@ -157,6 +157,16 @@ tr:nth-child(even) td {
   color: white;
 }
 
+.state-quick-yes {
+  background: #146b34;
+  color: white;
+}
+
+.state-quick-no {
+  background: #7a2222;
+  color: white;
+}
+
 
 .reply-button {
   border: none;
@@ -251,7 +261,7 @@ tr:nth-child(even) td {
 <body>
   <div class="top-bar">
     <div class="datetime" id="datetimeBar">Loading time…</div>
-    <div class="version">Family Status v0.2</div>
+    <div class="version">Family Status v0.3</div>
   </div>
 
   <div class="page">
@@ -276,6 +286,7 @@ tr:nth-child(even) td {
             <th>Opened</th>
             <th>Read</th>
             <th>Liked</th>
+            <th>Quick Response</th>
             <th>Reply</th>
             <th>Archived</th>
           </tr>
@@ -363,6 +374,13 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
+function quickResponseCellHtml(msg) {
+  if (!msg.quick_response) return pillHtml(false);
+
+  const cls = msg.quick_response === "YES" ? "state-quick-yes" : "state-quick-no";
+  return `<span class="state-pill ${cls}">${msg.quick_response}</span><div style="margin-top:6px;">${formatDateTime(msg.quick_response_at)}</div>`;
+}
+
 function replyCellHtml(msg, index) {
   if (!msg.replied_at) {
     return pillHtml(false);
@@ -408,7 +426,7 @@ async function loadStatus() {
 
     if (!messages.length) {
       const tr = document.createElement("tr");
-      tr.innerHTML = '<td colspan="8" class="muted">No messages found.</td>';
+      tr.innerHTML = '<td colspan="9" class="muted">No messages found.</td>';
       tableBody.appendChild(tr);
       statusLine.textContent = "No messages found.";
       return;
@@ -423,6 +441,7 @@ async function loadStatus() {
         <td>${msg.opened_at ? pillHtml(true) + '<div style="margin-top:6px;">' + formatDateTime(msg.opened_at) + '</div>' : pillHtml(false)}</td>
         <td>${msg.read_at ? pillHtml(true) + '<div style="margin-top:6px;">' + formatDateTime(msg.read_at) + '</div>' : pillHtml(false)}</td>
         <td>${msg.liked_at ? pillHtml(true) + '<div style="margin-top:6px;">' + formatDateTime(msg.liked_at) + '</div>' : pillHtml(false)}</td>
+        <td>${quickResponseCellHtml(msg)}</td>
         <td>${replyCellHtml(msg, index)}</td>
         <td>${msg.archived_at ? pillHtml(true, true) + '<div style="margin-top:6px;">' + formatDateTime(msg.archived_at) + '</div>' : pillHtml(false)}</td>
       `;
@@ -447,7 +466,7 @@ async function loadStatus() {
     statusLine.textContent = "Could not load message status.";
     tableBody.innerHTML = "";
     const tr = document.createElement("tr");
-    tr.innerHTML = '<td colspan="8" class="muted">Error loading status.</td>';
+    tr.innerHTML = '<td colspan="9" class="muted">Error loading status.</td>';
     tableBody.appendChild(tr);
   } finally {
     refreshButton.disabled = false;
