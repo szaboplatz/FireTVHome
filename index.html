@@ -757,7 +757,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.4.0 spatial</div>
+    <div class="version-label">Fire TV Home v1.4.1 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -951,7 +951,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.4.0";
+const PAGE_VERSION = "v1.4.1";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1692,6 +1692,17 @@ async function activateMessageAction() {
 
   if (action === "yes" || action === "no") {
     const response = action === "yes" ? "YES" : "NO";
+    const originalText = item.textContent;
+    const yesBtn = document.querySelector('[data-nav-group="messageActions"][data-action="yes"]');
+    const noBtn = document.querySelector('[data-nav-group="messageActions"][data-action="no"]');
+
+    // Give immediate feedback so the user knows the click/select worked.
+    item.textContent = `SAVING ${response}...`;
+    item.disabled = true;
+    item.classList.add("active");
+    if (yesBtn && yesBtn !== item) yesBtn.disabled = true;
+    if (noBtn && noBtn !== item) noBtn.disabled = true;
+
     logEvent("message_quick_response", response, { id: msg.id, subject: msg.subject || "" });
     try {
       const result = await sendQuickResponse(msg.id, response);
@@ -1708,10 +1719,24 @@ async function activateMessageAction() {
           cached.read_at = msg.read_at;
           cached.opened_at = msg.opened_at;
         }
-        renderMessageDetail();
+
+        item.textContent = `${response} SAVED ✓`;
+
+        setTimeout(() => {
+          renderMessageDetail();
+        }, 550);
       }
     } catch (e) {
       console.error(e);
+      item.textContent = "ERROR - TRY AGAIN";
+      item.disabled = false;
+      item.classList.remove("active");
+      if (yesBtn && yesBtn !== item) yesBtn.disabled = false;
+      if (noBtn && noBtn !== item) noBtn.disabled = false;
+
+      setTimeout(() => {
+        item.textContent = originalText;
+      }, 1200);
     }
     return;
   }
