@@ -378,7 +378,7 @@ body {
 
 .detail-actions {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 8px;
 }
 
@@ -409,8 +409,9 @@ body {
   background: #4d7cff;
 }
 
-.action-read { background: #444; }
 .action-like { background: #444; }
+.action-yes { background: #146b34; }
+.action-no { background: #7a2222; }
 .action-reply { background: #6b4aa0; }
 .action-archive { background: #666; }
 .action-close { background: #777; }
@@ -542,6 +543,22 @@ body {
 
 .message-card.replied {
   box-shadow: inset 0 0 0 4px #b58cff;
+}
+
+.message-card.quick-yes {
+  border-color: #54d982;
+}
+
+.message-card.quick-no {
+  border-color: #ff8a8a;
+}
+
+.message-response-line {
+  margin-top: 8px;
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 900;
+  color: #fff4b1;
 }
 
 .reply-context-panel {
@@ -740,7 +757,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.3.1 spatial</div>
+    <div class="version-label">Fire TV Home v1.4.0 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -822,8 +839,9 @@ textarea:focus {
       <div id="messageDetailHeader" class="message-detail-header"></div>
 
       <div class="detail-actions" id="messageDetailActions">
-        <button class="action-btn action-read spatial-item" data-nav-group="messageActions" data-action="read">✔ READ</button>
         <button class="action-btn action-like spatial-item" data-nav-group="messageActions" data-action="like">👍 LIKE</button>
+        <button class="action-btn action-yes spatial-item" data-nav-group="messageActions" data-action="yes">YES</button>
+        <button class="action-btn action-no spatial-item" data-nav-group="messageActions" data-action="no">NO</button>
         <button class="action-btn action-reply spatial-item" data-nav-group="messageActions" data-action="reply">↩ REPLY</button>
         <button class="action-btn action-archive spatial-item" data-nav-group="messageActions" data-action="archive">📥 ARCHIVE</button>
         <button class="action-btn action-close spatial-item" data-nav-group="messageActions" data-action="close">CLOSE</button>
@@ -933,7 +951,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.3.1";
+const PAGE_VERSION = "v1.4.0";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1394,7 +1412,7 @@ function measureListPageSize(container, sampleMinHeight, gap, minRows, maxRows) 
 }
 
 function updateMeasuredPageSizes() {
-  listState.messages.pageSize = measureListPageSize(messagesList, 154, 14, 2, 3);
+  listState.messages.pageSize = measureListPageSize(messagesList, 154, 14, 2, 5);
   listState.videos.pageSize = measureListPageSize(ytList, 88, 14, 2, 6);
 }
 
@@ -1432,8 +1450,14 @@ function renderMessagesList() {
     if (msg.read_at) card.classList.add("read");
     if (msg.liked_at) card.classList.add("liked");
     if (msg.replied_at) card.classList.add("replied");
+    if (msg.quick_response === "YES") card.classList.add("quick-yes");
+    if (msg.quick_response === "NO") card.classList.add("quick-no");
 
     const msgDate = msg.created_at ? formatHeaderDate(new Date(msg.created_at)) : "";
+
+    const responseLine = msg.quick_response
+      ? `<div class="message-response-line"><span class="field-label">RESPONSE:</span> ${msg.quick_response}</div>`
+      : "";
 
     card.innerHTML = `
       <div class="message-topline">
@@ -1441,6 +1465,7 @@ function renderMessagesList() {
         <span><span class="field-label">DATE:</span> ${msgDate}</span>
       </div>
       <div class="message-subject"><span class="field-label">SUBJECT:</span> ${msg.subject}</div>
+      ${responseLine}
     `;
 
     messagesList.appendChild(card);
@@ -1545,20 +1570,27 @@ function renderMessageDetail() {
   const actions = getAllItems("messageActions");
   actions.forEach(btn => btn.classList.remove("active", "selected"));
 
-  const readBtn = document.querySelector('[data-nav-group="messageActions"][data-action="read"]');
   const likeBtn = document.querySelector('[data-nav-group="messageActions"][data-action="like"]');
+  const yesBtn = document.querySelector('[data-nav-group="messageActions"][data-action="yes"]');
+  const noBtn = document.querySelector('[data-nav-group="messageActions"][data-action="no"]');
   const replyBtn = document.querySelector('[data-nav-group="messageActions"][data-action="reply"]');
-
-  if (readBtn) {
-    readBtn.disabled = false;
-    readBtn.classList.remove("active", "inactive");
-    readBtn.textContent = "✔ READ";
-  }
 
   if (likeBtn) {
     likeBtn.disabled = false;
     likeBtn.classList.remove("active", "inactive");
     likeBtn.textContent = "👍 LIKE";
+  }
+
+  if (yesBtn) {
+    yesBtn.disabled = false;
+    yesBtn.classList.remove("active", "inactive");
+    yesBtn.textContent = "YES";
+  }
+
+  if (noBtn) {
+    noBtn.disabled = false;
+    noBtn.classList.remove("active", "inactive");
+    noBtn.textContent = "NO";
   }
 
   if (replyBtn) {
@@ -1567,16 +1599,34 @@ function renderMessageDetail() {
     replyBtn.textContent = "↩ REPLY";
   }
 
-  if (msg.read_at && readBtn) {
-    readBtn.classList.add("inactive");
-    readBtn.disabled = true;
-    readBtn.textContent = "DONE: READ";
-  }
-
   if (msg.liked_at && likeBtn) {
     likeBtn.classList.add("inactive");
     likeBtn.disabled = true;
     likeBtn.textContent = "DONE: LIKED";
+  }
+
+  if (msg.quick_response === "YES") {
+    if (yesBtn) {
+      yesBtn.classList.add("inactive");
+      yesBtn.disabled = true;
+      yesBtn.textContent = "DONE: YES";
+    }
+    if (noBtn) {
+      noBtn.disabled = true;
+      noBtn.textContent = "NO";
+    }
+  }
+
+  if (msg.quick_response === "NO") {
+    if (noBtn) {
+      noBtn.classList.add("inactive");
+      noBtn.disabled = true;
+      noBtn.textContent = "DONE: NO";
+    }
+    if (yesBtn) {
+      yesBtn.disabled = true;
+      yesBtn.textContent = "YES";
+    }
   }
 
   if (msg.replied_at && replyBtn) {
@@ -1617,24 +1667,6 @@ async function activateMessageAction() {
     return;
   }
 
-  if (action === "read") {
-    logEvent("message_mark_read", msg.subject || msg.id, { id: msg.id });
-    messagesStatus.textContent = "Marking as read…";
-    try {
-      const result = await runMessageAction("mark_read", msg.id);
-      if (result.ok) {
-        msg.read_at = result.read_at || new Date().toISOString();
-        const cached = findCachedMessage(msg.id);
-        if (cached) cached.read_at = msg.read_at;
-        renderMessageDetail();
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    messagesStatus.textContent = "";
-    return;
-  }
-
   if (action === "like") {
     logEvent("message_like", msg.subject || msg.id, { id: msg.id });
     try {
@@ -1647,6 +1679,32 @@ async function activateMessageAction() {
         const cached = findCachedMessage(msg.id);
         if (cached) {
           cached.liked_at = msg.liked_at;
+          cached.read_at = msg.read_at;
+          cached.opened_at = msg.opened_at;
+        }
+        renderMessageDetail();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return;
+  }
+
+  if (action === "yes" || action === "no") {
+    const response = action === "yes" ? "YES" : "NO";
+    logEvent("message_quick_response", response, { id: msg.id, subject: msg.subject || "" });
+    try {
+      const result = await sendQuickResponse(msg.id, response);
+      if (result.ok) {
+        msg.quick_response = result.quick_response || response;
+        msg.quick_response_at = result.quick_response_at || new Date().toISOString();
+        msg.read_at = result.read_at || msg.read_at || new Date().toISOString();
+        msg.opened_at = result.opened_at || msg.opened_at || new Date().toISOString();
+
+        const cached = findCachedMessage(msg.id);
+        if (cached) {
+          cached.quick_response = msg.quick_response;
+          cached.quick_response_at = msg.quick_response_at;
           cached.read_at = msg.read_at;
           cached.opened_at = msg.opened_at;
         }
@@ -1961,6 +2019,26 @@ function playEmbeddedVideo(videoId) {
   playerHost.appendChild(iframe);
 }
 
+
+
+async function sendQuickResponse(id, response) {
+  const formData = new URLSearchParams();
+  formData.set("action", "quick_response");
+  formData.set("id", id);
+  formData.set("quick_response", response);
+
+  const fetchResponse = await fetch(MESSAGES_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+    body: formData.toString()
+  });
+
+  const result = await fetchResponse.json();
+  if (!fetchResponse.ok || !result.ok) {
+    throw new Error(result && result.error ? result.error : "Quick response failed");
+  }
+  return result;
+}
 
 /* ---------- REPLY ---------- */
 
