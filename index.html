@@ -326,24 +326,24 @@ body {
 
 /* MESSAGE DETAIL VIEW */
 .message-detail-title-row {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .message-detail-title-row .view-title {
-  font-size: 42px;
+  font-size: 38px;
 }
 
 .message-detail-title-row .nav-button {
-  min-height: 54px;
-  font-size: 24px;
-  padding: 8px 18px;
+  min-height: 50px;
+  font-size: 22px;
+  padding: 6px 16px;
 }
 
 .message-detail-layout {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
-  gap: 10px;
-  height: calc(var(--app-height) - 124px);
+  gap: 8px;
+  height: calc(var(--app-height) - 112px);
   min-height: 0;
 }
 
@@ -351,14 +351,14 @@ body {
   background: #111;
   border: 3px solid #555;
   border-radius: 14px;
-  padding: 10px 16px;
+  padding: 8px 14px;
   text-align: left;
 }
 
 .message-detail-line {
-  font-size: 32px;
-  line-height: 1.18;
-  margin-bottom: 4px;
+  font-size: 28px;
+  line-height: 1.12;
+  margin-bottom: 2px;
 }
 
 .message-detail-topline {
@@ -366,9 +366,9 @@ body {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 18px;
   align-items: baseline;
-  margin-bottom: 4px;
-  font-size: 32px;
-  line-height: 1.18;
+  margin-bottom: 2px;
+  font-size: 28px;
+  line-height: 1.12;
   font-weight: 900;
 }
 
@@ -385,9 +385,9 @@ body {
 .action-btn {
   border: none;
   border-radius: 14px;
-  min-height: 58px;
-  padding: 8px 10px;
-  font-size: 23px;
+  min-height: 52px;
+  padding: 6px 8px;
+  font-size: 21px;
   font-weight: 900;
   color: white;
   background: #555;
@@ -421,7 +421,7 @@ body {
   background: #111;
   border: 6px solid #9a9a9a;
   border-radius: 14px;
-  padding: 14px 18px 44px 18px;
+  padding: 18px 24px 48px 24px;
   overflow-y: auto;
   text-align: left;
   min-height: 0;
@@ -442,8 +442,10 @@ body {
 }
 
 .message-body {
-  font-size: 34px;
-  line-height: 1.32;
+  font-size: 48px;
+  line-height: 1.42;
+  font-weight: 800;
+  letter-spacing: 0.01em;
   white-space: pre-wrap;
 }
 
@@ -452,7 +454,7 @@ body {
   padding-top: 14px;
   border-top: 4px solid #777;
   color: #ffd400;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 900;
   text-align: center;
   letter-spacing: 1px;
@@ -748,6 +750,35 @@ textarea:focus {
 
   .message-subject {
     font-size: 28px;
+  }
+
+  .message-detail-title-row .view-title {
+    font-size: 34px;
+  }
+
+  .message-detail-layout {
+    height: calc(var(--app-height) - 98px);
+    gap: 6px;
+  }
+
+  .message-detail-line,
+  .message-detail-topline {
+    font-size: 24px;
+  }
+
+  .action-btn {
+    min-height: 46px;
+    font-size: 18px;
+    padding: 5px 6px;
+  }
+
+  .message-body-panel {
+    padding: 14px 18px 42px 18px;
+  }
+
+  .message-body {
+    font-size: 42px;
+    line-height: 1.36;
   }
 }
 </style>
