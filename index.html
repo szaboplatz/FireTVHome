@@ -1024,7 +1024,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.5.7 spatial</div>
+    <div class="version-label">Fire TV Home v1.5.8 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -1264,7 +1264,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.5.7";
+const PAGE_VERSION = "v1.5.8";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -2850,7 +2850,18 @@ document.addEventListener("keydown", function(event) {
         return;
       }
 
-      if (key === "ArrowUp" || key === "ArrowLeft") {
+      if (key === "ArrowUp") {
+        if (messageBodyPanel.scrollTop > 0) {
+          const pageStep = Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75));
+          messageBodyPanel.scrollTop = Math.max(0, messageBodyPanel.scrollTop - pageStep);
+          return;
+        }
+
+        selectMessageListButton();
+        return;
+      }
+
+      if (key === "ArrowLeft") {
         selectMessageListButton();
         return;
       }
