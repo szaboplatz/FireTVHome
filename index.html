@@ -325,67 +325,44 @@ body {
 }
 
 /* MESSAGE DETAIL VIEW */
-#messageDetailView {
-  padding: 6px 22px 12px;
-}
-
 .message-detail-title-row {
-  margin-bottom: 2px;
+  margin-bottom: 8px;
 }
 
 .message-detail-title-row .view-title {
-  font-size: 20px;
-  letter-spacing: 1px;
+  font-size: 42px;
 }
 
 .message-detail-title-row .nav-button {
-  min-height: 34px;
-  font-size: 17px;
-  padding: 4px 12px;
+  min-height: 54px;
+  font-size: 24px;
+  padding: 8px 18px;
 }
 
 .message-detail-layout {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 4px;
-  height: calc(100% - 40px);
+  grid-template-rows: auto 1fr auto;
+  gap: 6px;
+  height: calc(var(--app-height) - 104px);
   min-height: 0;
 }
 
 .message-detail-header {
-  grid-row: 1;
-  background: #0b0b0b;
+  background: #111;
   border: 2px solid #444;
-  border-radius: 8px;
-  padding: 3px 10px;
-  text-align: left;
+  border-radius: 10px;
+  padding: 4px 10px;
+  text-align: center;
 }
 
 .message-detail-line {
-  font-size: 18px;
-  line-height: 1.02;
+  font-size: 22px;
+  line-height: 1.05;
   margin-bottom: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .message-detail-topline {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: baseline;
-  margin-bottom: 0;
-  font-size: 18px;
-  line-height: 1.02;
-  font-weight: 900;
-}
-
-.message-detail-topline .left {
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: none;
 }
 
 .message-detail-topline .right {
@@ -393,19 +370,18 @@ body {
 }
 
 .detail-actions {
-  grid-row: 3;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 5px;
-  padding-bottom: 2px;
+  gap: 12px;
+  padding-top: 2px;
 }
 
 .action-btn {
   border: none;
-  border-radius: 11px;
-  min-height: 44px;
-  padding: 5px 6px;
-  font-size: 18px;
+  border-radius: 16px;
+  min-height: 88px;
+  padding: 10px 12px;
+  font-size: 28px;
   font-weight: 900;
   color: white;
   background: #555;
@@ -435,49 +411,42 @@ body {
 .action-close { background: #777; }
 
 .message-body-panel {
-  grid-row: 2;
   max-height: 100%;
-  background: #080808;
-  border: 3px solid #8d8d8d;
-  border-radius: 18px;
-  padding: 18px 36px 20px;
+  background: #111;
+  border: 4px solid #8a8a8a;
+  border-radius: 16px;
+  padding: 12px 24px;
   overflow-y: auto;
   text-align: center;
   min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow:
-    inset 0 -12px 0 rgba(255,212,0,0.08),
-    0 0 0 2px rgba(255,255,255,0.06);
 }
 
 .message-body-panel.selected {
   outline: 6px solid var(--focus);
   outline-offset: -8px;
-  transform: scale(1.004);
-  filter: brightness(1.1);
+  transform: scale(1.006);
+  filter: brightness(1.12);
   box-shadow:
-    inset 0 0 0 4px rgba(255,212,0,0.38),
-    inset 0 -14px 0 rgba(255,212,0,0.12),
+    inset 0 0 0 4px rgba(255,212,0,0.42),
+    inset 0 -18px 0 rgba(255,212,0,0.14),
     0 10px 26px rgba(0,0,0,0.55);
 }
 
 .message-body {
-  width: 100%;
-  max-width: 1120px;
-  margin: auto;
-  font-size: clamp(58px, 6.4vw, 88px);
-  line-height: 1.22;
-  font-weight: 800;
+  font-size: 54px;
+  line-height: 1.42;
   white-space: pre-wrap;
-  text-align: center;
+  font-weight: 700;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .message-end-marker {
-  margin: 30px auto 0;
-  max-width: 620px;
-  padding-top: 12px;
+  margin-top: 28px;
+  padding-top: 14px;
   border-top: 4px solid #777;
   color: #ffd400;
   font-size: 24px;
@@ -777,45 +746,6 @@ textarea:focus {
   .message-subject {
     font-size: 28px;
   }
-
-  #messageDetailView {
-    padding: 4px 18px 10px;
-  }
-
-  .message-detail-title-row .view-title {
-    font-size: 18px;
-  }
-
-  .message-detail-title-row .nav-button {
-    min-height: 32px;
-    font-size: 16px;
-  }
-
-  .message-detail-layout {
-    height: calc(100% - 34px);
-    gap: 4px;
-  }
-
-  .message-detail-topline,
-  .message-detail-line {
-    font-size: 16px;
-  }
-
-  .message-body-panel {
-    padding: 14px 24px 18px;
-  }
-
-  .message-body {
-    font-size: clamp(48px, 6.5vw, 70px);
-    line-height: 1.18;
-  }
-
-  .action-btn {
-    min-height: 38px;
-    font-size: 15px;
-    padding: 4px 5px;
-  }
-
 }
 </style>
 </head>
@@ -824,7 +754,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.4.4 reading</div>
+    <div class="version-label">Fire TV Home v1.4.5 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -1018,7 +948,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.4.4";
+const PAGE_VERSION = "v1.4.5";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1632,7 +1562,7 @@ function renderMessageDetail() {
     <div class="message-detail-line"><span class="field-label">SUBJECT:</span> ${msg.subject}</div>
   `;
 
-  messageDetailBody.innerHTML = `${msg.body}<div class="message-end-marker">END OF MESSAGE</div>`;
+  messageDetailBody.innerHTML = `<span class="field-label">BODY:</span> ${msg.body}<div class="message-end-marker">END OF MESSAGE</div>`;
 
   const actions = getAllItems("messageActions");
   actions.forEach(btn => btn.classList.remove("active", "selected"));
@@ -2427,18 +2357,7 @@ document.addEventListener("keydown", function(event) {
 
     if (action === "body") {
       if (key === "ArrowDown") {
-        const maxScroll = Math.max(0, messageBodyPanel.scrollHeight - messageBodyPanel.clientHeight);
-        const nearBottom = messageBodyPanel.scrollTop >= maxScroll - 8;
-
-        if (nearBottom) {
-          moveLinear("messageActions", "ArrowDown");
-          return;
-        }
-
-        messageBodyPanel.scrollTop = Math.min(
-          maxScroll,
-          messageBodyPanel.scrollTop + Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75))
-        );
+        messageBodyPanel.scrollTop += Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75));
         return;
       }
       if (key === "ArrowUp") {
