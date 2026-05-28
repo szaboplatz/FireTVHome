@@ -61,21 +61,21 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 18px;
-  padding: 10px 24px;
+  gap: 14px;
+  padding: 5px 20px;
   background: rgba(17, 17, 17, 0.98);
-  border-bottom: 3px solid #333;
+  border-bottom: 2px solid #333;
 }
 
 .datetime-bar {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: bold;
   color: #d8f6ff;
   white-space: nowrap;
 }
 
 .version-label {
-  font-size: 19px;
+  font-size: 16px;
   color: #9aa3aa;
   letter-spacing: 1px;
   white-space: nowrap;
@@ -87,7 +87,7 @@ body {
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  padding: 24px 36px 34px;
+  padding: 14px 28px 18px;
 }
 
 .view.active {
@@ -151,19 +151,19 @@ body {
 .home-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  height: calc(var(--app-height) - 104px);
+  gap: 10px;
+  height: calc(var(--app-height) - 88px);
 }
 
 .home-tile {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 102px;
-  border-radius: 18px;
-  padding: 16px;
-  font-size: 44px;
-  line-height: 1.02;
+  min-height: 84px;
+  border-radius: 14px;
+  padding: 8px 10px;
+  font-size: 38px;
+  line-height: 1;
   font-weight: 900;
   color: white;
   text-align: center;
@@ -173,7 +173,7 @@ body {
 }
 
 .home-tile.small-label {
-  font-size: 42px;
+  font-size: 34px;
 }
 
 .tile-family { background: #00a6c7; }
@@ -186,19 +186,19 @@ body {
 
 .unread-badge {
   position: absolute;
-  top: 12px;
-  right: 14px;
-  min-width: 58px;
-  height: 58px;
-  padding: 0 14px;
+  top: 6px;
+  right: 8px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 10px;
   border-radius: 999px;
   background: #c40000;
   color: white;
-  border: 4px solid #ff8a8a;
+  border: 3px solid #ff8a8a;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 22px;
   font-weight: bold;
   line-height: 1;
 }
@@ -209,43 +209,45 @@ body {
 
 .tile-update-badge {
   position: absolute;
-  top: 12px;
-  left: 12px;
+  top: 6px;
+  left: 8px;
   background: #c40000;
   color: white;
-  border: 4px solid #ff8a8a;
+  border: 3px solid #ff8a8a;
   border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 20px;
+  padding: 4px 10px;
+  font-size: 16px;
   font-weight: bold;
   line-height: 1;
 }
 
 .tile-update-text {
   position: absolute;
-  bottom: 12px;
-  left: 14px;
-  right: 14px;
-  font-size: 20px;
+  bottom: 6px;
+  left: 10px;
+  right: 10px;
+  font-size: 16px;
   font-weight: bold;
   color: #fff4b1;
-  line-height: 1.1;
+  line-height: 1;
 }
 
 /* MESSAGES LIST VIEW */
 .messages-list-shell {
   display: grid;
-  grid-template-rows: 10px minmax(0, 1fr) 20px;
-  height: calc(var(--app-height) - 82px);
+  grid-template-rows: 8px minmax(0, 1fr) 32px;
+  height: calc(var(--app-height) - 86px);
   gap: 1px;
   min-height: 0;
+  overflow: hidden;
 }
 
 .messages-status {
-  font-size: 11px;
+  font-size: 10px;
   color: #fff4b1;
-  min-height: 10px;
+  min-height: 8px;
   line-height: 1;
+  overflow: hidden;
 }
 
 .messages-list {
@@ -328,11 +330,11 @@ body {
   justify-content: space-between;
   align-items: center;
   color: #bbb;
-  font-size: 13px;
+  font-size: 16px;
   margin-top: 0;
   line-height: 1;
-  padding: 0 4px;
-  min-height: 18px;
+  padding: 0 6px 6px;
+  min-height: 30px;
   overflow: visible;
 }
 
@@ -364,17 +366,19 @@ body {
 
 .messages-list-shell {
   display: grid;
-  grid-template-rows: 10px minmax(0, 1fr) 20px;
-  height: calc(var(--app-height) - 82px);
+  grid-template-rows: 8px minmax(0, 1fr) 32px;
+  height: calc(var(--app-height) - 86px);
   gap: 1px;
   min-height: 0;
+  overflow: hidden;
 }
 
 .messages-status {
-  font-size: 11px;
+  font-size: 10px;
   color: #fff4b1;
-  min-height: 10px;
+  min-height: 8px;
   line-height: 1;
+  overflow: hidden;
 }
 
 .messages-list {
@@ -391,11 +395,11 @@ body {
   justify-content: space-between;
   align-items: center;
   color: #bbb;
-  font-size: 13px;
+  font-size: 16px;
   margin-top: 0;
   line-height: 1;
-  padding: 0 4px;
-  min-height: 18px;
+  padding: 0 6px 6px;
+  min-height: 30px;
   overflow: visible;
 }
 
@@ -787,38 +791,54 @@ textarea:focus {
 /* Small-screen / zoomed fallback */
 @media (max-height: 720px) {
   .top-status-bar {
-    padding-top: 6px;
-    padding-bottom: 6px;
-  }
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 5px 20px;
+  background: rgba(17, 17, 17, 0.98);
+  border-bottom: 2px solid #333;
+}
 
   .datetime-bar {
-    font-size: 22px;
-  }
+  font-size: 22px;
+  font-weight: bold;
+  color: #d8f6ff;
+  white-space: nowrap;
+}
 
   .version-label {
-    font-size: 17px;
-  }
+  font-size: 16px;
+  color: #9aa3aa;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
 
   .view {
-    padding: 16px 28px 26px;
-  }
+  display: none;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 14px 28px 18px;
+}
 
   .home-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  height: calc(var(--app-height) - 104px);
+  gap: 10px;
+  height: calc(var(--app-height) - 88px);
 }
 
   .home-tile {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 102px;
-  border-radius: 18px;
-  padding: 16px;
-  font-size: 44px;
-  line-height: 1.02;
+  min-height: 84px;
+  border-radius: 14px;
+  padding: 8px 10px;
+  font-size: 38px;
+  line-height: 1;
   font-weight: 900;
   color: white;
   text-align: center;
@@ -868,7 +888,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.4.13 spatial</div>
+    <div class="version-label">Fire TV Home v1.4.14 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -1062,7 +1082,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.4.13";
+const PAGE_VERSION = "v1.4.14";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1525,7 +1545,7 @@ function measureListPageSize(container, sampleMinHeight, gap, minRows, maxRows) 
 }
 
 function updateMeasuredPageSizes() {
-  listState.messages.pageSize = measureListPageSize(messagesList, 74, 4, 2, 8);
+  listState.messages.pageSize = measureListPageSize(messagesList, 82, 4, 2, 7);
   listState.videos.pageSize = measureListPageSize(ytList, 88, 14, 2, 6);
 }
 
