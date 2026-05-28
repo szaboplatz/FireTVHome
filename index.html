@@ -670,6 +670,107 @@ body {
   min-height: 32px;
 }
 
+
+/* LARGE REPLY KEYBOARD */
+.reply-large-layout {
+  display: grid;
+  grid-template-rows: auto minmax(88px, 1fr) auto auto;
+  gap: 8px;
+  height: calc(var(--app-height) - 116px);
+  min-height: 0;
+}
+
+.reply-display {
+  background: #111;
+  color: white;
+  border: 4px solid #777;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 38px;
+  line-height: 1.2;
+  font-weight: 800;
+  min-height: 88px;
+  max-height: 140px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  text-align: left;
+}
+
+.reply-placeholder {
+  color: #888;
+}
+
+.large-keyboard {
+  display: grid;
+  grid-template-rows: repeat(4, 1fr);
+  gap: 8px;
+  min-height: 0;
+}
+
+.keyboard-row {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+}
+
+.keyboard-row.letters-10 {
+  grid-template-columns: repeat(10, 1fr);
+}
+
+.keyboard-row.letters-9 {
+  grid-template-columns: repeat(9, 1fr);
+  padding: 0 42px;
+}
+
+.keyboard-row.actions {
+  grid-template-columns: 1.2fr 1.2fr 2.6fr 1.2fr 1.6fr;
+}
+
+.keyboard-key {
+  border: 3px solid rgba(255,255,255,0.18);
+  border-radius: 14px;
+  background: #333;
+  color: white;
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 900;
+  min-height: 58px;
+  padding: 4px 6px;
+  text-align: center;
+}
+
+.keyboard-key.special {
+  background: #555;
+  font-size: 28px;
+}
+
+.keyboard-key.send-key {
+  background: #00bcd4;
+  color: #000;
+  font-size: 32px;
+}
+
+.reply-status-note.sending {
+  background: #4a4300;
+  color: #ffff66;
+  border-radius: 10px;
+  padding: 4px 8px;
+}
+
+.reply-status-note.sent {
+  background: #003d1f;
+  color: #00ff66;
+  border-radius: 10px;
+  padding: 4px 8px;
+}
+
+.reply-status-note.error {
+  background: #4a0000;
+  color: #ff6666;
+  border-radius: 10px;
+  padding: 4px 8px;
+}
+
 /* SEND MESSAGE VIEW */
 .send-layout {
   display: grid;
@@ -890,7 +991,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.4.15 spatial</div>
+    <div class="version-label">Fire TV Home v1.5.0 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -1019,17 +1120,63 @@ textarea:focus {
       <button class="nav-button spatial-item" data-nav-group="replyHeader" data-action="close">MESSAGE</button>
     </div>
 
-    <div class="send-layout">
+    <div class="reply-large-layout">
       <div class="reply-context-panel" id="replyContextPanel">
-        <div class="reply-context-line"><span class="field-label">REPLYING TO:</span> <span id="replyToText">Family</span></div>
-        <div class="reply-context-line"><span class="field-label">SUBJECT:</span> <span id="replySubjectText"></span></div>
+        <div class="reply-context-line"><span class="field-label">TO:</span> <span id="replyToText">Family</span> <span class="field-label">SUBJECT:</span> <span id="replySubjectText"></span></div>
       </div>
 
-      <textarea class="spatial-item" data-nav-group="reply" data-action="textarea" id="replyBox" placeholder="Type or speak your reply here" required></textarea>
+      <div class="reply-display spatial-item" data-nav-group="reply" data-action="display" id="replyDisplay">
+        <span class="reply-placeholder">Use the large keyboard below to write a reply.</span>
+      </div>
+
+      <div class="large-keyboard" id="largeKeyboard">
+        <div class="keyboard-row letters-10">
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="Q">Q</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="W">W</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="E">E</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="R">R</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="T">T</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="Y">Y</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="U">U</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="I">I</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="O">O</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="P">P</button>
+        </div>
+        <div class="keyboard-row letters-9">
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="A">A</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="S">S</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="D">D</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="F">F</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="G">G</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="H">H</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="J">J</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="K">K</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="L">L</button>
+        </div>
+        <div class="keyboard-row letters-9">
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="Z">Z</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="X">X</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="C">C</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="V">V</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="B">B</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="N">N</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="M">M</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key=".">.</button>
+          <button class="keyboard-key spatial-item" data-nav-group="reply" data-action="key" data-key="?">?</button>
+        </div>
+        <div class="keyboard-row actions">
+          <button class="keyboard-key special spatial-item" data-nav-group="reply" data-action="backspace">DELETE</button>
+          <button class="keyboard-key special spatial-item" data-nav-group="reply" data-action="clear">CLEAR</button>
+          <button class="keyboard-key special spatial-item" data-nav-group="reply" data-action="space">SPACE</button>
+          <button class="keyboard-key special spatial-item" data-nav-group="reply" data-action="close">CANCEL</button>
+          <button class="keyboard-key send-key spatial-item" data-nav-group="reply" data-action="submit">SEND</button>
+        </div>
+      </div>
 
       <div id="replyStatus" class="reply-status-note"></div>
 
-      <button class="submit-button spatial-item" data-nav-group="reply" data-action="submit" id="replySendButton" type="button">SEND REPLY</button>
+      <textarea id="replyBox" class="hidden" aria-hidden="true"></textarea>
+      <button class="submit-button hidden" data-nav-group="reply" data-action="submit" id="replySendButton" type="button">SEND REPLY</button>
     </div>
   </section>
 
@@ -1084,7 +1231,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.4.15";
+const PAGE_VERSION = "v1.5.0";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1147,6 +1294,7 @@ const statusBox = document.getElementById("status");
 const sendButton = document.getElementById("sendButton");
 
 const replyBox = document.getElementById("replyBox");
+const replyDisplay = document.getElementById("replyDisplay");
 const replySendButton = document.getElementById("replySendButton");
 const replyStatus = document.getElementById("replyStatus");
 const replyToText = document.getElementById("replyToText");
@@ -2197,12 +2345,74 @@ async function sendQuickResponse(id, response) {
 
 /* ---------- REPLY ---------- */
 
+
+function updateReplyDisplay() {
+  if (!replyDisplay || !replyBox) return;
+  const value = replyBox.value || "";
+  if (!value) {
+    replyDisplay.innerHTML = '<span class="reply-placeholder">Use the large keyboard below to write a reply.</span>';
+    return;
+  }
+  replyDisplay.textContent = value;
+  replyDisplay.scrollTop = replyDisplay.scrollHeight;
+}
+
+function appendReplyText(textToAdd) {
+  replyBox.value = (replyBox.value || "") + textToAdd;
+  updateReplyDisplay();
+}
+
+function backspaceReplyText() {
+  replyBox.value = (replyBox.value || "").slice(0, -1);
+  updateReplyDisplay();
+}
+
+function clearReplyText() {
+  replyBox.value = "";
+  updateReplyDisplay();
+}
+
+function activateReplyKeyboardItem() {
+  const item = getSelectedItem("reply");
+  if (!item) return;
+
+  const action = item.dataset.action;
+
+  if (action === "display") return;
+  if (action === "key") {
+    appendReplyText(item.dataset.key || "");
+    return;
+  }
+  if (action === "space") {
+    appendReplyText(" ");
+    return;
+  }
+  if (action === "backspace") {
+    backspaceReplyText();
+    return;
+  }
+  if (action === "clear") {
+    clearReplyText();
+    return;
+  }
+  if (action === "close") {
+    renderMessageDetail();
+    showView("messageDetail");
+    return;
+  }
+  if (action === "submit") {
+    submitReply();
+  }
+}
+
 function openReplyView() {
   if (!currentMessage) return;
   replyToText.textContent = currentMessage.from_name || "Family";
   replySubjectText.textContent = currentMessage.subject || "";
   replyBox.value = "";
   replyStatus.textContent = "";
+  updateReplyDisplay();
+  selected.reply = 1;
   showView("reply");
 }
 
@@ -2354,7 +2564,7 @@ function startPeriodicRefresh() {
 
 function maybeReloadPage() {
   const videoIsOpen = playerPanel.classList.contains("show");
-  const textBoxActive = document.activeElement === textarea || document.activeElement === replyBox;
+  const textBoxActive = document.activeElement === textarea;
   const idleMs = Date.now() - lastPageActivityAt;
 
   if (videoIsOpen || textBoxActive || currentView !== "home") {
@@ -2578,18 +2788,13 @@ document.addEventListener("keydown", function(event) {
       return;
     }
 
-    if (key === "ArrowUp" || key === "ArrowDown") moveLinear("reply", key);
+    if (key === "ArrowLeft" || key === "ArrowRight" || key === "ArrowUp" || key === "ArrowDown") {
+      moveLinear("reply", key);
+      return;
+    }
+
     if (isActivationKey(key)) {
-      const item = getSelectedItem("reply");
-      if (!item) return;
-
-      if (item.dataset.action === "textarea") {
-        replyBox.focus();
-      }
-
-      if (item.dataset.action === "submit") {
-        submitReply();
-      }
+      activateReplyKeyboardItem();
     }
     return;
   }
@@ -2676,8 +2881,7 @@ document.addEventListener("click", function(event) {
     activateVideo();
   }
   if (group === "reply") {
-    if (item.dataset.action === "textarea") replyBox.focus();
-    if (item.dataset.action === "submit") submitReply();
+    activateReplyKeyboardItem();
   }
 });
 
