@@ -1024,7 +1024,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.5.6 spatial</div>
+    <div class="version-label">Fire TV Home v1.5.7 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -1264,7 +1264,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.5.6";
+const PAGE_VERSION = "v1.5.7";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -2701,9 +2701,17 @@ function selectMessageListButton() {
 
 function selectFirstMessageActionButton() {
   const items = getItems("messageActions");
-  const firstBottomButton = document.querySelector("#messageDetailActions .spatial-item");
-  const firstBottomButtonIndex = items.indexOf(firstBottomButton);
-  setSelected("messageActions", firstBottomButtonIndex >= 0 ? firstBottomButtonIndex : 0);
+  const bottomButtons = Array.from(document.querySelectorAll("#messageDetailActions .spatial-item"));
+  const firstEnabledBottomButton = bottomButtons.find(btn => !btn.disabled && btn.offsetParent !== null);
+  const firstBottomButtonIndex = items.indexOf(firstEnabledBottomButton);
+
+  if (firstBottomButtonIndex >= 0) {
+    setSelected("messageActions", firstBottomButtonIndex);
+    return;
+  }
+
+  // Fallback: return to the body rather than jumping to the top MESSAGE LIST button.
+  selectMessageBody();
 }
 
 function selectMessageBody() {
