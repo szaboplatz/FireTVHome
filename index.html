@@ -325,26 +325,30 @@ body {
 }
 
 /* MESSAGE DETAIL VIEW */
+#messageDetailView {
+  padding: 12px 28px 22px;
+}
+
 .message-detail-title-row {
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .message-detail-title-row .view-title {
-  font-size: 34px;
+  font-size: 28px;
   letter-spacing: 1px;
 }
 
 .message-detail-title-row .nav-button {
-  min-height: 48px;
-  font-size: 22px;
-  padding: 7px 16px;
+  min-height: 42px;
+  font-size: 20px;
+  padding: 6px 14px;
 }
 
 .message-detail-layout {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 8px;
-  height: calc(var(--app-height) - 116px);
+  gap: 6px;
+  height: calc(var(--app-height) - 88px);
   min-height: 0;
 }
 
@@ -352,15 +356,15 @@ body {
   grid-row: 1;
   background: #0b0b0b;
   border: 2px solid #444;
-  border-radius: 12px;
-  padding: 8px 14px;
+  border-radius: 10px;
+  padding: 5px 12px;
   text-align: left;
 }
 
 .message-detail-line {
-  font-size: 24px;
-  line-height: 1.12;
-  margin-bottom: 2px;
+  font-size: 21px;
+  line-height: 1.08;
+  margin-bottom: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -369,11 +373,11 @@ body {
 .message-detail-topline {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 14px;
+  gap: 12px;
   align-items: baseline;
-  margin-bottom: 2px;
-  font-size: 24px;
-  line-height: 1.12;
+  margin-bottom: 1px;
+  font-size: 21px;
+  line-height: 1.08;
   font-weight: 900;
 }
 
@@ -392,15 +396,15 @@ body {
   grid-row: 3;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
+  gap: 6px;
 }
 
 .action-btn {
   border: none;
-  border-radius: 14px;
-  min-height: 52px;
-  padding: 7px 8px;
-  font-size: 21px;
+  border-radius: 12px;
+  min-height: 48px;
+  padding: 6px 7px;
+  font-size: 20px;
   font-weight: 900;
   color: white;
   background: #555;
@@ -433,9 +437,9 @@ body {
   grid-row: 2;
   max-height: 100%;
   background: #080808;
-  border: 4px solid #8d8d8d;
+  border: 3px solid #8d8d8d;
   border-radius: 18px;
-  padding: 24px 34px 28px;
+  padding: 20px 42px 24px;
   overflow-y: auto;
   text-align: center;
   min-height: 0;
@@ -460,10 +464,10 @@ body {
 
 .message-body {
   width: 100%;
-  max-width: 940px;
+  max-width: 1080px;
   margin: auto;
-  font-size: clamp(46px, 5.1vw, 68px);
-  line-height: 1.34;
+  font-size: clamp(54px, 6.1vw, 82px);
+  line-height: 1.26;
   font-weight: 800;
   white-space: pre-wrap;
   text-align: center;
@@ -773,33 +777,42 @@ textarea:focus {
     font-size: 28px;
   }
 
+  #messageDetailView {
+    padding: 8px 22px 16px;
+  }
+
   .message-detail-title-row .view-title {
-    font-size: 30px;
+    font-size: 24px;
+  }
+
+  .message-detail-title-row .nav-button {
+    min-height: 38px;
+    font-size: 18px;
   }
 
   .message-detail-layout {
-    height: calc(var(--app-height) - 96px);
-    gap: 6px;
+    height: calc(var(--app-height) - 72px);
+    gap: 5px;
   }
 
   .message-detail-topline,
   .message-detail-line {
-    font-size: 21px;
+    font-size: 18px;
   }
 
   .message-body-panel {
-    padding: 18px 24px 22px;
+    padding: 16px 28px 20px;
   }
 
   .message-body {
-    font-size: clamp(40px, 5.5vw, 58px);
-    line-height: 1.28;
+    font-size: clamp(46px, 6.2vw, 66px);
+    line-height: 1.22;
   }
 
   .action-btn {
-    min-height: 46px;
-    font-size: 18px;
-    padding: 6px 7px;
+    min-height: 42px;
+    font-size: 17px;
+    padding: 5px 6px;
   }
 
 }
@@ -810,7 +823,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.4.2 reading</div>
+    <div class="version-label">Fire TV Home v1.4.3 reading</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -1004,7 +1017,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.4.2";
+const PAGE_VERSION = "v1.4.3";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -2413,7 +2426,18 @@ document.addEventListener("keydown", function(event) {
 
     if (action === "body") {
       if (key === "ArrowDown") {
-        messageBodyPanel.scrollTop += Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75));
+        const maxScroll = Math.max(0, messageBodyPanel.scrollHeight - messageBodyPanel.clientHeight);
+        const nearBottom = messageBodyPanel.scrollTop >= maxScroll - 8;
+
+        if (nearBottom) {
+          moveLinear("messageActions", "ArrowDown");
+          return;
+        }
+
+        messageBodyPanel.scrollTop = Math.min(
+          maxScroll,
+          messageBodyPanel.scrollTop + Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75))
+        );
         return;
       }
       if (key === "ArrowUp") {
