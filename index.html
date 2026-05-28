@@ -650,16 +650,16 @@ body {
 
 .reply-context-panel {
   background: #111;
-  border: 3px solid #6b4aa0;
-  border-radius: 10px;
-  padding: 5px 8px;
+  border: 2px solid #6b4aa0;
+  border-radius: 8px;
+  padding: 3px 6px;
   text-align: left;
   overflow: hidden;
 }
 
 .reply-context-line {
-  font-size: 22px;
-  line-height: 1.05;
+  font-size: 18px;
+  line-height: 1;
   margin-bottom: 0;
   font-weight: 900;
   white-space: nowrap;
@@ -668,10 +668,10 @@ body {
 }
 
 .reply-status-note {
-  font-size: 18px;
+  font-size: 16px;
   color: #fff4b1;
   text-align: center;
-  min-height: 22px;
+  min-height: 18px;
   line-height: 1;
 }
 
@@ -679,32 +679,32 @@ body {
 
 /* Compact reply screen chrome */
 #replyView .view-title-row {
-  margin-bottom: 4px;
-  gap: 8px;
+  margin-bottom: 2px;
+  gap: 6px;
   align-items: center;
 }
 
 #replyView .view-title {
-  font-size: 30px;
-  line-height: 1;
+  font-size: 24px;
+  line-height: 0.95;
 }
 
 #replyView .nav-button {
-  min-width: 120px;
-  min-height: 34px;
-  padding: 2px 8px;
-  border-radius: 8px;
+  min-width: 102px;
+  min-height: 28px;
+  padding: 1px 6px;
+  border-radius: 7px;
   border-width: 2px;
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1;
 }
 
 /* LARGE REPLY KEYBOARD */
 .reply-large-layout {
   display: grid;
-  grid-template-rows: auto 92px minmax(0, 1fr) 26px;
-  gap: 5px;
-  height: calc(var(--app-height) - 84px);
+  grid-template-rows: 28px 86px minmax(0, 1fr) 22px;
+  gap: 4px;
+  height: calc(var(--app-height) - 72px);
   min-height: 0;
   overflow: hidden;
 }
@@ -713,10 +713,10 @@ body {
   background: #111;
   color: white;
   border: 3px solid #777;
-  border-radius: 12px;
-  padding: 8px 12px;
-  font-size: 34px;
-  line-height: 1.15;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 32px;
+  line-height: 1.12;
   font-weight: 800;
   min-height: 0;
   max-height: none;
@@ -732,14 +732,14 @@ body {
 .large-keyboard {
   display: grid;
   grid-template-rows: repeat(4, minmax(0, 1fr));
-  gap: 5px;
+  gap: 4px;
   min-height: 0;
   overflow: hidden;
 }
 
 .keyboard-row {
   display: grid;
-  gap: 5px;
+  gap: 4px;
   min-height: 0;
   overflow: hidden;
 }
@@ -750,7 +750,7 @@ body {
 
 .keyboard-row.letters-9 {
   grid-template-columns: repeat(9, 1fr);
-  padding: 0 24px;
+  padding: 0 18px;
 }
 
 .keyboard-row.actions {
@@ -759,28 +759,28 @@ body {
 
 .keyboard-key {
   border: 3px solid rgba(255,255,255,0.18);
-  border-radius: 11px;
+  border-radius: 10px;
   background: #333;
   color: white;
-  font-size: 31px;
+  font-size: 34px;
   line-height: 1;
   font-weight: 900;
   min-height: 0;
   height: 100%;
-  padding: 1px 4px;
+  padding: 0 3px;
   text-align: center;
   overflow: hidden;
 }
 
 .keyboard-key.special {
   background: #555;
-  font-size: 23px;
+  font-size: 25px;
 }
 
 .keyboard-key.send-key {
   background: #00bcd4;
   color: #000;
-  font-size: 27px;
+  font-size: 29px;
 }
 
 .reply-status-note.sending {
@@ -1024,7 +1024,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.5.1 spatial</div>
+    <div class="version-label">Fire TV Home v1.5.2 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -1264,7 +1264,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.5.1";
+const PAGE_VERSION = "v1.5.2";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1483,9 +1483,7 @@ function showView(name) {
   }
   if (name === "messageDetail") {
     if (messageBodyPanel) messageBodyPanel.scrollTop = 0;
-    const items = getItems("messageActions");
-    const bodyIndex = items.findIndex(el => el.dataset.action === "body");
-    setSelected("messageActions", bodyIndex >= 0 ? bodyIndex : 0);
+    selectMessageBody();
   }
   if (name === "videos") {
     clearGroupSelection("videosHeader");
@@ -2698,6 +2696,34 @@ function activateHeaderHome() {
   showView("home");
 }
 
+
+function selectMessageListButton() {
+  const items = getItems("messageActions");
+  const listButton = document.querySelector('.message-detail-title-row [data-nav-group="messageActions"][data-action="close"]');
+  const listButtonIndex = items.indexOf(listButton);
+  setSelected("messageActions", listButtonIndex >= 0 ? listButtonIndex : 0);
+}
+
+function selectFirstMessageActionButton() {
+  const items = getItems("messageActions");
+  const firstBottomButton = document.querySelector("#messageDetailActions .spatial-item");
+  const firstBottomButtonIndex = items.indexOf(firstBottomButton);
+  setSelected("messageActions", firstBottomButtonIndex >= 0 ? firstBottomButtonIndex : 0);
+}
+
+function selectMessageBody() {
+  const items = getItems("messageActions");
+  const body = document.getElementById("messageBodyPanel");
+  const bodyIndex = items.indexOf(body);
+  setSelected("messageActions", bodyIndex >= 0 ? bodyIndex : 0);
+}
+
+function messageBodyIsAtBottom() {
+  if (!messageBodyPanel) return true;
+  const maxScroll = Math.max(0, messageBodyPanel.scrollHeight - messageBodyPanel.clientHeight);
+  return messageBodyPanel.scrollTop >= maxScroll - 12;
+}
+
 function activateMessageListButton() {
   logEvent("nav_message_list", "On-screen MESSAGE LIST button");
   showView("messages");
@@ -2747,66 +2773,15 @@ document.addEventListener("keydown", function(event) {
   if (key === "Escape" || key === "Backspace") {
     if (currentView === "home") return;
     if (currentView === "messageDetail") {
-      showView("messages");
-      return;
-    }
-    showView("home");
-    return;
-  }
-
-  if (currentView === "home") {
-    if (key.startsWith("Arrow")) moveGrid("home", 2, key);
-    if (isActivationKey(key)) activateHomeItem();
-    return;
-  }
-
-  if (currentView === "messages") {
-    const headerSelected = getSelectedItem("messagesHeader")?.classList.contains("selected");
-
-    if (key === "ArrowLeft" && !headerSelected) {
-      clearGroupSelection("messages");
-      setSelected("messagesHeader", 0);
-      return;
-    }
-
-    if ((key === "ArrowRight" || key === "ArrowDown") && headerSelected) {
-      clearGroupSelection("messagesHeader");
-      setSelected("messages", listState.messages.homeSelected
-        ? getItems("messages").length - 1
-        : Math.max(0, listState.messages.index - listState.messages.offset));
-      return;
-    }
-
-    if (key === "ArrowUp" && listState.messages.index === 0 && !listState.messages.homeSelected) {
-      clearGroupSelection("messages");
-      setSelected("messagesHeader", 0);
-      return;
-    }
-
-    if (headerSelected) {
-      if (isActivationKey(key)) activateHeaderHome();
-      return;
-    }
-
-    if (key === "ArrowDown" || key === "ArrowUp") moveMessages(key);
-    if (isActivationKey(key)) activateMessage();
-    return;
-  }
-
-  if (currentView === "messageDetail") {
     const item = getSelectedItem("messageActions");
     const action = item ? item.dataset.action : "";
 
     if (action === "body") {
       if (key === "ArrowDown") {
         const maxScroll = Math.max(0, messageBodyPanel.scrollHeight - messageBodyPanel.clientHeight);
-        const atBottom = messageBodyPanel.scrollTop >= maxScroll - 10;
 
-        if (atBottom) {
-          const items = getItems("messageActions");
-          const firstBottomButton = document.querySelector("#messageDetailActions .spatial-item");
-          const firstBottomButtonIndex = items.indexOf(firstBottomButton);
-          setSelected("messageActions", firstBottomButtonIndex >= 0 ? firstBottomButtonIndex : 0);
+        if (messageBodyIsAtBottom()) {
+          selectFirstMessageActionButton();
           return;
         }
 
@@ -2816,23 +2791,42 @@ document.addEventListener("keydown", function(event) {
         );
         return;
       }
+
+      if (key === "ArrowUp" || key === "ArrowLeft") {
+        selectMessageListButton();
+        return;
+      }
+
+      if (key === "ArrowRight") {
+        selectFirstMessageActionButton();
+        return;
+      }
+
+      return;
+    }
+
+    if (item && item.closest("#messageDetailActions")) {
       if (key === "ArrowUp") {
-        if (messageBodyPanel.scrollTop > 0) {
-          messageBodyPanel.scrollTop = Math.max(
-            0,
-            messageBodyPanel.scrollTop - Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75))
-          );
-        }
+        selectMessageBody();
         return;
       }
       if (key === "ArrowLeft" || key === "ArrowRight") {
+        moveLinear("messageActions", key);
+        return;
+      }
+      if (key === "ArrowDown") {
         return;
       }
     }
 
-    if (key === "ArrowLeft" || key === "ArrowRight" || key === "ArrowUp" || key === "ArrowDown") {
-      moveLinear("messageActions", key);
-      return;
+    if (action === "close") {
+      if (key === "ArrowDown" || key === "ArrowRight") {
+        selectMessageBody();
+        return;
+      }
+      if (key === "ArrowLeft" || key === "ArrowUp") {
+        return;
+      }
     }
 
     if (isActivationKey(key)) activateMessageAction();
