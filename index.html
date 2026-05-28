@@ -1024,7 +1024,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.5.2 spatial</div>
+    <div class="version-label">Fire TV Home v1.5.3 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -1264,7 +1264,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.5.2";
+const PAGE_VERSION = "v1.5.3";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -2157,6 +2157,699 @@ async function loadVideos(key = currentVideoPlaylistKey) {
       applyVideoHeaderUpdateUI(key);
 
       if (currentView === "videos") {
+        renderVideosList();
+      }
+    }
+  } catch (e) {
+    console.error(e);
+    if (key === currentVideoPlaylistKey) {
+      ytStatus.textContent = "Error loading videos";
+      updateYoutubeLastChecked();
+    }
+  }
+}
+
+async function loadAllVideoPlaylists() {
+  await Promise.all(Object.keys(VIDEO_PLAYLISTS).map(key => loadVideos(key)));
+}
+
+function updateYoutubeLastChecked() {
+  const now = new Date();
+  const datePart = now.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  });
+  const timePart = now.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit"
+  });
+  ytLastChecked.textContent = `Last checked: ${datePart} ${timePart}`;
+}
+
+function updateYoutubeHeaderCount(count) {
+  const playlist = VIDEO_PLAYLISTS[currentVideoPlaylistKey] || VIDEO_PLAYLISTS.wrestling;
+  ytHeaderTitle.textContent = `${playlist.title} (${count})`;
+}
+
+function openVideosView(key = "wrestling") {
+  currentVideoPlaylistKey = VIDEO_PLAYLISTS[key] ? key : "wrestling";
+  listState.videos.index = 0;
+  listState.videos.offset = 0;
+  listState.videos.homeSelected = false;
+  applyVideoHeaderUpdateUI(currentVideoPlaylistKey);
+  updateYoutubeHeaderCount((loadedVideosByKey[currentVideoPlaylistKey] || []).length);
+  showView("videos");
+
+  if (!(loadedVideosByKey[currentVideoPlaylistKey] || []).length) {
+    ytStatus.textContent = "Loading videos…";
+    loadVideos(currentVideoPlaylistKey);
+  } else {
+    renderVideosList();
+  }
+}
+
+function renderVideosList() {
+  updateMeasuredPageSizes();
+  ytList.innerHTML = "";
+
+  const currentVideos = loadedVideosByKey[currentVideoPlaylistKey] || [];
+
+  if (!currentVideos.length) {
+    ytStatus.textContent = "No videos found.";
+    videosPageInfo.textContent = "";
+    updateYoutubeHeaderCount(0);
+    return;
+  }
+
+  ytStatus.textContent = "";
+
+  const watched = getWatchedVideos();
+  const state = listState.videos;
+  state.index = Math.max(0, Math.min(state.index, currentVideos.length - 1));
+
+  if (state.index < state.offset) state.offset = state.index;
+  if (state.index >= state.offset + state.pageSize) state.offset = state.index - state.pageSize + 1;
+  state.offset = Math.max(0, Math.min(state.offset, Math.max(0, currentVideos.length - state.pageSize)));
+
+  const visible = currentVideos.slice(state.offset, state.offset + state.pageSize);
+
+  visible.forEach((video, visibleIndex) => {
+    const actualIndex = state.offset + visibleIndex;
+    const card = document.createElement("div");
+    card.className = "video-card spatial-item";
+    card.dataset.navGroup = "videos";
+    card.dataset.action = "open";
+    card.dataset.index = String(actualIndex);
+    card.dataset.videoId = video.videoId;
+
+    if (watched[video.videoId]) {
+      card.classList.add("watched");
+    }
+
+    card.textContent = video.title;
+    ytList.appendChild(card);
+  });
+
+  const isFinalPage = state.offset + visible.length >= currentVideos.length;
+
+  if (isFinalPage) {
+    const homeCard = document.createElement("div");
+    homeCard.className = "video-home-card spatial-item";
+    homeCard.dataset.navGroup = "videos";
+    homeCard.dataset.action = "home";
+    homeCard.textContent = "HOME";
+    ytList.appendChild(homeCard);
+  }
+
+  if (!isFinalPage) {
+    state.homeSelected = false;
+  }
+
+  videosPageInfo.textContent = state.homeSelected
+    ? `HOME selected — press Select to return`
+    : `Video ${state.index + 1} of ${currentVideos.length}`;
+
+  const selectedIndex = state.homeSelected && isFinalPage ? visible.length : state.index - state.offset;
+  setSelected("videos", selectedIndex);
+}
+
+function moveVideos(key) {
+  const state = listState.videos;
+
+  if (key === "ArrowDown") {
+    if (state.homeSelected) {
+      renderVideosList();
+      return;
+    }
+
+    const currentVideos = loadedVideosByKey[currentVideoPlaylistKey] || [];
+    if (state.index >= currentVideos.length - 1) {
+      state.homeSelected = true;
+    } else {
+      state.index = Math.min(state.index + 1, currentVideos.length - 1);
+      state.homeSelected = false;
+    }
+  }
+
+  if (key === "ArrowUp") {
+    if (state.homeSelected) {
+      state.homeSelected = false;
+      state.index = (loadedVideosByKey[currentVideoPlaylistKey] || []).length - 1;
+    } else {
+      state.index = Math.max(state.index - 1, 0);
+    }
+  }
+
+  renderVideosList();
+}
+
+function activateVideo() {
+  if (listState.videos.homeSelected) {
+    logEvent("nav_home", "Videos bottom HOME row");
+    showView("home");
+    return;
+  }
+
+  const video = (loadedVideosByKey[currentVideoPlaylistKey] || [])[listState.videos.index];
+  if (!video) return;
+
+  playEmbeddedVideo(video.videoId);
+}
+
+function destroyEmbeddedPlayer() {
+  playerHost.innerHTML = "";
+}
+
+function showPlayerPanel() {
+  playerPanel.classList.add("show");
+}
+
+function hidePlayerPanel() {
+  logEvent("video_close", "Close video");
+  destroyEmbeddedPlayer();
+  playerPanel.classList.remove("show");
+}
+
+function playEmbeddedVideo(videoId) {
+  logEvent("youtube_video_open", videoId);
+  showPlayerPanel();
+  destroyEmbeddedPlayer();
+  markVideoWatched(videoId);
+
+  const iframe = document.createElement("iframe");
+  iframe.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
+  iframe.allowFullscreen = true;
+  iframe.referrerPolicy = "strict-origin-when-cross-origin";
+
+  const embedUrl = new URL(`https://www.youtube.com/embed/${videoId}`);
+  embedUrl.searchParams.set("autoplay", "1");
+  embedUrl.searchParams.set("mute", "0");
+  embedUrl.searchParams.set("controls", "1");
+  embedUrl.searchParams.set("playsinline", "1");
+  embedUrl.searchParams.set("rel", "0");
+
+  iframe.src = embedUrl.toString();
+  playerHost.appendChild(iframe);
+}
+
+
+
+async function sendQuickResponse(id, response) {
+  const formData = new URLSearchParams();
+  formData.set("action", "quick_response");
+  formData.set("id", id);
+  formData.set("quick_response", response);
+
+  const fetchResponse = await fetch(MESSAGES_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+    body: formData.toString()
+  });
+
+  const result = await fetchResponse.json();
+  if (!fetchResponse.ok || !result.ok) {
+    throw new Error(result && result.error ? result.error : "Quick response failed");
+  }
+  return result;
+}
+
+/* ---------- REPLY ---------- */
+
+
+function updateReplyDisplay() {
+  if (!replyDisplay || !replyBox) return;
+  const value = replyBox.value || "";
+  if (!value) {
+    replyDisplay.innerHTML = '<span class="reply-placeholder">Use the large keyboard below to write a reply.</span>';
+    return;
+  }
+  replyDisplay.textContent = value;
+  replyDisplay.scrollTop = replyDisplay.scrollHeight;
+}
+
+function appendReplyText(textToAdd) {
+  replyBox.value = (replyBox.value || "") + textToAdd;
+  updateReplyDisplay();
+}
+
+function backspaceReplyText() {
+  replyBox.value = (replyBox.value || "").slice(0, -1);
+  updateReplyDisplay();
+}
+
+function clearReplyText() {
+  replyBox.value = "";
+  updateReplyDisplay();
+}
+
+
+function getKeyboardItems() {
+  return getItems("reply");
+}
+
+function moveReplyKeyboard(key) {
+  const items = getKeyboardItems();
+  if (!items.length) return;
+
+  let index = selected.reply || 0;
+  const current = items[index];
+  if (!current) return;
+
+  const action = current.dataset.action || "";
+
+  // Row layout in DOM order:
+  // 0 display, then Q-P 10 keys, A-L 9 keys, Z-? 9 keys, action row 5 keys.
+  const rowStarts = [1, 11, 20, 29];
+  const rowLengths = [10, 9, 9, 5];
+
+  if (index === 0) {
+    if (key === "ArrowDown") setSelected("reply", 1);
+    return;
+  }
+
+  if (key === "ArrowLeft" || key === "ArrowRight") {
+    moveLinear("reply", key);
+    return;
+  }
+
+  if (key === "ArrowUp") {
+    for (let r = 0; r < rowStarts.length; r++) {
+      const start = rowStarts[r];
+      const len = rowLengths[r];
+      if (index >= start && index < start + len) {
+        if (r === 0) {
+          setSelected("reply", 0);
+          return;
+        }
+        const colRatio = len <= 1 ? 0 : (index - start) / (len - 1);
+        const prevStart = rowStarts[r - 1];
+        const prevLen = rowLengths[r - 1];
+        const prevCol = Math.round(colRatio * (prevLen - 1));
+        setSelected("reply", prevStart + prevCol);
+        return;
+      }
+    }
+  }
+
+  if (key === "ArrowDown") {
+    for (let r = 0; r < rowStarts.length; r++) {
+      const start = rowStarts[r];
+      const len = rowLengths[r];
+      if (index >= start && index < start + len) {
+        if (r >= rowStarts.length - 1) return;
+        const colRatio = len <= 1 ? 0 : (index - start) / (len - 1);
+        const nextStart = rowStarts[r + 1];
+        const nextLen = rowLengths[r + 1];
+        const nextCol = Math.round(colRatio * (nextLen - 1));
+        setSelected("reply", nextStart + nextCol);
+        return;
+      }
+    }
+  }
+}
+
+function activateReplyKeyboardItem() {
+  const item = getSelectedItem("reply");
+  if (!item) return;
+
+  const action = item.dataset.action;
+
+  if (action === "display") return;
+  if (action === "key") {
+    appendReplyText(item.dataset.key || "");
+    return;
+  }
+  if (action === "space") {
+    appendReplyText(" ");
+    return;
+  }
+  if (action === "backspace") {
+    backspaceReplyText();
+    return;
+  }
+  if (action === "clear") {
+    clearReplyText();
+    return;
+  }
+  if (action === "close") {
+    renderMessageDetail();
+    showView("messageDetail");
+    return;
+  }
+  if (action === "submit") {
+    submitReply();
+  }
+}
+
+function openReplyView() {
+  if (!currentMessage) return;
+  replyToText.textContent = currentMessage.from_name || "Family";
+  replySubjectText.textContent = currentMessage.subject || "";
+  replyBox.value = "";
+  replyStatus.textContent = "";
+  updateReplyDisplay();
+  selected.reply = 1;
+  showView("reply");
+}
+
+function showReplyStatus(text, mode) {
+  replyStatus.textContent = text;
+  replyStatus.className = "reply-status-note";
+  if (mode) replyStatus.classList.add(mode);
+}
+
+async function submitReply() {
+  if (!currentMessage) return;
+
+  const body = replyBox.value.trim();
+  if (!body) {
+    showReplyStatus("Please enter a reply.", "error");
+    return;
+  }
+
+  replySendButton.disabled = true;
+  showReplyStatus("SENDING REPLY...", "sending");
+  logEvent("message_reply_attempt", currentMessage.subject || currentMessage.id, { id: currentMessage.id });
+
+  try {
+    const formData = new URLSearchParams();
+    formData.set("action", "add_reply");
+    formData.set("id", currentMessage.id);
+    formData.set("reply_body", body);
+
+    const response = await fetch(MESSAGES_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      body: formData.toString()
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.ok) {
+      throw new Error(result && result.error ? result.error : "Reply failed");
+    }
+
+    currentMessage.replied_at = result.replied_at || new Date().toISOString();
+    currentMessage.reply_body = body;
+
+    const cached = findCachedMessage(currentMessage.id);
+    if (cached) {
+      cached.replied_at = currentMessage.replied_at;
+      cached.reply_body = body;
+    }
+
+    showReplyStatus("REPLY SENT ✓", "sent");
+    logEvent("message_reply_success", currentMessage.subject || currentMessage.id, { id: currentMessage.id });
+
+    setTimeout(() => {
+      clearGroupSelection("reply");
+      clearGroupSelection("replyHeader");
+      selected.messageActions = 0;
+      renderMessageDetail();
+      showView("messageDetail");
+    }, 900);
+  } catch (e) {
+    console.error(e);
+    showReplyStatus("ERROR SENDING REPLY", "error");
+    logEvent("message_reply_error", currentMessage.subject || currentMessage.id, { id: currentMessage.id });
+  } finally {
+    replySendButton.disabled = false;
+  }
+}
+
+/* ---------- SEND MESSAGE ---------- */
+
+function showStatus(text, mode) {
+  statusBox.textContent = text;
+  statusBox.className = "";
+  statusBox.id = "status";
+  statusBox.classList.add("show", mode);
+}
+
+function clearStatus() {
+  statusBox.textContent = "";
+  statusBox.className = "";
+  statusBox.id = "status";
+}
+
+function handleSubmit(event) {
+  event.preventDefault();
+
+  const form = event.target;
+  clearTimeout(statusTimeout);
+
+  sendButton.disabled = true;
+  sendButton.blur();
+
+  showStatus("SENDING...", "sending");
+  logEvent("send_message_attempt", "Send Message");
+
+  if (TEST_MODE) {
+    setTimeout(() => {
+      form.reset();
+      showStatus("MESSAGE SENT ✓", "sent");
+      logEvent("send_message_success", "Send Message");
+      sendButton.disabled = false;
+
+      statusTimeout = setTimeout(() => {
+        clearStatus();
+      }, 5000);
+    }, 900);
+    return;
+  }
+
+  const data = new FormData(form);
+
+  fetch(form.action, {
+    method: form.method,
+    body: data,
+    headers: { 'Accept': 'application/json' }
+  })
+  .then((response) => {
+    if (!response.ok) throw new Error("Send failed");
+    form.reset();
+    showStatus("MESSAGE SENT ✓", "sent");
+    logEvent("send_message_success", "Send Message");
+    sendButton.disabled = false;
+
+    statusTimeout = setTimeout(() => {
+      clearStatus();
+    }, 5000);
+  })
+  .catch(() => {
+    showStatus("ERROR SENDING", "error");
+    logEvent("send_message_error", "Send Message");
+    sendButton.disabled = false;
+  });
+}
+
+/* ---------- REFRESH / AUTO RELOAD ---------- */
+
+function startPeriodicRefresh() {
+  setInterval(async () => {
+    await refreshMessages();
+  }, MESSAGE_REFRESH_INTERVAL_MS);
+
+  setInterval(async () => {
+    await loadAllVideoPlaylists();
+  }, VIDEO_REFRESH_INTERVAL_MS);
+
+  setInterval(() => {
+    maybeReloadPage();
+  }, PAGE_RELOAD_CHECK_INTERVAL_MS);
+}
+
+function maybeReloadPage() {
+  const videoIsOpen = playerPanel.classList.contains("show");
+  const textBoxActive = document.activeElement === textarea;
+  const idleMs = Date.now() - lastPageActivityAt;
+
+  if (videoIsOpen || textBoxActive || currentView !== "home") {
+    logEvent("auto_reload_skipped", "Page reload skipped because page was in use", {
+      idle_ms: idleMs,
+      idle_hours: Math.round((idleMs / (60 * 60 * 1000)) * 100) / 100,
+      last_activity_at: formatActivityTime_(lastPageActivityAt),
+      last_activity_type: lastPageActivityType,
+      video_is_open: videoIsOpen,
+      current_view: currentView,
+      text_box_active: textBoxActive
+    });
+    return;
+  }
+
+  if (idleMs < PAGE_RELOAD_IDLE_MS) {
+    return;
+  }
+
+  logEvent("auto_reload", "Automatic page reload after idle period", {
+    idle_ms: idleMs,
+    idle_hours: Math.round((idleMs / (60 * 60 * 1000)) * 100) / 100,
+    last_activity_at: formatActivityTime_(lastPageActivityAt),
+    last_activity_type: lastPageActivityType
+  });
+
+  window.location.reload();
+}
+
+function activateHeaderHome() {
+  logEvent("nav_home", "On-screen HOME button", { from_view: currentView });
+  showView("home");
+}
+
+
+function selectMessageListButton() {
+  const items = getItems("messageActions");
+  const listButton = document.querySelector('.message-detail-title-row [data-nav-group="messageActions"][data-action="close"]');
+  const listButtonIndex = items.indexOf(listButton);
+  setSelected("messageActions", listButtonIndex >= 0 ? listButtonIndex : 0);
+}
+
+function selectFirstMessageActionButton() {
+  const items = getItems("messageActions");
+  const firstBottomButton = document.querySelector("#messageDetailActions .spatial-item");
+  const firstBottomButtonIndex = items.indexOf(firstBottomButton);
+  setSelected("messageActions", firstBottomButtonIndex >= 0 ? firstBottomButtonIndex : 0);
+}
+
+function selectMessageBody() {
+  const items = getItems("messageActions");
+  const body = document.getElementById("messageBodyPanel");
+  const bodyIndex = items.indexOf(body);
+  setSelected("messageActions", bodyIndex >= 0 ? bodyIndex : 0);
+}
+
+function messageBodyIsAtBottom() {
+  if (!messageBodyPanel) return true;
+  const maxScroll = Math.max(0, messageBodyPanel.scrollHeight - messageBodyPanel.clientHeight);
+  return messageBodyPanel.scrollTop >= maxScroll - 12;
+}
+
+function activateMessageListButton() {
+  logEvent("nav_message_list", "On-screen MESSAGE LIST button");
+  showView("messages");
+}
+
+/* ---------- KEY HANDLING ---------- */
+
+function isActivationKey(key) {
+  return key === "Enter" || key === "OK" || key === "Select";
+}
+
+document.addEventListener("keydown", function(event) {
+  markPageActivity(event);
+
+  if (playerPanel.classList.contains("show")) {
+    if (event.key === "Escape" || event.key === "Backspace" || isActivationKey(event.key)) {
+      event.preventDefault();
+      hidePlayerPanel();
+    }
+    return;
+  }
+
+  if (document.activeElement === textarea) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      showView("home");
+    }
+    return;
+  }
+
+  if (document.activeElement === replyBox) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      renderMessageDetail();
+      showView("messageDetail");
+    }
+    return;
+  }
+
+  const key = event.key;
+
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", "OK", "Select", "Escape", "Backspace"].includes(key)) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  
+  if (key === "Escape" || key === "Backspace") {
+    if (currentView === "home") return;
+
+    if (currentView === "messageDetail") {
+      showView("messages");
+      return;
+    }
+
+    if (currentView === "reply") {
+      renderMessageDetail();
+      showView("messageDetail");
+      return;
+    }
+
+    showView("home");
+    return;
+  }
+
+  if (currentView === "messageDetail") {
+    const item = getSelectedItem("messageActions");
+    const action = item ? item.dataset.action : "";
+
+    if (action === "body") {
+      if (key === "ArrowDown") {
+        const maxScroll = Math.max(0, messageBodyPanel.scrollHeight - messageBodyPanel.clientHeight);
+
+        if (messageBodyIsAtBottom()) {
+          selectFirstMessageActionButton();
+          return;
+        }
+
+        messageBodyPanel.scrollTop = Math.min(
+          maxScroll,
+          messageBodyPanel.scrollTop + Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75))
+        );
+        return;
+      }
+
+      if (key === "ArrowUp" || key === "ArrowLeft") {
+        selectMessageListButton();
+        return;
+      }
+
+      if (key === "ArrowRight") {
+        selectFirstMessageActionButton();
+        return;
+      }
+
+      return;
+    }
+
+    if (action === "close") {
+      if (key === "ArrowDown" || key === "ArrowRight") {
+        selectMessageBody();
+        return;
+      }
+
+      return;
+    }
+
+    if (item && item.closest("#messageDetailActions")) {
+      if (key === "ArrowUp") {
+        selectMessageBody();
+        return;
+      }
+
+      if (key === "ArrowLeft" || key === "ArrowRight") {
+        moveLinear("messageActions", key);
+        return;
+      }
+
+      return;
+    }
+
+    if (isActivationKey(key)) activateMessageAction();
+    return;
+  }
+
+if (currentView === "videos") {
         renderVideosList();
       }
     }
