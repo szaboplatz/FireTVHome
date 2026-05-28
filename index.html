@@ -236,43 +236,43 @@ body {
 .messages-list-shell {
   display: grid;
   grid-template-rows: auto 1fr auto;
-  height: calc(var(--app-height) - 94px);
-  gap: 4px;
+  height: calc(var(--app-height) - 90px);
+  gap: 3px;
 }
 
 .messages-status {
-  font-size: 20px;
+  font-size: 18px;
   color: #fff4b1;
-  min-height: 22px;
+  min-height: 18px;
 }
 
 .messages-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   overflow: hidden;
-  padding: 2px 8px;
+  padding: 0 6px;
 }
 
 .message-card {
-  border-radius: 14px;
-  padding: 8px 14px;
+  border-radius: 12px;
+  padding: 5px 10px;
   background: #1f6f2a;
   border: 3px solid #4fc46a;
-  min-height: 112px;
+  min-height: 96px;
   text-align: left;
   color: white;
 }
 
 .message-home-card {
-  border-radius: 14px;
-  padding: 10px 14px;
+  border-radius: 12px;
+  padding: 7px 10px;
   background: #444;
   border: 3px solid #999;
-  min-height: 58px;
+  min-height: 48px;
   text-align: center;
   color: white;
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 900;
 }
 
@@ -293,11 +293,11 @@ body {
 .message-topline {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
-  font-size: 23px;
-  line-height: 1.03;
+  gap: 8px;
+  font-size: 21px;
+  line-height: 1;
   font-weight: 900;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
   white-space: normal;
 }
 
@@ -306,8 +306,8 @@ body {
 }
 
 .message-subject {
-  font-size: 26px;
-  line-height: 1.04;
+  font-size: 24px;
+  line-height: 1.02;
   font-weight: 900;
 }
 
@@ -320,10 +320,10 @@ body {
   display: flex;
   justify-content: space-between;
   color: #bbb;
-  font-size: 16px;
+  font-size: 14px;
   margin-top: 0;
   line-height: 1;
-  padding: 0 8px 2px;
+  padding: 0 6px 1px;
 }
 
 /* Compact message-list header to make room for more message cards */
@@ -355,32 +355,32 @@ body {
 .messages-list-shell {
   display: grid;
   grid-template-rows: auto 1fr auto;
-  height: calc(var(--app-height) - 94px);
-  gap: 4px;
+  height: calc(var(--app-height) - 90px);
+  gap: 3px;
 }
 
 .messages-status {
-  font-size: 20px;
+  font-size: 18px;
   color: #fff4b1;
-  min-height: 22px;
+  min-height: 18px;
 }
 
 .messages-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   overflow: hidden;
-  padding: 2px 8px;
+  padding: 0 6px;
 }
 
 .list-footer {
   display: flex;
   justify-content: space-between;
   color: #bbb;
-  font-size: 16px;
+  font-size: 14px;
   margin-top: 0;
   line-height: 1;
-  padding: 0 8px 2px;
+  padding: 0 6px 1px;
 }
 
 
@@ -619,8 +619,8 @@ body {
 }
 
 .message-response-line {
-  margin-top: 3px;
-  font-size: 22px;
+  margin-top: 2px;
+  font-size: 20px;
   line-height: 1;
   font-weight: 900;
   color: #fff4b1;
@@ -803,11 +803,11 @@ textarea:focus {
   }
 
   .message-card {
-  border-radius: 14px;
-  padding: 8px 14px;
+  border-radius: 12px;
+  padding: 5px 10px;
   background: #1f6f2a;
   border: 3px solid #4fc46a;
-  min-height: 112px;
+  min-height: 96px;
   text-align: left;
   color: white;
 }
@@ -815,17 +815,17 @@ textarea:focus {
   .message-topline {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
-  font-size: 23px;
-  line-height: 1.03;
+  gap: 8px;
+  font-size: 21px;
+  line-height: 1;
   font-weight: 900;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
   white-space: normal;
 }
 
   .message-subject {
-  font-size: 26px;
-  line-height: 1.04;
+  font-size: 24px;
+  line-height: 1.02;
   font-weight: 900;
 }
 }
@@ -836,7 +836,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.4.9 spatial</div>
+    <div class="version-label">Fire TV Home v1.4.10 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -1030,7 +1030,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.4.9";
+const PAGE_VERSION = "v1.4.10";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1493,7 +1493,7 @@ function measureListPageSize(container, sampleMinHeight, gap, minRows, maxRows) 
 }
 
 function updateMeasuredPageSizes() {
-  listState.messages.pageSize = measureListPageSize(messagesList, 112, 6, 2, 7);
+  listState.messages.pageSize = measureListPageSize(messagesList, 96, 4, 2, 8);
   listState.videos.pageSize = measureListPageSize(ytList, 88, 14, 2, 6);
 }
 
@@ -2439,8 +2439,9 @@ document.addEventListener("keydown", function(event) {
         const atBottom = messageBodyPanel.scrollTop + messageBodyPanel.clientHeight >= messageBodyPanel.scrollHeight - 8;
         if (atBottom) {
           const items = getItems("messageActions");
-          const firstButtonIndex = items.findIndex(el => el.dataset.action !== "body");
-          setSelected("messageActions", firstButtonIndex >= 0 ? firstButtonIndex : 0);
+          const firstBottomButton = document.querySelector("#messageDetailActions .spatial-item");
+          const firstBottomButtonIndex = items.indexOf(firstBottomButton);
+          setSelected("messageActions", firstBottomButtonIndex >= 0 ? firstBottomButtonIndex : 0);
           return;
         }
         messageBodyPanel.scrollTop += Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75));
