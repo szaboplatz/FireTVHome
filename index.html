@@ -326,29 +326,29 @@ body {
 
 /* MESSAGE DETAIL VIEW */
 #messageDetailView {
-  padding: 12px 28px 22px;
+  padding: 6px 22px 12px;
 }
 
 .message-detail-title-row {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .message-detail-title-row .view-title {
-  font-size: 28px;
+  font-size: 20px;
   letter-spacing: 1px;
 }
 
 .message-detail-title-row .nav-button {
-  min-height: 42px;
-  font-size: 20px;
-  padding: 6px 14px;
+  min-height: 34px;
+  font-size: 17px;
+  padding: 4px 12px;
 }
 
 .message-detail-layout {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 6px;
-  height: calc(var(--app-height) - 88px);
+  gap: 4px;
+  height: calc(100% - 40px);
   min-height: 0;
 }
 
@@ -356,14 +356,14 @@ body {
   grid-row: 1;
   background: #0b0b0b;
   border: 2px solid #444;
-  border-radius: 10px;
-  padding: 5px 12px;
+  border-radius: 8px;
+  padding: 3px 10px;
   text-align: left;
 }
 
 .message-detail-line {
-  font-size: 21px;
-  line-height: 1.08;
+  font-size: 18px;
+  line-height: 1.02;
   margin-bottom: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -375,9 +375,9 @@ body {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
   align-items: baseline;
-  margin-bottom: 1px;
-  font-size: 21px;
-  line-height: 1.08;
+  margin-bottom: 0;
+  font-size: 18px;
+  line-height: 1.02;
   font-weight: 900;
 }
 
@@ -396,15 +396,16 @@ body {
   grid-row: 3;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
+  gap: 5px;
+  padding-bottom: 2px;
 }
 
 .action-btn {
   border: none;
-  border-radius: 12px;
-  min-height: 48px;
-  padding: 6px 7px;
-  font-size: 20px;
+  border-radius: 11px;
+  min-height: 44px;
+  padding: 5px 6px;
+  font-size: 18px;
   font-weight: 900;
   color: white;
   background: #555;
@@ -439,7 +440,7 @@ body {
   background: #080808;
   border: 3px solid #8d8d8d;
   border-radius: 18px;
-  padding: 20px 42px 24px;
+  padding: 18px 36px 20px;
   overflow-y: auto;
   text-align: center;
   min-height: 0;
@@ -447,7 +448,7 @@ body {
   align-items: center;
   justify-content: center;
   box-shadow:
-    inset 0 -14px 0 rgba(255,212,0,0.08),
+    inset 0 -12px 0 rgba(255,212,0,0.08),
     0 0 0 2px rgba(255,255,255,0.06);
 }
 
@@ -464,10 +465,10 @@ body {
 
 .message-body {
   width: 100%;
-  max-width: 1080px;
+  max-width: 1120px;
   margin: auto;
-  font-size: clamp(54px, 6.1vw, 82px);
-  line-height: 1.26;
+  font-size: clamp(58px, 6.4vw, 88px);
+  line-height: 1.22;
   font-weight: 800;
   white-space: pre-wrap;
   text-align: center;
@@ -778,41 +779,41 @@ textarea:focus {
   }
 
   #messageDetailView {
-    padding: 8px 22px 16px;
+    padding: 4px 18px 10px;
   }
 
   .message-detail-title-row .view-title {
-    font-size: 24px;
-  }
-
-  .message-detail-title-row .nav-button {
-    min-height: 38px;
     font-size: 18px;
   }
 
+  .message-detail-title-row .nav-button {
+    min-height: 32px;
+    font-size: 16px;
+  }
+
   .message-detail-layout {
-    height: calc(var(--app-height) - 72px);
-    gap: 5px;
+    height: calc(100% - 34px);
+    gap: 4px;
   }
 
   .message-detail-topline,
   .message-detail-line {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   .message-body-panel {
-    padding: 16px 28px 20px;
+    padding: 14px 24px 18px;
   }
 
   .message-body {
-    font-size: clamp(46px, 6.2vw, 66px);
-    line-height: 1.22;
+    font-size: clamp(48px, 6.5vw, 70px);
+    line-height: 1.18;
   }
 
   .action-btn {
-    min-height: 42px;
-    font-size: 17px;
-    padding: 5px 6px;
+    min-height: 38px;
+    font-size: 15px;
+    padding: 4px 5px;
   }
 
 }
@@ -823,7 +824,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.4.3 reading</div>
+    <div class="version-label">Fire TV Home v1.4.4 reading</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -1017,7 +1018,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.4.3";
+const PAGE_VERSION = "v1.4.4";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
