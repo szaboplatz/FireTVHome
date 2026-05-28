@@ -259,7 +259,7 @@ body {
 
 .message-card {
   border-radius: 10px;
-  padding: 3px 8px;
+  padding: 4px 9px;
   background: #1f6f2a;
   border: 3px solid #4fc46a;
   min-height: 0;
@@ -270,13 +270,13 @@ body {
 
 .message-home-card {
   border-radius: 10px;
-  padding: 5px 8px;
+  padding: 6px 9px;
   background: #444;
   border: 3px solid #999;
   min-height: 0;
   text-align: center;
   color: white;
-  font-size: 26px;
+  font-size: 29px;
   line-height: 1;
   font-weight: 900;
 }
@@ -299,10 +299,10 @@ body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
-  font-size: 20px;
+  font-size: 23px;
   line-height: 1;
   font-weight: 900;
-  margin-bottom: 1px;
+  margin-bottom: 2px;
   white-space: normal;
 }
 
@@ -311,8 +311,8 @@ body {
 }
 
 .message-subject {
-  font-size: 24px;
-  line-height: 1;
+  font-size: 29px;
+  line-height: 1.03;
   font-weight: 900;
   margin: 0;
   padding: 0;
@@ -635,8 +635,8 @@ body {
 }
 
 .message-response-line {
-  margin-top: 1px;
-  font-size: 19px;
+  margin-top: 2px;
+  font-size: 22px;
   line-height: 1;
   font-weight: 900;
   color: #fff4b1;
@@ -820,7 +820,7 @@ textarea:focus {
 
   .message-card {
   border-radius: 10px;
-  padding: 3px 8px;
+  padding: 4px 9px;
   background: #1f6f2a;
   border: 3px solid #4fc46a;
   min-height: 0;
@@ -833,16 +833,16 @@ textarea:focus {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
-  font-size: 20px;
+  font-size: 23px;
   line-height: 1;
   font-weight: 900;
-  margin-bottom: 1px;
+  margin-bottom: 2px;
   white-space: normal;
 }
 
   .message-subject {
-  font-size: 24px;
-  line-height: 1;
+  font-size: 29px;
+  line-height: 1.03;
   font-weight: 900;
   margin: 0;
   padding: 0;
@@ -855,7 +855,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.4.11 spatial</div>
+    <div class="version-label">Fire TV Home v1.4.12 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -1049,7 +1049,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.4.11";
+const PAGE_VERSION = "v1.4.12";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1512,7 +1512,7 @@ function measureListPageSize(container, sampleMinHeight, gap, minRows, maxRows) 
 }
 
 function updateMeasuredPageSizes() {
-  listState.messages.pageSize = measureListPageSize(messagesList, 54, 4, 2, 10);
+  listState.messages.pageSize = measureListPageSize(messagesList, 68, 4, 2, 9);
   listState.videos.pageSize = measureListPageSize(ytList, 88, 14, 2, 6);
 }
 
