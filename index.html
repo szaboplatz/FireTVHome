@@ -650,47 +650,76 @@ body {
 
 .reply-context-panel {
   background: #111;
-  border: 4px solid #6b4aa0;
-  border-radius: 16px;
-  padding: 14px 18px;
+  border: 3px solid #6b4aa0;
+  border-radius: 10px;
+  padding: 5px 8px;
   text-align: left;
+  overflow: hidden;
 }
 
 .reply-context-line {
-  font-size: 30px;
-  line-height: 1.22;
-  margin-bottom: 6px;
+  font-size: 22px;
+  line-height: 1.05;
+  margin-bottom: 0;
   font-weight: 900;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .reply-status-note {
-  font-size: 24px;
+  font-size: 18px;
   color: #fff4b1;
   text-align: center;
-  min-height: 32px;
+  min-height: 22px;
+  line-height: 1;
 }
 
+
+
+/* Compact reply screen chrome */
+#replyView .view-title-row {
+  margin-bottom: 4px;
+  gap: 8px;
+  align-items: center;
+}
+
+#replyView .view-title {
+  font-size: 30px;
+  line-height: 1;
+}
+
+#replyView .nav-button {
+  min-width: 120px;
+  min-height: 34px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  border-width: 2px;
+  font-size: 20px;
+  line-height: 1;
+}
 
 /* LARGE REPLY KEYBOARD */
 .reply-large-layout {
   display: grid;
-  grid-template-rows: auto minmax(88px, 1fr) auto auto;
-  gap: 8px;
-  height: calc(var(--app-height) - 116px);
+  grid-template-rows: auto 92px minmax(0, 1fr) 26px;
+  gap: 5px;
+  height: calc(var(--app-height) - 84px);
   min-height: 0;
+  overflow: hidden;
 }
 
 .reply-display {
   background: #111;
   color: white;
-  border: 4px solid #777;
-  border-radius: 14px;
-  padding: 12px 16px;
-  font-size: 38px;
-  line-height: 1.2;
+  border: 3px solid #777;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 34px;
+  line-height: 1.15;
   font-weight: 800;
-  min-height: 88px;
-  max-height: 140px;
+  min-height: 0;
+  max-height: none;
   overflow-y: auto;
   white-space: pre-wrap;
   text-align: left;
@@ -702,15 +731,17 @@ body {
 
 .large-keyboard {
   display: grid;
-  grid-template-rows: repeat(4, 1fr);
-  gap: 8px;
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  gap: 5px;
   min-height: 0;
+  overflow: hidden;
 }
 
 .keyboard-row {
   display: grid;
-  gap: 8px;
+  gap: 5px;
   min-height: 0;
+  overflow: hidden;
 }
 
 .keyboard-row.letters-10 {
@@ -719,7 +750,7 @@ body {
 
 .keyboard-row.letters-9 {
   grid-template-columns: repeat(9, 1fr);
-  padding: 0 42px;
+  padding: 0 24px;
 }
 
 .keyboard-row.actions {
@@ -728,26 +759,28 @@ body {
 
 .keyboard-key {
   border: 3px solid rgba(255,255,255,0.18);
-  border-radius: 14px;
+  border-radius: 11px;
   background: #333;
   color: white;
-  font-size: 34px;
+  font-size: 31px;
   line-height: 1;
   font-weight: 900;
-  min-height: 58px;
-  padding: 4px 6px;
+  min-height: 0;
+  height: 100%;
+  padding: 1px 4px;
   text-align: center;
+  overflow: hidden;
 }
 
 .keyboard-key.special {
   background: #555;
-  font-size: 28px;
+  font-size: 23px;
 }
 
 .keyboard-key.send-key {
   background: #00bcd4;
   color: #000;
-  font-size: 32px;
+  font-size: 27px;
 }
 
 .reply-status-note.sending {
@@ -991,7 +1024,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.5.0 spatial</div>
+    <div class="version-label">Fire TV Home v1.5.1 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -1231,7 +1264,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.5.0";
+const PAGE_VERSION = "v1.5.1";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -2372,6 +2405,72 @@ function clearReplyText() {
   updateReplyDisplay();
 }
 
+
+function getKeyboardItems() {
+  return getItems("reply");
+}
+
+function moveReplyKeyboard(key) {
+  const items = getKeyboardItems();
+  if (!items.length) return;
+
+  let index = selected.reply || 0;
+  const current = items[index];
+  if (!current) return;
+
+  const action = current.dataset.action || "";
+
+  // Row layout in DOM order:
+  // 0 display, then Q-P 10 keys, A-L 9 keys, Z-? 9 keys, action row 5 keys.
+  const rowStarts = [1, 11, 20, 29];
+  const rowLengths = [10, 9, 9, 5];
+
+  if (index === 0) {
+    if (key === "ArrowDown") setSelected("reply", 1);
+    return;
+  }
+
+  if (key === "ArrowLeft" || key === "ArrowRight") {
+    moveLinear("reply", key);
+    return;
+  }
+
+  if (key === "ArrowUp") {
+    for (let r = 0; r < rowStarts.length; r++) {
+      const start = rowStarts[r];
+      const len = rowLengths[r];
+      if (index >= start && index < start + len) {
+        if (r === 0) {
+          setSelected("reply", 0);
+          return;
+        }
+        const colRatio = len <= 1 ? 0 : (index - start) / (len - 1);
+        const prevStart = rowStarts[r - 1];
+        const prevLen = rowLengths[r - 1];
+        const prevCol = Math.round(colRatio * (prevLen - 1));
+        setSelected("reply", prevStart + prevCol);
+        return;
+      }
+    }
+  }
+
+  if (key === "ArrowDown") {
+    for (let r = 0; r < rowStarts.length; r++) {
+      const start = rowStarts[r];
+      const len = rowLengths[r];
+      if (index >= start && index < start + len) {
+        if (r >= rowStarts.length - 1) return;
+        const colRatio = len <= 1 ? 0 : (index - start) / (len - 1);
+        const nextStart = rowStarts[r + 1];
+        const nextLen = rowLengths[r + 1];
+        const nextCol = Math.round(colRatio * (nextLen - 1));
+        setSelected("reply", nextStart + nextCol);
+        return;
+      }
+    }
+  }
+}
+
 function activateReplyKeyboardItem() {
   const item = getSelectedItem("reply");
   if (!item) return;
@@ -2700,7 +2799,9 @@ document.addEventListener("keydown", function(event) {
 
     if (action === "body") {
       if (key === "ArrowDown") {
-        const atBottom = messageBodyPanel.scrollTop + messageBodyPanel.clientHeight >= messageBodyPanel.scrollHeight - 8;
+        const maxScroll = Math.max(0, messageBodyPanel.scrollHeight - messageBodyPanel.clientHeight);
+        const atBottom = messageBodyPanel.scrollTop >= maxScroll - 10;
+
         if (atBottom) {
           const items = getItems("messageActions");
           const firstBottomButton = document.querySelector("#messageDetailActions .spatial-item");
@@ -2708,18 +2809,23 @@ document.addEventListener("keydown", function(event) {
           setSelected("messageActions", firstBottomButtonIndex >= 0 ? firstBottomButtonIndex : 0);
           return;
         }
-        messageBodyPanel.scrollTop += Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75));
+
+        messageBodyPanel.scrollTop = Math.min(
+          maxScroll,
+          messageBodyPanel.scrollTop + Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75))
+        );
         return;
       }
       if (key === "ArrowUp") {
         if (messageBodyPanel.scrollTop > 0) {
-          messageBodyPanel.scrollTop -= Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75));
-          return;
+          messageBodyPanel.scrollTop = Math.max(
+            0,
+            messageBodyPanel.scrollTop - Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75))
+          );
         }
         return;
       }
       if (key === "ArrowLeft" || key === "ArrowRight") {
-        moveLinear("messageActions", key);
         return;
       }
     }
@@ -2789,7 +2895,7 @@ document.addEventListener("keydown", function(event) {
     }
 
     if (key === "ArrowLeft" || key === "ArrowRight" || key === "ArrowUp" || key === "ArrowDown") {
-      moveLinear("reply", key);
+      moveReplyKeyboard(key);
       return;
     }
 
