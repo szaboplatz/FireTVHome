@@ -326,24 +326,25 @@ body {
 
 /* MESSAGE DETAIL VIEW */
 .message-detail-title-row {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .message-detail-title-row .view-title {
-  font-size: 42px;
+  font-size: 34px;
+  line-height: 1;
 }
 
 .message-detail-title-row .nav-button {
-  min-height: 54px;
-  font-size: 24px;
-  padding: 8px 18px;
+  min-height: 46px;
+  font-size: 22px;
+  padding: 6px 16px;
 }
 
 .message-detail-layout {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 6px;
-  height: calc(var(--app-height) - 104px);
+  height: calc(var(--app-height) - 112px);
   min-height: 0;
 }
 
@@ -351,14 +352,16 @@ body {
   background: #111;
   border: 2px solid #444;
   border-radius: 10px;
-  padding: 4px 10px;
+  padding: 5px 12px;
   text-align: center;
+  min-height: 0;
 }
 
 .message-detail-line {
-  font-size: 22px;
-  line-height: 1.05;
+  font-size: 24px;
+  line-height: 1.08;
   margin-bottom: 0;
+  font-weight: 900;
 }
 
 .message-detail-topline {
@@ -372,16 +375,17 @@ body {
 .detail-actions {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 12px;
-  padding-top: 2px;
+  gap: 10px;
+  padding-top: 0;
 }
 
 .action-btn {
   border: none;
-  border-radius: 16px;
-  min-height: 88px;
-  padding: 10px 12px;
-  font-size: 28px;
+  border-radius: 14px;
+  min-height: 62px;
+  padding: 6px 8px;
+  font-size: 24px;
+  line-height: 1.05;
   font-weight: 900;
   color: white;
   background: #555;
@@ -415,41 +419,41 @@ body {
   background: #111;
   border: 4px solid #8a8a8a;
   border-radius: 16px;
-  padding: 12px 24px;
+  padding: 18px 28px 22px;
   overflow-y: auto;
   text-align: center;
   min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  box-shadow:
+    inset 0 -14px 0 rgba(255,212,0,0.10),
+    0 0 0 2px rgba(255,255,255,0.08);
 }
 
 .message-body-panel.selected {
   outline: 6px solid var(--focus);
   outline-offset: -8px;
-  transform: scale(1.006);
-  filter: brightness(1.12);
+  transform: scale(1.003);
+  filter: brightness(1.10);
   box-shadow:
-    inset 0 0 0 4px rgba(255,212,0,0.42),
-    inset 0 -18px 0 rgba(255,212,0,0.14),
-    0 10px 26px rgba(0,0,0,0.55);
+    inset 0 0 0 4px rgba(255,212,0,0.38),
+    inset 0 -14px 0 rgba(255,212,0,0.14),
+    0 10px 24px rgba(0,0,0,0.52);
 }
 
 .message-body {
   font-size: 54px;
-  line-height: 1.42;
+  line-height: 1.36;
   white-space: pre-wrap;
-  font-weight: 700;
-  max-width: 900px;
+  font-weight: 750;
+  max-width: 980px;
   margin: 0 auto;
 }
 
 .message-end-marker {
-  margin-top: 28px;
-  padding-top: 14px;
-  border-top: 4px solid #777;
+  margin-top: 22px;
+  padding-top: 10px;
+  border-top: 3px solid #777;
   color: #ffd400;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 900;
   text-align: center;
   letter-spacing: 1px;
@@ -754,7 +758,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.4.5 spatial</div>
+    <div class="version-label">Fire TV Home v1.4.6 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -948,7 +952,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.4.5";
+const PAGE_VERSION = "v1.4.6";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1166,7 +1170,9 @@ function showView(name) {
   }
   if (name === "messageDetail") {
     if (messageBodyPanel) messageBodyPanel.scrollTop = 0;
-    setSelected("messageActions", selected.messageActions || 0);
+    const items = getItems("messageActions");
+    const bodyIndex = items.findIndex(el => el.dataset.action === "body");
+    setSelected("messageActions", bodyIndex >= 0 ? bodyIndex : 0);
   }
   if (name === "videos") {
     clearGroupSelection("videosHeader");
@@ -1555,14 +1561,10 @@ function renderMessageDetail() {
   const msgDate = msg.created_at ? formatHeaderDate(new Date(msg.created_at)) : "";
 
   messageDetailHeader.innerHTML = `
-    <div class="message-detail-topline">
-      <div class="left"><span class="field-label">FROM:</span> ${msg.from_name || "Family"}</div>
-      <div class="right"><span class="field-label">DATE:</span> ${msgDate}</div>
-    </div>
-    <div class="message-detail-line"><span class="field-label">SUBJECT:</span> ${msg.subject}</div>
+    <div class="message-detail-line"><span class="field-label">SUBJECT:</span> ${msg.subject} <span class="field-label">DATE:</span> ${msgDate}</div>
   `;
 
-  messageDetailBody.innerHTML = `<span class="field-label">BODY:</span> ${msg.body}<div class="message-end-marker">END OF MESSAGE</div>`;
+  messageDetailBody.innerHTML = `${msg.body}<div class="message-end-marker">END OF MESSAGE</div>`;
 
   const actions = getAllItems("messageActions");
   actions.forEach(btn => btn.classList.remove("active", "selected"));
@@ -1633,7 +1635,6 @@ function renderMessageDetail() {
   }
 
   selected.messageActions = 0;
-  setSelected("messageActions", 0);
 }
 
 async function runMessageAction(action, id) {
@@ -2357,6 +2358,13 @@ document.addEventListener("keydown", function(event) {
 
     if (action === "body") {
       if (key === "ArrowDown") {
+        const atBottom = messageBodyPanel.scrollTop + messageBodyPanel.clientHeight >= messageBodyPanel.scrollHeight - 8;
+        if (atBottom) {
+          const items = getItems("messageActions");
+          const firstButtonIndex = items.findIndex(el => el.dataset.action !== "body");
+          setSelected("messageActions", firstButtonIndex >= 0 ? firstButtonIndex : 0);
+          return;
+        }
         messageBodyPanel.scrollTop += Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75));
         return;
       }
@@ -2365,7 +2373,6 @@ document.addEventListener("keydown", function(event) {
           messageBodyPanel.scrollTop -= Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75));
           return;
         }
-        moveLinear("messageActions", "ArrowUp");
         return;
       }
       if (key === "ArrowLeft" || key === "ArrowRight") {
