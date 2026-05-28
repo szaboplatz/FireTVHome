@@ -1024,7 +1024,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.5.5 spatial</div>
+    <div class="version-label">Fire TV Home v1.5.6 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -1264,7 +1264,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.5.5";
+const PAGE_VERSION = "v1.5.6";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -2822,21 +2822,23 @@ document.addEventListener("keydown", function(event) {
   if (currentView === "messageDetail") {
     const item = getSelectedItem("messageActions");
     const action = item ? item.dataset.action : "";
+    const isBottomAction = !!(item && item.closest("#messageDetailActions"));
+    const isTopMessageListButton = !!(item && item.closest(".message-detail-title-row"));
 
     if (action === "body") {
       if (key === "ArrowDown") {
         const maxScroll = Math.max(0, messageBodyPanel.scrollHeight - messageBodyPanel.clientHeight);
-        const nearBottom = messageBodyPanel.scrollTop >= maxScroll - 60;
+        const pageStep = Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75));
+        const nextScroll = Math.min(maxScroll, messageBodyPanel.scrollTop + pageStep);
+        const willReachBottom = maxScroll <= 20 || nextScroll >= maxScroll - 12;
 
-        if (maxScroll <= 20 || nearBottom) {
+        if (willReachBottom) {
+          messageBodyPanel.scrollTop = maxScroll;
           selectFirstMessageActionButton();
           return;
         }
 
-        messageBodyPanel.scrollTop = Math.min(
-          maxScroll,
-          messageBodyPanel.scrollTop + Math.max(120, Math.floor(messageBodyPanel.clientHeight * 0.75))
-        );
+        messageBodyPanel.scrollTop = nextScroll;
         return;
       }
 
@@ -2853,18 +2855,7 @@ document.addEventListener("keydown", function(event) {
       return;
     }
 
-    if (action === "close") {
-      if (key === "ArrowDown" || key === "ArrowRight") {
-        selectMessageBody();
-        return;
-      }
-
-      if (key === "ArrowUp" || key === "ArrowLeft") {
-        return;
-      }
-    }
-
-    if (item && item.closest("#messageDetailActions")) {
+    if (isBottomAction) {
       if (key === "ArrowUp") {
         selectMessageBody();
         return;
@@ -2876,6 +2867,17 @@ document.addEventListener("keydown", function(event) {
       }
 
       if (key === "ArrowDown") {
+        return;
+      }
+    }
+
+    if (isTopMessageListButton) {
+      if (key === "ArrowDown" || key === "ArrowRight") {
+        selectMessageBody();
+        return;
+      }
+
+      if (key === "ArrowLeft" || key === "ArrowUp") {
         return;
       }
     }
