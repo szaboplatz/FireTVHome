@@ -10,6 +10,11 @@ const DAD_MESSAGE_HEADERS = [
   'created_at'
 ];
 
+/* AI narrowing (Talk / communicator "Something to say" mode). The Anthropic
+   API key lives in Script Properties as ANTHROPIC_API_KEY, never in the page. */
+const AI_MODEL = 'claude-haiku-4-5';
+const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
+
 const MESSAGE_HEADERS = [
   'id',
   'from_name',
@@ -165,6 +170,14 @@ function doPost(e) {
     }
 
     return json_(addDadMessage_(fromName, body));
+  }
+
+  if (action === 'narrow') {
+    const mode = (e.parameter.mode || 'say').trim();
+    let path = [];
+    try { path = JSON.parse(e.parameter.path || '[]'); } catch (err) { path = []; }
+    if (!Array.isArray(path)) path = [];
+    return json_(narrow_(mode, path));
   }
 
   return json_({ ok: false, error: 'Unknown action' });
@@ -724,6 +737,120 @@ function getDadHeaderMap_(sheet) {
   });
 
   return map;
+}
+
+/* ---------- AI NARROWING (Anthropic) ---------- */
+
+function narrow_(mode, path) {
+  const apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+  if (!apiKey) {
+    return { ok: false, error: 'Missing ANTHROPIC_API_KEY' };
+  }
+
+  const steps = Array.isArray(path) ? path.map(function (s) { return String(s || ''); }) : [];
+
+  // Placeholder for personalization. Later: names, relationships, a few notes
+  // on how he speaks, so the drafted sentences sound like him.
+  const PEOPLE_CONTEXT = '';
+
+  const systemPrompt =
+    'You are helping a man who cannot speak compose a short, heartfelt first-person ' +
+    'message to his family. He is choosing options one at a time using a television ' +
+    'remote (up, down, left, right). You are given the choices he has made so far, ' +
+    'from broad to specific. Report your answer ONLY by calling the present tool.\n\n' +
+    'Decide one of two things:\n' +
+    '1) If the message is not yet specific enough, set done to false and offer up to 4 ' +
+    'short next options (2 to 6 words each) that narrow toward a specific, sincere ' +
+    'message. Options must be distinct, warm, plain-spoken, and easy to read on a TV.\n' +
+    '2) If the intent is already clear enough to say in one line (usually after 2 to 4 ' +
+    'choices), set done to true and provide one natural first-person sentence he could ' +
+    'send, in his own plain voice (sincere, not flowery).' +
+    (PEOPLE_CONTEXT ? ('\n\n' + PEOPLE_CONTEXT) : '');
+
+  const tool = {
+    name: 'present',
+    description: 'Present the next step to the user.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        done: { type: 'boolean', description: 'true when proposing a final sentence; false when offering more options' },
+        options: { type: 'array', items: { type: 'string' }, description: 'Up to 4 short next options. Use when done is false.' },
+        sentence: { type: 'string', description: 'The final first-person sentence. Use when done is true.' }
+      },
+      required: ['done']
+    }
+  };
+
+  const userText = 'Mode: a message to family.\nChoices so far: ' +
+    (steps.length ? steps.join(' > ') : '(none yet)') +
+    '\n\nPropose the next step by calling the present tool.';
+
+  const payload = {
+    model: AI_MODEL,
+    max_tokens: 512,
+    system: systemPrompt,
+    tools: [tool],
+    tool_choice: { type: 'tool', name: 'present' },
+    messages: [{ role: 'user', content: userText }]
+  };
+
+  let response;
+  try {
+    response = UrlFetchApp.fetch(ANTHROPIC_URL, {
+      method: 'post',
+      contentType: 'application/json',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+  } catch (e) {
+    return { ok: false, error: 'Request failed' };
+  }
+
+  const code = response.getResponseCode();
+  if (code !== 200) {
+    return { ok: false, error: 'API error ' + code };
+  }
+
+  let data;
+  try {
+    data = JSON.parse(response.getContentText());
+  } catch (e) {
+    return { ok: false, error: 'Bad response' };
+  }
+
+  const blocks = (data && data.content) || [];
+  let input = null;
+  for (let i = 0; i < blocks.length; i++) {
+    if (blocks[i] && blocks[i].type === 'tool_use' && blocks[i].name === 'present') {
+      input = blocks[i].input;
+      break;
+    }
+  }
+  if (!input) {
+    return { ok: false, error: 'No structured output' };
+  }
+
+  if (input.done === true) {
+    const sentence = String(input.sentence || '').trim();
+    if (!sentence) return { ok: false, error: 'Empty sentence' };
+    return { ok: true, done: true, sentence: sentence };
+  }
+
+  let options = Array.isArray(input.options) ? input.options : [];
+  options = options
+    .map(function (o) { return String(o || '').trim(); })
+    .filter(function (o) { return o; })
+    .slice(0, 4);
+
+  if (!options.length) {
+    return { ok: false, error: 'No options' };
+  }
+
+  return { ok: true, done: false, options: options };
 }
 
 function formatDate_(value) {

@@ -245,7 +245,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.1</div>
+    <div class="version-label">Talk v0.2</div>
   </div>
 
   <!-- START -->
@@ -307,6 +307,35 @@ body {
     <div class="say-status" id="sayResultText"></div>
     <div class="screen-hint" id="sayResultHint"></div>
   </section>
+
+  <!-- AI THINKING -->
+  <section id="aiThinkingScreen" class="screen">
+    <div class="say-status">Finding options…</div>
+    <div class="screen-hint">One moment. Press BACK to start over.</div>
+  </section>
+
+  <!-- AI OPTIONS (dynamic narrowing rounds) -->
+  <section id="aiOptionsScreen" class="screen">
+    <div class="screen-title" id="aiOptionsTitle"></div>
+    <div class="field" id="aiOptionsField"></div>
+    <div class="screen-hint">Press the direction of your choice. Press BACK to go back one step.</div>
+  </section>
+
+  <!-- AI ERROR -->
+  <section id="aiErrorScreen" class="screen">
+    <div class="screen-title">Couldn't reach the helper</div>
+    <div class="field">
+      <div class="tile dir-left" data-choose="ai-retry">
+        <span class="arrow">&#8592;</span>
+        <span class="tile-label">TRY AGAIN</span>
+      </div>
+      <div class="tile dir-right" data-choose="ai-startover">
+        <span class="arrow">&#8594;</span>
+        <span class="tile-label">START OVER</span>
+      </div>
+    </div>
+    <div class="screen-hint">Press LEFT to try again, or RIGHT to start over.</div>
+  </section>
 </div>
 
 <script>
@@ -317,8 +346,13 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.1";
+const PAGE_VERSION = "v0.2";
 const ENABLE_MONITORING_LOGS = true;
+
+// When true, "Something to say" narrows with AI (via the Apps Script `narrow`
+// action). If the AI is unreachable, it falls back to the static tree so the
+// tool still works offline. Care mode is always the instant static tree.
+const ENABLE_AI = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
 const DIRS = ["left", "up", "right", "down"];
@@ -493,9 +527,17 @@ const SAY_TREE = {
 let mode = null;             // "care" | "say"
 let nodeStack = [];          // nodes visited this round, top = current
 let pathLabels = [];         // breadcrumb labels
-let currentScreen = "start"; // start | options | careFinal | sayConfirm | sayResult
+let currentScreen = "start"; // start | options | careFinal | sayConfirm | sayResult | aiThinking | aiOptions | aiError
 let currentFinalText = "";
 let sending = false;
+
+// AI narrowing state (Say mode).
+let aiPath = [];             // choices made in AI mode, from broad to specific
+let aiHistory = [];          // stack of { path, options } so BACK can re-show a prior round
+let aiFallbackNode = null;   // static category node used if the first AI round fails
+let aiBusy = false;          // a narrow request is in flight
+let narrowSeq = 0;           // guards against a stale response landing after BACK
+let sayFromAi = false;       // did the current sayConfirm sentence come from AI?
 
 let cachedPublicIp = localStorage.getItem(PUBLIC_IP_STORAGE_KEY) || "";
 
@@ -506,7 +548,10 @@ const screens = {
   options: document.getElementById("optionsScreen"),
   careFinal: document.getElementById("careFinalScreen"),
   sayConfirm: document.getElementById("sayConfirmScreen"),
-  sayResult: document.getElementById("sayResultScreen")
+  sayResult: document.getElementById("sayResultScreen"),
+  aiThinking: document.getElementById("aiThinkingScreen"),
+  aiOptions: document.getElementById("aiOptionsScreen"),
+  aiError: document.getElementById("aiErrorScreen")
 };
 const optionsTitle = document.getElementById("optionsTitle");
 const optionsField = document.getElementById("optionsField");
@@ -514,6 +559,8 @@ const careFinalText = document.getElementById("careFinalText");
 const sayConfirmText = document.getElementById("sayConfirmText");
 const sayResultText = document.getElementById("sayResultText");
 const sayResultHint = document.getElementById("sayResultHint");
+const aiOptionsTitle = document.getElementById("aiOptionsTitle");
+const aiOptionsField = document.getElementById("aiOptionsField");
 
 /* ---------- LOGGING (reuses the existing event monitor) ---------- */
 
@@ -637,6 +684,149 @@ function escapeHtml(value) {
     .replace(/'/g, "&#039;");
 }
 
+/* ---------- AI NARROWING (Say mode) ---------- */
+
+// Which directions to use for a given number of AI options, so the physical
+// direction pressed still maps to the tile's on-screen position.
+const AI_DIR_LAYOUT = {
+  1: ["up"],
+  2: ["left", "right"],
+  3: ["left", "up", "right"],
+  4: ["left", "up", "right", "down"]
+};
+
+async function callNarrow(path) {
+  const formData = new URLSearchParams();
+  formData.set("action", "narrow");
+  formData.set("mode", "say");
+  formData.set("path", JSON.stringify(path));
+
+  const response = await fetch(MESSAGES_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+    body: formData.toString()
+  });
+
+  const result = await response.json();
+  if (!response.ok || !result.ok) {
+    throw new Error(result && result.error ? result.error : "Narrow failed");
+  }
+  return result;
+}
+
+function renderAiOptions(options) {
+  aiOptionsField.innerHTML = "";
+  aiOptionsTitle.textContent = aiPath.length ? aiPath[aiPath.length - 1] : "Something to say";
+
+  const dirs = AI_DIR_LAYOUT[Math.min(options.length, 4)] || AI_DIR_LAYOUT[4];
+  options.forEach((label, i) => {
+    const dir = dirs[i];
+    if (!dir) return;
+    const tile = document.createElement("div");
+    tile.className = "tile dir-" + dir;
+    tile.dataset.choose = "ai-option";
+    tile.dataset.index = String(i);
+    tile.dataset.dir = dir;
+    tile.innerHTML =
+      '<span class="arrow">' + arrowGlyph(dir) + '</span>' +
+      '<span class="tile-label">' + escapeHtml(label) + '</span>';
+    aiOptionsField.appendChild(tile);
+  });
+}
+
+function beginAiSay(categoryLabel, staticCategoryNode) {
+  aiPath = [categoryLabel];
+  aiHistory = [];
+  aiFallbackNode = staticCategoryNode || null;
+  runNarrow();
+}
+
+async function runNarrow() {
+  const seq = ++narrowSeq;
+  aiBusy = true;
+  showScreen("aiThinking");
+
+  let result;
+  try {
+    result = await callNarrow(aiPath);
+  } catch (e) {
+    if (seq !== narrowSeq) return; // user navigated away; ignore this result
+    aiBusy = false;
+    logEvent("say_ai_error", String((e && e.message) || e), { path: aiPath.join(" > ") });
+
+    // If the very first round fails, fall back to the static tree for this
+    // category so he can still compose a message with no network.
+    if (!aiHistory.length && aiFallbackNode && aiFallbackNode.children) {
+      nodeStack = [SAY_TREE, aiFallbackNode];
+      pathLabels = [aiPath[0]];
+      updateBreadcrumb();
+      renderOptions();
+      showScreen("options");
+      return;
+    }
+    showScreen("aiError");
+    return;
+  }
+
+  if (seq !== narrowSeq) return;
+  aiBusy = false;
+
+  if (result.done && result.sentence) {
+    currentFinalText = result.sentence;
+    sayFromAi = true;
+    sayConfirmText.textContent = "“" + result.sentence + "”";
+    logEvent("say_ai_drafted", result.sentence, { path: aiPath.join(" > ") });
+    showScreen("sayConfirm");
+    return;
+  }
+
+  const options = (result.options || []).filter(Boolean).slice(0, 4);
+  if (!options.length) {
+    showScreen("aiError");
+    return;
+  }
+
+  aiHistory.push({ path: aiPath.slice(), options: options });
+  renderAiOptions(options);
+  showScreen("aiOptions");
+}
+
+function chooseAiOption(index) {
+  if (aiBusy) return;
+  const current = aiHistory[aiHistory.length - 1];
+  if (!current) return;
+  const label = current.options[index];
+  if (label == null) return;
+  aiPath.push(label);
+  runNarrow();
+}
+
+function aiBack() {
+  if (aiBusy) return;
+  aiHistory.pop(); // discard the round currently shown
+  const prev = aiHistory[aiHistory.length - 1];
+  if (prev) {
+    aiPath = prev.path.slice();
+    updateBreadcrumb();
+    renderAiOptions(prev.options);
+    showScreen("aiOptions");
+  } else {
+    goToSayRoot();
+  }
+}
+
+function goToSayRoot() {
+  aiPath = [];
+  aiHistory = [];
+  aiFallbackNode = null;
+  sayFromAi = false;
+  nodeStack = [SAY_TREE];
+  pathLabels = [];
+  updateBreadcrumb();
+  renderOptions();
+  showScreen("options");
+}
+
 /* ---------- FLOW ---------- */
 
 function startMode(m) {
@@ -644,6 +834,11 @@ function startMode(m) {
   nodeStack = [m === "care" ? CARE_TREE : SAY_TREE];
   pathLabels = [];
   sending = false;
+  aiPath = [];
+  aiHistory = [];
+  aiFallbackNode = null;
+  sayFromAi = false;
+  narrowSeq++;
   setModeClass();
   updateBreadcrumb();
   logEvent("communicator_mode_start", m === "care" ? "Care need" : "Something to say");
@@ -654,6 +849,13 @@ function startMode(m) {
 function choose(dir) {
   const node = currentNode();
   if (!node || !node.children || !node.children[dir]) return;
+
+  // In Say mode, once he picks a top-level category, hand off to AI narrowing.
+  // Care mode and the static fallback keep walking the local tree below.
+  if (mode === "say" && ENABLE_AI && nodeStack.length === 1) {
+    beginAiSay(node.children[dir].label, node.children[dir]);
+    return;
+  }
 
   const next = node.children[dir];
   nodeStack.push(next);
@@ -699,7 +901,22 @@ function stepBack() {
   }
 
   if (currentScreen === "sayConfirm") {
-    // Back to the last set of options for this message.
+    // If the sentence came from AI, go back to the last AI options round.
+    if (sayFromAi) {
+      const prev = aiHistory[aiHistory.length - 1];
+      if (prev) {
+        sayFromAi = false;
+        aiPath = prev.path.slice();
+        updateBreadcrumb();
+        renderAiOptions(prev.options);
+        showScreen("aiOptions");
+      } else {
+        goToSayRoot();
+      }
+      return;
+    }
+
+    // Static path: back to the last set of options for this message.
     if (nodeStack.length > 1) {
       nodeStack.pop();
       pathLabels.pop();
@@ -709,6 +926,24 @@ function stepBack() {
     } else {
       goToStart();
     }
+    return;
+  }
+
+  if (currentScreen === "aiOptions") {
+    aiBack();
+    return;
+  }
+
+  if (currentScreen === "aiThinking") {
+    // Cancel the in-flight request (its result will be ignored) and start over.
+    narrowSeq++;
+    aiBusy = false;
+    goToStart();
+    return;
+  }
+
+  if (currentScreen === "aiError") {
+    goToStart();
     return;
   }
 
@@ -727,6 +962,11 @@ function goToStart() {
   nodeStack = [];
   pathLabels = [];
   sending = false;
+  aiPath = [];
+  aiHistory = [];
+  aiFallbackNode = null;
+  sayFromAi = false;
+  narrowSeq++;
   setModeClass();
   updateBreadcrumb();
   showScreen("start");
@@ -886,6 +1126,24 @@ document.addEventListener("keydown", function(event) {
     if (isActivationKey(key) && !sending) startMode("say");
     return;
   }
+
+  if (currentScreen === "aiOptions") {
+    if (!dir) return;
+    const tile = aiOptionsField.querySelector('[data-dir="' + dir + '"]');
+    if (tile) chooseAiOption(Number(tile.dataset.index || "0"));
+    return;
+  }
+
+  if (currentScreen === "aiThinking") {
+    // Arrows/OK do nothing while waiting; BACK (handled above) cancels.
+    return;
+  }
+
+  if (currentScreen === "aiError") {
+    if (dir === "left") runNarrow();
+    if (dir === "right") goToStart();
+    return;
+  }
 });
 
 /* ---------- TAP FALLBACK (phone testing) ---------- */
@@ -902,6 +1160,9 @@ document.addEventListener("click", function(event) {
   if (choose === "say-send-family") { handleSay("family"); return; }
   if (choose === "say-send-email") { handleSay("email"); return; }
   if (choose === "say-again") { startMode("say"); return; }
+  if (choose === "ai-option") { chooseAiOption(Number(tile.dataset.index || "0")); return; }
+  if (choose === "ai-retry") { runNarrow(); return; }
+  if (choose === "ai-startover") { goToStart(); return; }
 });
 
 document.getElementById("careFinalScreen").addEventListener("click", function() {
