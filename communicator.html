@@ -238,6 +238,82 @@ body {
 .say-status.sending { color: #ffff66; }
 .say-status.sent { color: #66ff9e; }
 .say-status.error { color: #ff8888; }
+
+/* AI dynamic-narrowing screen: running draft on top, 4 option tiles around a
+   center "SAY THIS" tile that maps to the remote's center OK button. */
+.ai-draft-panel {
+  position: absolute;
+  top: 12px;
+  left: 20px;
+  right: 20px;
+  max-height: 24%;
+  overflow: hidden;
+  background: #151a24;
+  border: 3px solid var(--say);
+  border-radius: 14px;
+  padding: 12px 18px;
+  text-align: center;
+}
+
+.ai-draft-label {
+  color: var(--say);
+  font-weight: 900;
+  font-size: 20px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.ai-draft-text {
+  font-size: 30px;
+  line-height: 1.22;
+  font-weight: 800;
+}
+
+.field.ai-field {
+  top: 27%;
+}
+
+.ai-field .tile {
+  width: 28%;
+  min-height: 15%;
+  padding: 12px 12px;
+  gap: 6px;
+}
+
+.ai-field .tile .arrow { font-size: 30px; }
+.ai-field .tile .tile-label { font-size: 26px; }
+
+.ai-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30%;
+  min-height: 15%;
+  background: #00323a;
+  border: 5px solid #00bcd4;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px;
+  box-shadow: 0 0 30px -6px #00bcd4;
+}
+
+.ai-center-main {
+  font-size: 30px;
+  font-weight: 900;
+  color: #6df3ff;
+  line-height: 1.05;
+}
+
+.ai-center-sub {
+  font-size: 18px;
+  color: #a9eef5;
+  margin-top: 6px;
+}
 </style>
 </head>
 
@@ -245,7 +321,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.2</div>
+    <div class="version-label">Talk v0.3</div>
   </div>
 
   <!-- START -->
@@ -316,9 +392,12 @@ body {
 
   <!-- AI OPTIONS (dynamic narrowing rounds) -->
   <section id="aiOptionsScreen" class="screen">
-    <div class="screen-title" id="aiOptionsTitle"></div>
-    <div class="field" id="aiOptionsField"></div>
-    <div class="screen-hint">Press the direction of your choice. Press BACK to go back one step.</div>
+    <div class="ai-draft-panel">
+      <span class="ai-draft-label">YOU'D SAY:</span>
+      <span class="ai-draft-text" id="aiDraftText"></span>
+    </div>
+    <div class="field ai-field" id="aiOptionsField"></div>
+    <div class="screen-hint">Press an arrow to go deeper. Press OK (center) to send this. BACK goes back one step.</div>
   </section>
 
   <!-- AI ERROR -->
@@ -346,7 +425,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.2";
+const PAGE_VERSION = "v0.3";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -533,11 +612,12 @@ let sending = false;
 
 // AI narrowing state (Say mode).
 let aiPath = [];             // choices made in AI mode, from broad to specific
-let aiHistory = [];          // stack of { path, options } so BACK can re-show a prior round
+let aiHistory = [];          // stack of { path, options, draft } so BACK can re-show a prior round
 let aiFallbackNode = null;   // static category node used if the first AI round fails
 let aiBusy = false;          // a narrow request is in flight
 let narrowSeq = 0;           // guards against a stale response landing after BACK
-let sayFromAi = false;       // did the current sayConfirm sentence come from AI?
+let sayFromAi = false;       // did the current sayConfirm message come from AI?
+let currentDraft = "";       // the running AI draft he could send right now
 
 let cachedPublicIp = localStorage.getItem(PUBLIC_IP_STORAGE_KEY) || "";
 
@@ -559,8 +639,8 @@ const careFinalText = document.getElementById("careFinalText");
 const sayConfirmText = document.getElementById("sayConfirmText");
 const sayResultText = document.getElementById("sayResultText");
 const sayResultHint = document.getElementById("sayResultHint");
-const aiOptionsTitle = document.getElementById("aiOptionsTitle");
 const aiOptionsField = document.getElementById("aiOptionsField");
+const aiDraftText = document.getElementById("aiDraftText");
 
 /* ---------- LOGGING (reuses the existing event monitor) ---------- */
 
@@ -714,9 +794,10 @@ async function callNarrow(path) {
   return result;
 }
 
-function renderAiOptions(options) {
+function renderAiOptions(options, draft) {
   aiOptionsField.innerHTML = "";
-  aiOptionsTitle.textContent = aiPath.length ? aiPath[aiPath.length - 1] : "Something to say";
+  currentDraft = draft || "";
+  aiDraftText.textContent = currentDraft;
 
   const dirs = AI_DIR_LAYOUT[Math.min(options.length, 4)] || AI_DIR_LAYOUT[4];
   options.forEach((label, i) => {
@@ -732,6 +813,15 @@ function renderAiOptions(options) {
       '<span class="tile-label">' + escapeHtml(label) + '</span>';
     aiOptionsField.appendChild(tile);
   });
+
+  // Center "SAY THIS" tile — maps to the remote's center OK button.
+  const center = document.createElement("div");
+  center.className = "ai-center";
+  center.dataset.choose = "ai-say";
+  center.innerHTML =
+    '<span class="ai-center-main">SAY THIS</span>' +
+    '<span class="ai-center-sub">press OK</span>';
+  aiOptionsField.appendChild(center);
 }
 
 function beginAiSay(categoryLabel, staticCategoryNode) {
@@ -771,23 +861,18 @@ async function runNarrow() {
   if (seq !== narrowSeq) return;
   aiBusy = false;
 
-  if (result.done && result.sentence) {
-    currentFinalText = result.sentence;
-    sayFromAi = true;
-    sayConfirmText.textContent = "“" + result.sentence + "”";
-    logEvent("say_ai_drafted", result.sentence, { path: aiPath.join(" > ") });
-    showScreen("sayConfirm");
-    return;
-  }
-
   const options = (result.options || []).filter(Boolean).slice(0, 4);
-  if (!options.length) {
+  const draft = result.draft || result.sentence || ""; // tolerate the older backend shape
+
+  // He can always send the draft, so a round with a draft but no options is fine.
+  if (!options.length && !draft) {
     showScreen("aiError");
     return;
   }
 
-  aiHistory.push({ path: aiPath.slice(), options: options });
-  renderAiOptions(options);
+  aiHistory.push({ path: aiPath.slice(), options: options, draft: draft });
+  updateBreadcrumb();
+  renderAiOptions(options, draft);
   showScreen("aiOptions");
 }
 
@@ -801,6 +886,17 @@ function chooseAiOption(index) {
   runNarrow();
 }
 
+// Center OK / "SAY THIS": send the current running draft.
+function chooseAiSay() {
+  if (aiBusy) return;
+  if (!currentDraft) return;
+  currentFinalText = currentDraft;
+  sayFromAi = true;
+  sayConfirmText.textContent = "“" + currentDraft + "”";
+  logEvent("say_ai_drafted", currentDraft, { path: aiPath.join(" > ") });
+  showScreen("sayConfirm");
+}
+
 function aiBack() {
   if (aiBusy) return;
   aiHistory.pop(); // discard the round currently shown
@@ -808,7 +904,7 @@ function aiBack() {
   if (prev) {
     aiPath = prev.path.slice();
     updateBreadcrumb();
-    renderAiOptions(prev.options);
+    renderAiOptions(prev.options, prev.draft);
     showScreen("aiOptions");
   } else {
     goToSayRoot();
@@ -838,6 +934,7 @@ function startMode(m) {
   aiHistory = [];
   aiFallbackNode = null;
   sayFromAi = false;
+  currentDraft = "";
   narrowSeq++;
   setModeClass();
   updateBreadcrumb();
@@ -901,14 +998,14 @@ function stepBack() {
   }
 
   if (currentScreen === "sayConfirm") {
-    // If the sentence came from AI, go back to the last AI options round.
+    // If the message came from AI, go back to the last AI options round.
     if (sayFromAi) {
       const prev = aiHistory[aiHistory.length - 1];
       if (prev) {
         sayFromAi = false;
         aiPath = prev.path.slice();
         updateBreadcrumb();
-        renderAiOptions(prev.options);
+        renderAiOptions(prev.options, prev.draft);
         showScreen("aiOptions");
       } else {
         goToSayRoot();
@@ -966,6 +1063,7 @@ function goToStart() {
   aiHistory = [];
   aiFallbackNode = null;
   sayFromAi = false;
+  currentDraft = "";
   narrowSeq++;
   setModeClass();
   updateBreadcrumb();
@@ -1128,8 +1226,9 @@ document.addEventListener("keydown", function(event) {
   }
 
   if (currentScreen === "aiOptions") {
+    if (isActivationKey(key)) { chooseAiSay(); return; } // center OK = SAY THIS
     if (!dir) return;
-    const tile = aiOptionsField.querySelector('[data-dir="' + dir + '"]');
+    const tile = aiOptionsField.querySelector('.tile[data-dir="' + dir + '"]');
     if (tile) chooseAiOption(Number(tile.dataset.index || "0"));
     return;
   }
@@ -1161,6 +1260,7 @@ document.addEventListener("click", function(event) {
   if (choose === "say-send-email") { handleSay("email"); return; }
   if (choose === "say-again") { startMode("say"); return; }
   if (choose === "ai-option") { chooseAiOption(Number(tile.dataset.index || "0")); return; }
+  if (choose === "ai-say") { chooseAiSay(); return; }
   if (choose === "ai-retry") { runNarrow(); return; }
   if (choose === "ai-startover") { goToStart(); return; }
 });

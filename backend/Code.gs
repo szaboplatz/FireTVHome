@@ -767,34 +767,38 @@ function narrow_(mode, path) {
   const steps = Array.isArray(path) ? path.map(function (s) { return String(s || ''); }) : [];
 
   // Placeholder for personalization. Later: names, relationships, a few notes
-  // on how he speaks, so the drafted sentences sound like him.
+  // on how he speaks, so the drafted messages sound like him.
   const PEOPLE_CONTEXT = '';
 
   const systemPrompt =
-    'You are helping a man who cannot speak compose a short, heartfelt first-person ' +
-    'message to his family. He is choosing options one at a time using a television ' +
-    'remote (up, down, left, right). You are given the choices he has made so far, ' +
-    'from broad to specific. Report your answer ONLY by calling the present tool.\n\n' +
-    'Decide one of two things:\n' +
-    '1) If the message is not yet specific enough, set done to false and offer up to 4 ' +
-    'short next options (2 to 6 words each) that narrow toward a specific, sincere ' +
-    'message. Options must be distinct, warm, plain-spoken, and easy to read on a TV.\n' +
-    '2) If the intent is already clear enough to say in one line (usually after 2 to 4 ' +
-    'choices), set done to true and provide one natural first-person sentence he could ' +
-    'send, in his own plain voice (sincere, not flowery).' +
+    'You are helping a man who cannot speak compose a message to his family, ' +
+    'one choice at a time on a television remote (up, down, left, right, and a ' +
+    'center button). You are given the choices he has made so far, from broad to ' +
+    'specific. He, not you, decides when the message is finished and sends it with ' +
+    'the center button. ALWAYS reply by calling the present tool with BOTH of these:\n\n' +
+    '- options: up to 4 short next choices (2 to 6 words each) that take the message ' +
+    'DEEPER and MORE SPECIFIC. They may narrow the topic, or add to the message (a ' +
+    'reason, a memory, a feeling, a detail), or shift its tone. Make them distinct, ' +
+    'warm, concrete, and easy to read on a TV.\n' +
+    '- draft: a complete, natural first-person message he could send right now, ' +
+    'capturing everything chosen so far, in his own plain and sincere voice (one or ' +
+    'two sentences).\n\n' +
+    'There is no limit on how deep he can go. Even when the message already feels ' +
+    'specific, keep offering finer, meaningful ways to refine or extend it. Never say ' +
+    'the message is finished and never stop offering options. Keep it heartfelt and ' +
+    'human; avoid flowery or generic filler.' +
     (PEOPLE_CONTEXT ? ('\n\n' + PEOPLE_CONTEXT) : '');
 
   const tool = {
     name: 'present',
-    description: 'Present the next step to the user.',
+    description: 'Present the next options and the running draft to the user.',
     input_schema: {
       type: 'object',
       properties: {
-        done: { type: 'boolean', description: 'true when proposing a final sentence; false when offering more options' },
-        options: { type: 'array', items: { type: 'string' }, description: 'Up to 4 short next options. Use when done is false.' },
-        sentence: { type: 'string', description: 'The final first-person sentence. Use when done is true.' }
+        options: { type: 'array', items: { type: 'string' }, description: 'Up to 4 short next choices that go deeper / more specific.' },
+        draft: { type: 'string', description: 'A complete first-person message he could send right now, capturing the choices so far.' }
       },
-      required: ['done']
+      required: ['options', 'draft']
     }
   };
 
@@ -804,7 +808,7 @@ function narrow_(mode, path) {
 
   const payload = {
     model: AI_MODEL,
-    max_tokens: 512,
+    max_tokens: 700,
     system: systemPrompt,
     tools: [tool],
     tool_choice: { type: 'tool', name: 'present' },
@@ -851,23 +855,19 @@ function narrow_(mode, path) {
     return { ok: false, error: 'No structured output' };
   }
 
-  if (input.done === true) {
-    const sentence = String(input.sentence || '').trim();
-    if (!sentence) return { ok: false, error: 'Empty sentence' };
-    return { ok: true, done: true, sentence: sentence };
-  }
-
   let options = Array.isArray(input.options) ? input.options : [];
   options = options
     .map(function (o) { return String(o || '').trim(); })
     .filter(function (o) { return o; })
     .slice(0, 4);
 
-  if (!options.length) {
-    return { ok: false, error: 'No options' };
+  const draft = String(input.draft || '').trim();
+
+  if (!options.length && !draft) {
+    return { ok: false, error: 'Empty response' };
   }
 
-  return { ok: true, done: false, options: options };
+  return { ok: true, options: options, draft: draft };
 }
 
 function formatDate_(value) {
