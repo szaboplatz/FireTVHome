@@ -749,6 +749,15 @@ function getDadHeaderMap_(sheet) {
 
 /* ---------- AI NARROWING (Anthropic) ---------- */
 
+// Runnable from the Apps Script editor's Run dropdown (no trailing underscore).
+// Calls the AI once and prints the result to the Execution log, so you can see
+// exactly what happens without going through the web app.
+function testNarrow() {
+  const result = narrow_('say', ['About family']);
+  Logger.log(JSON.stringify(result));
+  return result;
+}
+
 function narrow_(mode, path) {
   const apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
   if (!apiKey) {
@@ -815,12 +824,12 @@ function narrow_(mode, path) {
       muteHttpExceptions: true
     });
   } catch (e) {
-    return { ok: false, error: 'Request failed' };
+    return { ok: false, error: 'Request failed: ' + ((e && e.message) ? e.message : String(e)) };
   }
 
   const code = response.getResponseCode();
   if (code !== 200) {
-    return { ok: false, error: 'API error ' + code };
+    return { ok: false, error: 'API error ' + code + ': ' + String(response.getContentText() || '').slice(0, 300) };
   }
 
   let data;
