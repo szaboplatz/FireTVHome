@@ -789,7 +789,12 @@ function narrow_(mode, path, avoid) {
     'warm, concrete, and easy to read on a TV.\n' +
     '- draft: a complete, natural first-person message he could send right now, ' +
     'capturing everything chosen so far, in his own plain and sincere voice (one or ' +
-    'two sentences).\n\n' +
+    'two sentences). It must read perfectly as-is: NEVER use placeholders, blanks, ' +
+    'brackets, or fill-in-the-blank text like "[activity]" or "___". He cannot type, ' +
+    'so nothing can be left for him to fill in. If a specific detail (a particular ' +
+    'activity, place, or name) has not been chosen yet, keep that part general and ' +
+    'natural (for example, "the things I love") instead of leaving a blank, and use ' +
+    'the options to let him choose that detail.\n\n' +
     'There is no limit on how deep he can go. Even when the message already feels ' +
     'specific, keep offering finer, meaningful ways to refine or extend it. Never say ' +
     'the message is finished and never stop offering options. Keep it heartfelt and ' +
@@ -812,8 +817,11 @@ function narrow_(mode, path, avoid) {
   const userText = 'Mode: a message to family.\nChoices so far: ' +
     (steps.length ? steps.join(' > ') : '(none yet)') +
     (avoidList.length
-      ? ('\n\nThese options were already shown and rejected — offer a genuinely ' +
-         'DIFFERENT set exploring other angles, do not repeat or trivially reword them: ' +
+      ? ('\n\nHe asked for OTHER OPTIONS at this same step. Offer a different set of ' +
+         'the SAME KIND as the ones already shown — more alternatives of the same type ' +
+         '(for example, if they were specific activities, give MORE specific activities; ' +
+         'if they were feelings, give more feelings). Do NOT switch to a different topic ' +
+         'or a different kind of choice, and do not repeat or trivially reword these: ' +
          avoidList.join(' | '))
       : '') +
     '\n\nPropose the next step by calling the present tool.';
