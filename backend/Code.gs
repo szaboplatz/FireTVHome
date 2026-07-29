@@ -1,0 +1,755 @@
+const SHEET_NAME = 'FireTVHomeMessages';
+const EVENT_SHEET_NAME = 'FireTVHomeEvents';
+const DAD_MESSAGE_SHEET_NAME = 'FireTVHomeDadMessages';
+const SPREADSHEET_ID = '1fHph8O83oAL9wC-j8swiMLDo8uYWNb6aL-vSpMvoP-w';
+
+const DAD_MESSAGE_HEADERS = [
+  'id',
+  'from_name',
+  'body',
+  'created_at'
+];
+
+const MESSAGE_HEADERS = [
+  'id',
+  'from_name',
+  'subject',
+  'body',
+  'created_at',
+  'opened_at',
+  'read_at',
+  'liked_at',
+  'archived_at',
+  'replied_at',
+  'reply_body',
+  'quick_response_at',
+  'quick_response'
+];
+
+function doGet(e) {
+  const action = (e.parameter.action || '').toLowerCase();
+  const callback = e.parameter.callback;
+
+  if (action === 'list') {
+    return output_(listMessages_(), callback);
+  }
+
+  if (action === 'list_status') {
+    return output_(listStatus_(), callback);
+  }
+
+  if (action === 'log_event') {
+    return output_(logEvent_(e.parameter || {}), callback);
+  }
+
+  if (action === 'list_events') {
+    return output_(listEvents_(e.parameter || {}), callback);
+  }
+
+  if (action === 'list_dad_messages') {
+    return output_(listDadMessages_(e.parameter || {}), callback);
+  }
+
+  if (action === 'mark_read') {
+    const id = (e.parameter.id || '').trim();
+    if (!id) return output_({ ok: false, error: 'Missing id' }, callback);
+    return output_(markRead_(id), callback);
+  }
+
+  if (action === 'mark_opened') {
+    const id = (e.parameter.id || '').trim();
+    if (!id) return output_({ ok: false, error: 'Missing id' }, callback);
+    return output_(markOpened_(id), callback);
+  }
+
+  if (action === 'like_message') {
+    const id = (e.parameter.id || '').trim();
+    if (!id) return output_({ ok: false, error: 'Missing id' }, callback);
+    return output_(likeMessage_(id), callback);
+  }
+
+  if (action === 'archive_message') {
+    const id = (e.parameter.id || '').trim();
+    if (!id) return output_({ ok: false, error: 'Missing id' }, callback);
+    return output_(archiveMessage_(id), callback);
+  }
+
+  if (action === 'quick_response') {
+    const id = (e.parameter.id || '').trim();
+    const response = (e.parameter.quick_response || '').trim().toUpperCase();
+    if (!id) return output_({ ok: false, error: 'Missing id' }, callback);
+    if (response !== 'YES' && response !== 'NO') return output_({ ok: false, error: 'Invalid quick response' }, callback);
+    return output_(quickResponse_(id, response), callback);
+  }
+
+  if (action === 'get_reply') {
+    const id = (e.parameter.id || '').trim();
+    if (!id) return output_({ ok: false, error: 'Missing id' }, callback);
+    return output_(getReply_(id), callback);
+  }
+
+  return output_({ ok: false, error: 'Unknown action' }, callback);
+}
+
+function doPost(e) {
+  const action = ((e.parameter && e.parameter.action) || '').toLowerCase();
+
+  if (action === 'log_event') {
+    return json_(logEvent_(e.parameter || {}));
+  }
+
+  if (action === 'list_events') {
+    return json_(listEvents_(e.parameter || {}));
+  }
+
+  if (action === 'mark_read') {
+    const id = (e.parameter.id || '').trim();
+    if (!id) return json_({ ok: false, error: 'Missing id' });
+    return json_(markRead_(id));
+  }
+
+  if (action === 'mark_opened') {
+    const id = (e.parameter.id || '').trim();
+    if (!id) return json_({ ok: false, error: 'Missing id' });
+    return json_(markOpened_(id));
+  }
+
+  if (action === 'like_message') {
+    const id = (e.parameter.id || '').trim();
+    if (!id) return json_({ ok: false, error: 'Missing id' });
+    return json_(likeMessage_(id));
+  }
+
+  if (action === 'archive_message') {
+    const id = (e.parameter.id || '').trim();
+    if (!id) return json_({ ok: false, error: 'Missing id' });
+    return json_(archiveMessage_(id));
+  }
+
+  if (action === 'quick_response') {
+    const id = (e.parameter.id || '').trim();
+    const response = (e.parameter.quick_response || '').trim().toUpperCase();
+    if (!id) return json_({ ok: false, error: 'Missing id' });
+    if (response !== 'YES' && response !== 'NO') return json_({ ok: false, error: 'Invalid quick response' });
+    return json_(quickResponse_(id, response));
+  }
+
+  if (action === 'add_reply') {
+    const id = (e.parameter.id || '').trim();
+    const replyBody = (e.parameter.reply_body || '').trim();
+
+    if (!id) return json_({ ok: false, error: 'Missing id' });
+    if (!replyBody) return json_({ ok: false, error: 'Missing reply body' });
+
+    return json_(addReply_(id, replyBody));
+  }
+
+  if (action === 'add_message') {
+    const fromName = (e.parameter.from_name || '').trim();
+    const subject = (e.parameter.subject || '').trim();
+    const body = (e.parameter.body || '').trim();
+
+    if (!subject || !body) {
+      return json_({ ok: false, error: 'Missing subject or body' });
+    }
+
+    return json_(addMessage_(fromName, subject, body));
+  }
+
+  if (action === 'add_dad_message') {
+    const fromName = (e.parameter.from_name || '').trim();
+    const body = (e.parameter.body || '').trim();
+
+    if (!body) {
+      return json_({ ok: false, error: 'Missing body' });
+    }
+
+    return json_(addDadMessage_(fromName, body));
+  }
+
+  return json_({ ok: false, error: 'Unknown action' });
+}
+
+/* ---------- EVENT LOGGING ---------- */
+
+function logEvent_(params) {
+  const sheet = getEventSheet_();
+  const now = new Date();
+
+  sheet.appendRow([
+    now,
+    String(params.event_type || ''),
+    String(params.event_label || ''),
+    String(params.page_version || ''),
+    String(params.public_ip || ''),
+    String(params.url || ''),
+    String(params.device_info || ''),
+    String(params.extra || '')
+  ]);
+
+  return {
+    ok: true,
+    logged_at: formatDate_(now)
+  };
+}
+
+function listEvents_(params) {
+  const sheet = getEventSheet_();
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+
+  if (lastRow < 2) {
+    return { ok: true, events: [] };
+  }
+
+  const limit = Math.min(Math.max(parseInt(params.limit || '100', 10) || 100, 1), 1000);
+  const eventTypeFilter = String(params.event_type || '').trim();
+
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const startRow = Math.max(2, lastRow - limit + 1);
+  const numRows = lastRow - startRow + 1;
+  const rows = sheet.getRange(startRow, 1, numRows, lastCol).getValues();
+
+  let events = rows.map(row => {
+    const obj = {};
+    headers.forEach((header, i) => {
+      obj[String(header || '').trim()] = row[i];
+    });
+
+    return {
+      timestamp: formatDate_(obj.timestamp),
+      event_type: String(obj.event_type || ''),
+      event_label: String(obj.event_label || ''),
+      page_version: String(obj.page_version || ''),
+      public_ip: String(obj.public_ip || ''),
+      url: String(obj.url || ''),
+      device_info: String(obj.device_info || ''),
+      extra: String(obj.extra || '')
+    };
+  });
+
+  if (eventTypeFilter) {
+    events = events.filter(event => event.event_type === eventTypeFilter);
+  }
+
+  events.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+
+  return {
+    ok: true,
+    events
+  };
+}
+
+function getEventSheet_() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(EVENT_SHEET_NAME);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(EVENT_SHEET_NAME);
+  }
+
+  ensureEventHeaders_(sheet);
+  return sheet;
+}
+
+function ensureEventHeaders_(sheet) {
+  const headers = [
+    'timestamp',
+    'event_type',
+    'event_label',
+    'page_version',
+    'public_ip',
+    'url',
+    'device_info',
+    'extra'
+  ];
+
+  const lastCol = sheet.getLastColumn();
+
+  if (sheet.getLastRow() === 0 || lastCol === 0) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.setFrozenRows(1);
+    return;
+  }
+
+  const current = sheet.getRange(1, 1, 1, Math.max(lastCol, headers.length)).getValues()[0];
+  const hasAnyHeader = current.some(value => String(value || '').trim());
+
+  if (!hasAnyHeader) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.setFrozenRows(1);
+    return;
+  }
+
+  headers.forEach((header, index) => {
+    const currentValue = String(current[index] || '').trim();
+    if (!currentValue) {
+      sheet.getRange(1, index + 1).setValue(header);
+    }
+  });
+
+  sheet.setFrozenRows(1);
+}
+
+/* ---------- MESSAGE FUNCTIONS ---------- */
+
+function listMessages_() {
+  const rows = getMessageObjects_();
+
+  const messages = rows
+    .filter(msg => msg.id && !msg.archived_at)
+    .sort(sortMessages_);
+
+  return { ok: true, messages };
+}
+
+function listStatus_() {
+  const rows = getMessageObjects_();
+
+  const messages = rows
+    .filter(msg => msg.id)
+    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+    .map(msg => ({
+      id: msg.id,
+      from_name: msg.from_name,
+      subject: msg.subject,
+      created_at: msg.created_at,
+      opened_at: msg.opened_at,
+      read_at: msg.read_at,
+      liked_at: msg.liked_at,
+      archived_at: msg.archived_at,
+      replied_at: msg.replied_at,
+      reply_body: msg.reply_body,
+      quick_response_at: msg.quick_response_at,
+      quick_response: msg.quick_response
+    }));
+
+  return { ok: true, messages };
+}
+
+function getReply_(id) {
+  const row = findRowById_(id);
+  if (!row) return { ok: false, error: 'Message not found' };
+
+  const headers = getHeaderMap_(row.sheet);
+  const values = row.sheet.getRange(row.rowNumber, 1, 1, row.sheet.getLastColumn()).getValues()[0];
+  const replyBody = String(values[(headers.reply_body || 0) - 1] || '');
+  const repliedAt = values[(headers.replied_at || 0) - 1];
+
+  return {
+    ok: true,
+    id,
+    replied_at: formatDate_(repliedAt),
+    reply_body: replyBody
+  };
+}
+
+function getMessageObjects_() {
+  const sheet = getSheet_();
+  ensureMessageHeaders_(sheet);
+
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+
+  if (lastRow < 2) {
+    return [];
+  }
+
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const rows = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+
+  return rows.map(row => {
+    const obj = {};
+    headers.forEach((header, i) => {
+      obj[String(header || '').trim()] = row[i];
+    });
+
+    return {
+      id: String(obj.id || ''),
+      from_name: String(obj.from_name || ''),
+      subject: String(obj.subject || ''),
+      body: String(obj.body || ''),
+      created_at: formatDate_(obj.created_at),
+      opened_at: formatDate_(obj.opened_at),
+      read_at: formatDate_(obj.read_at),
+      liked_at: formatDate_(obj.liked_at),
+      archived_at: formatDate_(obj.archived_at),
+      replied_at: formatDate_(obj.replied_at),
+      reply_body: String(obj.reply_body || ''),
+      quick_response_at: formatDate_(obj.quick_response_at),
+      quick_response: String(obj.quick_response || '')
+    };
+  });
+}
+
+function sortMessages_(a, b) {
+  const aUnread = !a.read_at;
+  const bUnread = !b.read_at;
+  if (aUnread !== bUnread) return aUnread ? -1 : 1;
+
+  const aUnopened = !a.opened_at;
+  const bUnopened = !b.opened_at;
+  if (aUnopened !== bUnopened) return aUnopened ? -1 : 1;
+
+  return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+}
+
+function markRead_(id) {
+  const row = findRowById_(id);
+  if (!row) return { ok: false, error: 'Message not found' };
+
+  const headers = getHeaderMap_(row.sheet);
+  const readCol = headers.read_at;
+  const readCell = row.sheet.getRange(row.rowNumber, readCol);
+
+  if (!readCell.getValue()) {
+    readCell.setValue(new Date());
+  }
+
+  return {
+    ok: true,
+    id,
+    read_at: formatDate_(readCell.getValue())
+  };
+}
+
+function markOpened_(id) {
+  const row = findRowById_(id);
+  if (!row) return { ok: false, error: 'Message not found' };
+
+  const headers = getHeaderMap_(row.sheet);
+  const openedCol = headers.opened_at;
+  const openedCell = row.sheet.getRange(row.rowNumber, openedCol);
+
+  if (!openedCell.getValue()) {
+    openedCell.setValue(new Date());
+  }
+
+  return {
+    ok: true,
+    id,
+    opened_at: formatDate_(openedCell.getValue())
+  };
+}
+
+function likeMessage_(id) {
+  const row = findRowById_(id);
+  if (!row) return { ok: false, error: 'Message not found' };
+
+  const headers = getHeaderMap_(row.sheet);
+  const now = new Date();
+  const openedCell = row.sheet.getRange(row.rowNumber, headers.opened_at);
+  const readCell = row.sheet.getRange(row.rowNumber, headers.read_at);
+  const likedCell = row.sheet.getRange(row.rowNumber, headers.liked_at);
+
+  if (!openedCell.getValue()) openedCell.setValue(now);
+  if (!readCell.getValue()) readCell.setValue(now);
+  if (!likedCell.getValue()) likedCell.setValue(now);
+
+  return {
+    ok: true,
+    id,
+    opened_at: formatDate_(openedCell.getValue()),
+    read_at: formatDate_(readCell.getValue()),
+    liked_at: formatDate_(likedCell.getValue())
+  };
+}
+
+
+function quickResponse_(id, response) {
+  const row = findRowById_(id);
+  if (!row) return { ok: false, error: 'Message not found' };
+
+  const headers = getHeaderMap_(row.sheet);
+  const now = new Date();
+  const openedCell = row.sheet.getRange(row.rowNumber, headers.opened_at);
+  const readCell = row.sheet.getRange(row.rowNumber, headers.read_at);
+  const responseAtCell = row.sheet.getRange(row.rowNumber, headers.quick_response_at);
+  const responseCell = row.sheet.getRange(row.rowNumber, headers.quick_response);
+
+  if (!openedCell.getValue()) openedCell.setValue(now);
+  if (!readCell.getValue()) readCell.setValue(now);
+  responseAtCell.setValue(now);
+  responseCell.setValue(response);
+
+  return {
+    ok: true,
+    id,
+    opened_at: formatDate_(openedCell.getValue()),
+    read_at: formatDate_(readCell.getValue()),
+    quick_response_at: formatDate_(responseAtCell.getValue()),
+    quick_response: response
+  };
+}
+
+function archiveMessage_(id) {
+  const row = findRowById_(id);
+  if (!row) return { ok: false, error: 'Message not found' };
+
+  const headers = getHeaderMap_(row.sheet);
+  const archivedCell = row.sheet.getRange(row.rowNumber, headers.archived_at);
+
+  if (!archivedCell.getValue()) {
+    archivedCell.setValue(new Date());
+  }
+
+  return {
+    ok: true,
+    id,
+    archived_at: formatDate_(archivedCell.getValue())
+  };
+}
+
+function addReply_(id, replyBody) {
+  const row = findRowById_(id);
+  if (!row) return { ok: false, error: 'Message not found' };
+
+  const headers = getHeaderMap_(row.sheet);
+  const now = new Date();
+  const repliedCell = row.sheet.getRange(row.rowNumber, headers.replied_at);
+  const replyBodyCell = row.sheet.getRange(row.rowNumber, headers.reply_body);
+  const openedCell = row.sheet.getRange(row.rowNumber, headers.opened_at);
+  const readCell = row.sheet.getRange(row.rowNumber, headers.read_at);
+
+  if (!openedCell.getValue()) openedCell.setValue(now);
+  if (!readCell.getValue()) readCell.setValue(now);
+  repliedCell.setValue(now);
+  replyBodyCell.setValue(replyBody);
+
+  return {
+    ok: true,
+    id,
+    opened_at: formatDate_(openedCell.getValue()),
+    read_at: formatDate_(readCell.getValue()),
+    replied_at: formatDate_(repliedCell.getValue()),
+    reply_body: replyBody
+  };
+}
+
+function addMessage_(fromName, subject, body) {
+  const sheet = getSheet_();
+  ensureMessageHeaders_(sheet);
+
+  const headers = getHeaderMap_(sheet);
+  const row = new Array(sheet.getLastColumn()).fill('');
+  const id = Utilities.getUuid();
+  const now = new Date();
+
+  row[headers.id - 1] = id;
+  row[headers.from_name - 1] = fromName;
+  row[headers.subject - 1] = subject;
+  row[headers.body - 1] = body;
+  row[headers.created_at - 1] = now;
+
+  sheet.appendRow(row);
+
+  return {
+    ok: true,
+    id,
+    created_at: formatDate_(now)
+  };
+}
+
+function findRowById_(id) {
+  const sheet = getSheet_();
+  ensureMessageHeaders_(sheet);
+
+  const headers = getHeaderMap_(sheet);
+  const idCol = headers.id;
+  const lastRow = sheet.getLastRow();
+
+  if (lastRow < 2) return null;
+
+  const values = sheet.getRange(2, idCol, lastRow - 1, 1).getValues();
+
+  for (let i = 0; i < values.length; i++) {
+    if (String(values[i][0]) === id) {
+      return {
+        sheet,
+        rowNumber: i + 2
+      };
+    }
+  }
+
+  return null;
+}
+
+function getSheet_() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAME);
+
+  if (!sheet) {
+    throw new Error(`Sheet "${SHEET_NAME}" not found`);
+  }
+
+  ensureMessageHeaders_(sheet);
+  return sheet;
+}
+
+function ensureMessageHeaders_(sheet) {
+  const lastCol = Math.max(sheet.getLastColumn(), MESSAGE_HEADERS.length);
+
+  if (sheet.getLastRow() === 0 || sheet.getLastColumn() === 0) {
+    sheet.getRange(1, 1, 1, MESSAGE_HEADERS.length).setValues([MESSAGE_HEADERS]);
+    sheet.setFrozenRows(1);
+    return;
+  }
+
+  const current = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const currentNames = current.map(value => String(value || '').trim());
+
+  MESSAGE_HEADERS.forEach(header => {
+    if (!currentNames.includes(header)) {
+      const appendCol = sheet.getLastColumn() + 1;
+      sheet.getRange(1, appendCol).setValue(header);
+      currentNames.push(header);
+    }
+  });
+
+  sheet.setFrozenRows(1);
+}
+
+function getHeaderMap_(sheet) {
+  ensureMessageHeaders_(sheet);
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const map = {};
+
+  headers.forEach((header, index) => {
+    const name = String(header || '').trim();
+    if (name) map[name] = index + 1;
+  });
+
+  return map;
+}
+
+/* ---------- DAD MESSAGE FUNCTIONS (composed on the TV, sent to family) ---------- */
+
+function addDadMessage_(fromName, body) {
+  const sheet = getDadMessageSheet_();
+  const headers = getDadHeaderMap_(sheet);
+  const row = new Array(sheet.getLastColumn()).fill('');
+  const id = Utilities.getUuid();
+  const now = new Date();
+
+  row[headers.id - 1] = id;
+  row[headers.from_name - 1] = fromName || 'Dad';
+  row[headers.body - 1] = body;
+  row[headers.created_at - 1] = now;
+
+  sheet.appendRow(row);
+
+  return {
+    ok: true,
+    id,
+    created_at: formatDate_(now)
+  };
+}
+
+function listDadMessages_(params) {
+  const sheet = getDadMessageSheet_();
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+
+  if (lastRow < 2) {
+    return { ok: true, messages: [] };
+  }
+
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const rows = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+
+  let messages = rows.map(row => {
+    const obj = {};
+    headers.forEach((header, i) => {
+      obj[String(header || '').trim()] = row[i];
+    });
+
+    return {
+      id: String(obj.id || ''),
+      from_name: String(obj.from_name || ''),
+      body: String(obj.body || ''),
+      created_at: formatDate_(obj.created_at)
+    };
+  }).filter(msg => msg.id);
+
+  messages.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+  const limit = Math.min(Math.max(parseInt(params.limit || '200', 10) || 200, 1), 1000);
+  if (messages.length > limit) messages = messages.slice(0, limit);
+
+  return { ok: true, messages };
+}
+
+function getDadMessageSheet_() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(DAD_MESSAGE_SHEET_NAME);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(DAD_MESSAGE_SHEET_NAME);
+  }
+
+  ensureDadMessageHeaders_(sheet);
+  return sheet;
+}
+
+function ensureDadMessageHeaders_(sheet) {
+  if (sheet.getLastRow() === 0 || sheet.getLastColumn() === 0) {
+    sheet.getRange(1, 1, 1, DAD_MESSAGE_HEADERS.length).setValues([DAD_MESSAGE_HEADERS]);
+    sheet.setFrozenRows(1);
+    return;
+  }
+
+  const lastCol = Math.max(sheet.getLastColumn(), DAD_MESSAGE_HEADERS.length);
+  const current = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const currentNames = current.map(value => String(value || '').trim());
+
+  DAD_MESSAGE_HEADERS.forEach(header => {
+    if (!currentNames.includes(header)) {
+      const appendCol = sheet.getLastColumn() + 1;
+      sheet.getRange(1, appendCol).setValue(header);
+      currentNames.push(header);
+    }
+  });
+
+  sheet.setFrozenRows(1);
+}
+
+function getDadHeaderMap_(sheet) {
+  ensureDadMessageHeaders_(sheet);
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const map = {};
+
+  headers.forEach((header, index) => {
+    const name = String(header || '').trim();
+    if (name) map[name] = index + 1;
+  });
+
+  return map;
+}
+
+function formatDate_(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return '';
+  return date.toISOString();
+}
+
+function json_(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function output_(obj, callback) {
+  const text = JSON.stringify(obj);
+
+  if (callback) {
+    return ContentService
+      .createTextOutput(`${callback}(${text});`)
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+
+  return ContentService
+    .createTextOutput(text)
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
