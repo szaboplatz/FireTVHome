@@ -55,6 +55,14 @@ function doGet(e) {
     return output_(listDadMessages_(e.parameter || {}), callback);
   }
 
+  if (action === 'narrow') {
+    const mode = (e.parameter.mode || 'say').trim();
+    let path = [];
+    try { path = JSON.parse(e.parameter.path || '[]'); } catch (err) { path = []; }
+    if (!Array.isArray(path)) path = [];
+    return output_(narrow_(mode, path), callback);
+  }
+
   if (action === 'mark_read') {
     const id = (e.parameter.id || '').trim();
     if (!id) return output_({ ok: false, error: 'Missing id' }, callback);
