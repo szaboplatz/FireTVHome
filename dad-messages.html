@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+
+<title>Messages from Dad</title>
+<style>
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(17, 17, 17, 0.98);
+  border-bottom: 3px solid #333;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.datetime {
+  font-size: 24px;
+  font-weight: bold;
+  color: #d8f6ff;
+}
+
+.version {
+  font-size: 20px;
+  color: #9aa3aa;
+}
+
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.title {
+  font-size: 52px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 24px;
+  color: #f0a58f;
+  line-height: 1.35;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.control-button {
+  border: none;
+  border-radius: 12px;
+  background: #e8735a;
+  color: black;
+  font-size: 24px;
+  font-weight: bold;
+  padding: 14px 22px;
+  cursor: pointer;
+}
+
+.control-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.status-line {
+  min-height: 30px;
+  text-align: center;
+  font-size: 22px;
+  color: #c7d6de;
+  margin-bottom: 20px;
+}
+
+.message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.message-card {
+  background: #17110f;
+  border: 3px solid #e8735a;
+  border-left-width: 12px;
+  border-radius: 14px;
+  padding: 22px 26px;
+}
+
+.message-body {
+  font-size: 36px;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  font-weight: bold;
+}
+
+.message-meta {
+  margin-top: 12px;
+  font-size: 20px;
+  color: #b8c7cf;
+}
+
+.empty {
+  text-align: center;
+  color: #7f8c94;
+  font-size: 24px;
+  padding: 30px 0;
+}
+
+.help {
+  margin-top: 26px;
+  text-align: center;
+  font-size: 20px;
+  color: #b8c7cf;
+  line-height: 1.4;
+}
+</style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="datetime" id="datetimeBar">Loading time…</div>
+    <div class="version">Messages from Dad v0.1</div>
+  </div>
+
+  <div class="page">
+    <div class="header">
+      <div class="title">Messages from Dad</div>
+      <div class="subtitle">Notes Dad has sent from his TV, newest first.</div>
+    </div>
+
+    <div class="controls">
+      <button class="control-button" id="refreshButton" type="button">REFRESH NOW</button>
+    </div>
+
+    <div class="status-line" id="statusLine">Loading messages…</div>
+
+    <div id="messageList" class="message-list"></div>
+
+    <div class="help">
+      This page updates on its own every few minutes. Press REFRESH NOW to check right away.
+    </div>
+  </div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+
+const datetimeBar = document.getElementById("datetimeBar");
+const refreshButton = document.getElementById("refreshButton");
+const statusLine = document.getElementById("statusLine");
+const messageList = document.getElementById("messageList");
+
+function updateDateTimeBar() {
+  const now = new Date();
+  const datePart = now.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  });
+  const timePart = now.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit"
+  });
+  datetimeBar.textContent = `${datePart}   ${timePart}`;
+}
+
+function formatDateTime(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+async function loadMessages() {
+  statusLine.textContent = "Loading messages…";
+  refreshButton.disabled = true;
+
+  try {
+    const response = await fetch(API_URL + "?action=list_dad_messages");
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error((data && data.error) || "Load failed");
+    }
+
+    const messages = data.messages || [];
+    messageList.innerHTML = "";
+
+    if (!messages.length) {
+      messageList.innerHTML = '<div class="empty">No messages from Dad yet.</div>';
+      statusLine.textContent = "No messages yet.";
+      return;
+    }
+
+    messages.forEach((msg) => {
+      const card = document.createElement("div");
+      card.className = "message-card";
+      card.innerHTML =
+        '<div class="message-body">' + escapeHtml(msg.body || "") + '</div>' +
+        '<div class="message-meta">' + formatDateTime(msg.created_at) + '</div>';
+      messageList.appendChild(card);
+    });
+
+    const now = new Date();
+    statusLine.textContent = "Last refreshed " + now.toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit"
+    });
+  } catch (error) {
+    console.error(error);
+    statusLine.textContent = "Could not load messages.";
+    messageList.innerHTML = '<div class="empty">Error loading messages.</div>';
+  } finally {
+    refreshButton.disabled = false;
+  }
+}
+
+refreshButton.addEventListener("click", loadMessages);
+
+document.addEventListener("DOMContentLoaded", () => {
+  updateDateTimeBar();
+  setInterval(updateDateTimeBar, 1000);
+  loadMessages();
+  setInterval(loadMessages, REFRESH_INTERVAL_MS);
+});
+</script>
+</body>
+</html>

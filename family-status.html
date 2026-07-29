@@ -256,72 +256,18 @@ tr:nth-child(even) td {
   color: #b8c7cf;
   line-height: 1.4;
 }
-
-/* Messages Dad composed on the TV and sent to the family. */
-.dad-section {
-  margin: 6px 0 30px;
-}
-
-.dad-title {
-  text-align: center;
-  font-size: 34px;
-  font-weight: bold;
-  color: #f0a58f;
-  margin-bottom: 14px;
-}
-
-.dad-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.dad-card {
-  background: #17110f;
-  border: 3px solid #e8735a;
-  border-left-width: 10px;
-  border-radius: 12px;
-  padding: 16px 20px;
-}
-
-.dad-card-body {
-  font-size: 30px;
-  line-height: 1.35;
-  white-space: pre-wrap;
-  font-weight: bold;
-}
-
-.dad-card-meta {
-  margin-top: 10px;
-  font-size: 18px;
-  color: #b8c7cf;
-}
-
-.dad-empty {
-  text-align: center;
-  color: #7f8c94;
-  font-size: 20px;
-  padding: 8px 0;
-}
 </style>
 </head>
 <body>
   <div class="top-bar">
     <div class="datetime" id="datetimeBar">Loading time…</div>
-    <div class="version">Family Status v0.4</div>
+    <div class="version">Family Status v0.3</div>
   </div>
 
   <div class="page">
     <div class="header">
       <div class="title">Family Message Status</div>
-      <div class="subtitle">The status table below shows message status only, not the message text.</div>
-    </div>
-
-    <div class="dad-section">
-      <div class="dad-title">Messages from Dad</div>
-      <div id="dadMessagesList" class="dad-list">
-        <div class="dad-empty">Loading…</div>
-      </div>
+      <div class="subtitle">This page shows message status only. It does not display message bodies.</div>
     </div>
 
     <div class="controls">
@@ -373,7 +319,6 @@ const datetimeBar = document.getElementById("datetimeBar");
 const refreshButton = document.getElementById("refreshButton");
 const statusLine = document.getElementById("statusLine");
 const tableBody = document.getElementById("statusTableBody");
-const dadMessagesList = document.getElementById("dadMessagesList");
 const replyModal = document.getElementById("replyModal");
 const replyModalTitle = document.getElementById("replyModalTitle");
 const replyModalMeta = document.getElementById("replyModalMeta");
@@ -528,37 +473,6 @@ async function loadStatus() {
   }
 }
 
-async function loadDadMessages() {
-  try {
-    const response = await fetch(API_URL + "?action=list_dad_messages");
-    const data = await response.json();
-
-    if (!response.ok || !data.ok) {
-      throw new Error((data && data.error) || "Load failed");
-    }
-
-    const messages = data.messages || [];
-    dadMessagesList.innerHTML = "";
-
-    if (!messages.length) {
-      dadMessagesList.innerHTML = '<div class="dad-empty">No messages from Dad yet.</div>';
-      return;
-    }
-
-    messages.forEach((msg) => {
-      const card = document.createElement("div");
-      card.className = "dad-card";
-      card.innerHTML =
-        '<div class="dad-card-body">' + escapeHtml(msg.body || "") + '</div>' +
-        '<div class="dad-card-meta">' + formatDateTime(msg.created_at) + '</div>';
-      dadMessagesList.appendChild(card);
-    });
-  } catch (error) {
-    console.error(error);
-    dadMessagesList.innerHTML = '<div class="dad-empty">Could not load messages from Dad.</div>';
-  }
-}
-
 replyModalClose.addEventListener("click", closeReplyModal);
 replyModal.addEventListener("click", (event) => {
   if (event.target === replyModal) closeReplyModal();
@@ -569,16 +483,13 @@ document.addEventListener("keydown", (event) => {
 
 refreshButton.addEventListener("click", () => {
   loadStatus();
-  loadDadMessages();
 });
 
 document.addEventListener("DOMContentLoaded", () => {
   updateDateTimeBar();
   setInterval(updateDateTimeBar, 1000);
   loadStatus();
-  loadDadMessages();
   setInterval(loadStatus, REFRESH_INTERVAL_MS);
-  setInterval(loadDadMessages, REFRESH_INTERVAL_MS);
 });
 </script>
 </body>
