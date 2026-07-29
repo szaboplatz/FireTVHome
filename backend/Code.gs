@@ -932,10 +932,16 @@ function narrow_(mode, path, avoid, draft) {
     '\n\nUpdate the draft to reflect his most recent choice, building on the message so ' +
     'far, and propose the next options by calling the present tool.';
 
+  // Send the system prompt as a cacheable block. Within one Say-mode session the
+  // system prompt (instructions + profile) is byte-identical across rounds, so
+  // after the first round the model reads it from cache (~0.1x cost) instead of
+  // reprocessing it. Note: Haiku's minimum cacheable prefix is ~4096 tokens, so
+  // this only takes effect once the instructions + profile exceed that size
+  // (which the profile grows toward as rows are added); below it, it's a no-op.
   const payload = {
     model: AI_MODEL,
     max_tokens: 700,
-    system: systemPrompt,
+    system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
     tools: [tool],
     tool_choice: { type: 'tool', name: 'present' },
     messages: [{ role: 'user', content: userText }]
