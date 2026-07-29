@@ -60,7 +60,10 @@ function doGet(e) {
     let path = [];
     try { path = JSON.parse(e.parameter.path || '[]'); } catch (err) { path = []; }
     if (!Array.isArray(path)) path = [];
-    return output_(narrow_(mode, path), callback);
+    let avoid = [];
+    try { avoid = JSON.parse(e.parameter.avoid || '[]'); } catch (err) { avoid = []; }
+    if (!Array.isArray(avoid)) avoid = [];
+    return output_(narrow_(mode, path, avoid), callback);
   }
 
   if (action === 'mark_read') {
@@ -185,7 +188,10 @@ function doPost(e) {
     let path = [];
     try { path = JSON.parse(e.parameter.path || '[]'); } catch (err) { path = []; }
     if (!Array.isArray(path)) path = [];
-    return json_(narrow_(mode, path));
+    let avoid = [];
+    try { avoid = JSON.parse(e.parameter.avoid || '[]'); } catch (err) { avoid = []; }
+    if (!Array.isArray(avoid)) avoid = [];
+    return json_(narrow_(mode, path, avoid));
   }
 
   return json_({ ok: false, error: 'Unknown action' });
@@ -753,18 +759,19 @@ function getDadHeaderMap_(sheet) {
 // Calls the AI once and prints the result to the Execution log, so you can see
 // exactly what happens without going through the web app.
 function testNarrow() {
-  const result = narrow_('say', ['About family']);
+  const result = narrow_('say', ['About family'], []);
   Logger.log(JSON.stringify(result));
   return result;
 }
 
-function narrow_(mode, path) {
+function narrow_(mode, path, avoid) {
   const apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
   if (!apiKey) {
     return { ok: false, error: 'Missing ANTHROPIC_API_KEY' };
   }
 
   const steps = Array.isArray(path) ? path.map(function (s) { return String(s || ''); }) : [];
+  const avoidList = Array.isArray(avoid) ? avoid.map(function (s) { return String(s || ''); }).filter(function (s) { return s; }) : [];
 
   // Placeholder for personalization. Later: names, relationships, a few notes
   // on how he speaks, so the drafted messages sound like him.
@@ -776,7 +783,7 @@ function narrow_(mode, path) {
     'center button). You are given the choices he has made so far, from broad to ' +
     'specific. He, not you, decides when the message is finished and sends it with ' +
     'the center button. ALWAYS reply by calling the present tool with BOTH of these:\n\n' +
-    '- options: up to 4 short next choices (2 to 6 words each) that take the message ' +
+    '- options: up to 3 short next choices (2 to 6 words each) that take the message ' +
     'DEEPER and MORE SPECIFIC. They may narrow the topic, or add to the message (a ' +
     'reason, a memory, a feeling, a detail), or shift its tone. Make them distinct, ' +
     'warm, concrete, and easy to read on a TV.\n' +
@@ -795,7 +802,7 @@ function narrow_(mode, path) {
     input_schema: {
       type: 'object',
       properties: {
-        options: { type: 'array', items: { type: 'string' }, description: 'Up to 4 short next choices that go deeper / more specific.' },
+        options: { type: 'array', items: { type: 'string' }, description: 'Up to 3 short next choices that go deeper / more specific.' },
         draft: { type: 'string', description: 'A complete first-person message he could send right now, capturing the choices so far.' }
       },
       required: ['options', 'draft']
@@ -804,6 +811,11 @@ function narrow_(mode, path) {
 
   const userText = 'Mode: a message to family.\nChoices so far: ' +
     (steps.length ? steps.join(' > ') : '(none yet)') +
+    (avoidList.length
+      ? ('\n\nThese options were already shown and rejected — offer a genuinely ' +
+         'DIFFERENT set exploring other angles, do not repeat or trivially reword them: ' +
+         avoidList.join(' | '))
+      : '') +
     '\n\nPropose the next step by calling the present tool.';
 
   const payload = {
@@ -859,7 +871,7 @@ function narrow_(mode, path) {
   options = options
     .map(function (o) { return String(o || '').trim(); })
     .filter(function (o) { return o; })
-    .slice(0, 4);
+    .slice(0, 3);
 
   const draft = String(input.draft || '').trim();
 

@@ -314,6 +314,18 @@ body {
   color: #a9eef5;
   margin-top: 6px;
 }
+
+/* "OTHER OPTIONS" tile reads as a utility, not one of the choices. */
+.ai-field .tile.ai-other-tile {
+  border-color: #7c8598;
+  box-shadow: none;
+  background: #12151c;
+}
+
+.ai-field .tile.ai-other-tile .arrow,
+.ai-field .tile.ai-other-tile .tile-label {
+  color: #c7d0dc;
+}
 </style>
 </head>
 
@@ -321,7 +333,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.3</div>
+    <div class="version-label">Talk v0.4</div>
   </div>
 
   <!-- START -->
@@ -397,7 +409,7 @@ body {
       <span class="ai-draft-text" id="aiDraftText"></span>
     </div>
     <div class="field ai-field" id="aiOptionsField"></div>
-    <div class="screen-hint">Press an arrow to go deeper. Press OK (center) to send this. BACK goes back one step.</div>
+    <div class="screen-hint">LEFT / UP / RIGHT go deeper &middot; DOWN for other options &middot; OK (center) sends &middot; BACK goes back</div>
   </section>
 
   <!-- AI ERROR -->
@@ -425,7 +437,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.3";
+const PAGE_VERSION = "v0.4";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -618,6 +630,7 @@ let aiBusy = false;          // a narrow request is in flight
 let narrowSeq = 0;           // guards against a stale response landing after BACK
 let sayFromAi = false;       // did the current sayConfirm message come from AI?
 let currentDraft = "";       // the running AI draft he could send right now
+let aiAvoid = [];            // options already shown at this level (for "other options")
 
 let cachedPublicIp = localStorage.getItem(PUBLIC_IP_STORAGE_KEY) || "";
 
@@ -766,20 +779,16 @@ function escapeHtml(value) {
 
 /* ---------- AI NARROWING (Say mode) ---------- */
 
-// Which directions to use for a given number of AI options, so the physical
-// direction pressed still maps to the tile's on-screen position.
-const AI_DIR_LAYOUT = {
-  1: ["up"],
-  2: ["left", "right"],
-  3: ["left", "up", "right"],
-  4: ["left", "up", "right", "down"]
-};
+// Options fill these directions; DOWN is reserved for "OTHER OPTIONS" and the
+// center OK button is "SAY THIS".
+const AI_OPTION_DIRS = ["left", "up", "right"];
 
-async function callNarrow(path) {
+async function callNarrow(path, avoid) {
   const formData = new URLSearchParams();
   formData.set("action", "narrow");
   formData.set("mode", "say");
   formData.set("path", JSON.stringify(path));
+  formData.set("avoid", JSON.stringify(avoid || []));
 
   const response = await fetch(MESSAGES_API_URL, {
     method: "POST",
@@ -799,10 +808,8 @@ function renderAiOptions(options, draft) {
   currentDraft = draft || "";
   aiDraftText.textContent = currentDraft;
 
-  const dirs = AI_DIR_LAYOUT[Math.min(options.length, 4)] || AI_DIR_LAYOUT[4];
-  options.forEach((label, i) => {
-    const dir = dirs[i];
-    if (!dir) return;
+  options.slice(0, AI_OPTION_DIRS.length).forEach((label, i) => {
+    const dir = AI_OPTION_DIRS[i];
     const tile = document.createElement("div");
     tile.className = "tile dir-" + dir;
     tile.dataset.choose = "ai-option";
@@ -813,6 +820,16 @@ function renderAiOptions(options, draft) {
       '<span class="tile-label">' + escapeHtml(label) + '</span>';
     aiOptionsField.appendChild(tile);
   });
+
+  // DOWN is reserved for "OTHER OPTIONS" (ask for a different set).
+  const other = document.createElement("div");
+  other.className = "tile dir-down ai-other-tile";
+  other.dataset.choose = "ai-other";
+  other.dataset.dir = "down";
+  other.innerHTML =
+    '<span class="arrow">' + arrowGlyph("down") + '</span>' +
+    '<span class="tile-label">OTHER OPTIONS</span>';
+  aiOptionsField.appendChild(other);
 
   // Center "SAY THIS" tile — maps to the remote's center OK button.
   const center = document.createElement("div");
@@ -827,6 +844,7 @@ function renderAiOptions(options, draft) {
 function beginAiSay(categoryLabel, staticCategoryNode) {
   aiPath = [categoryLabel];
   aiHistory = [];
+  aiAvoid = [];
   aiFallbackNode = staticCategoryNode || null;
   runNarrow();
 }
@@ -838,7 +856,7 @@ async function runNarrow() {
 
   let result;
   try {
-    result = await callNarrow(aiPath);
+    result = await callNarrow(aiPath, []);
   } catch (e) {
     if (seq !== narrowSeq) return; // user navigated away; ignore this result
     aiBusy = false;
@@ -861,7 +879,7 @@ async function runNarrow() {
   if (seq !== narrowSeq) return;
   aiBusy = false;
 
-  const options = (result.options || []).filter(Boolean).slice(0, 4);
+  const options = (result.options || []).filter(Boolean).slice(0, 3);
   const draft = result.draft || result.sentence || ""; // tolerate the older backend shape
 
   // He can always send the draft, so a round with a draft but no options is fine.
@@ -870,9 +888,49 @@ async function runNarrow() {
     return;
   }
 
+  aiAvoid = options.slice();
   aiHistory.push({ path: aiPath.slice(), options: options, draft: draft });
   updateBreadcrumb();
   renderAiOptions(options, draft);
+  showScreen("aiOptions");
+}
+
+// DOWN / "OTHER OPTIONS": ask for a different set at the same level, keeping
+// the draft the same (the message so far hasn't changed, just the next choices).
+async function refreshOptions() {
+  if (aiBusy) return;
+  const top = aiHistory[aiHistory.length - 1];
+  if (!top) return;
+
+  const seq = ++narrowSeq;
+  aiBusy = true;
+  showScreen("aiThinking");
+
+  let result;
+  try {
+    result = await callNarrow(aiPath, aiAvoid);
+  } catch (e) {
+    if (seq !== narrowSeq) return;
+    aiBusy = false;
+    logEvent("say_ai_error", String((e && e.message) || e), { path: aiPath.join(" > "), refresh: true });
+    renderAiOptions(top.options, top.draft); // keep what he had
+    showScreen("aiOptions");
+    return;
+  }
+
+  if (seq !== narrowSeq) return;
+  aiBusy = false;
+
+  const options = (result.options || []).filter(Boolean).slice(0, 3);
+  if (!options.length) {
+    renderAiOptions(top.options, top.draft); // nothing new; keep what he had
+    showScreen("aiOptions");
+    return;
+  }
+
+  aiAvoid = aiAvoid.concat(options);
+  top.options = options; // replace the level's options; draft stays the same
+  renderAiOptions(options, top.draft);
   showScreen("aiOptions");
 }
 
@@ -883,6 +941,7 @@ function chooseAiOption(index) {
   const label = current.options[index];
   if (label == null) return;
   aiPath.push(label);
+  aiAvoid = [];
   runNarrow();
 }
 
@@ -903,6 +962,7 @@ function aiBack() {
   const prev = aiHistory[aiHistory.length - 1];
   if (prev) {
     aiPath = prev.path.slice();
+    aiAvoid = prev.options.slice();
     updateBreadcrumb();
     renderAiOptions(prev.options, prev.draft);
     showScreen("aiOptions");
@@ -914,6 +974,7 @@ function aiBack() {
 function goToSayRoot() {
   aiPath = [];
   aiHistory = [];
+  aiAvoid = [];
   aiFallbackNode = null;
   sayFromAi = false;
   nodeStack = [SAY_TREE];
@@ -935,6 +996,7 @@ function startMode(m) {
   aiFallbackNode = null;
   sayFromAi = false;
   currentDraft = "";
+  aiAvoid = [];
   narrowSeq++;
   setModeClass();
   updateBreadcrumb();
@@ -1004,6 +1066,7 @@ function stepBack() {
       if (prev) {
         sayFromAi = false;
         aiPath = prev.path.slice();
+        aiAvoid = prev.options.slice();
         updateBreadcrumb();
         renderAiOptions(prev.options, prev.draft);
         showScreen("aiOptions");
@@ -1064,6 +1127,7 @@ function goToStart() {
   aiFallbackNode = null;
   sayFromAi = false;
   currentDraft = "";
+  aiAvoid = [];
   narrowSeq++;
   setModeClass();
   updateBreadcrumb();
@@ -1226,9 +1290,10 @@ document.addEventListener("keydown", function(event) {
   }
 
   if (currentScreen === "aiOptions") {
-    if (isActivationKey(key)) { chooseAiSay(); return; } // center OK = SAY THIS
+    if (isActivationKey(key)) { chooseAiSay(); return; }   // center OK = SAY THIS
+    if (dir === "down") { refreshOptions(); return; }      // DOWN = OTHER OPTIONS
     if (!dir) return;
-    const tile = aiOptionsField.querySelector('.tile[data-dir="' + dir + '"]');
+    const tile = aiOptionsField.querySelector('.tile[data-dir="' + dir + '"][data-choose="ai-option"]');
     if (tile) chooseAiOption(Number(tile.dataset.index || "0"));
     return;
   }
@@ -1260,6 +1325,7 @@ document.addEventListener("click", function(event) {
   if (choose === "say-send-email") { handleSay("email"); return; }
   if (choose === "say-again") { startMode("say"); return; }
   if (choose === "ai-option") { chooseAiOption(Number(tile.dataset.index || "0")); return; }
+  if (choose === "ai-other") { refreshOptions(); return; }
   if (choose === "ai-say") { chooseAiSay(); return; }
   if (choose === "ai-retry") { runNarrow(); return; }
   if (choose === "ai-startover") { goToStart(); return; }
