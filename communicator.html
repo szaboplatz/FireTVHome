@@ -333,7 +333,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.5</div>
+    <div class="version-label">Talk v0.6</div>
   </div>
 
   <!-- START -->
@@ -437,7 +437,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.5";
+const PAGE_VERSION = "v0.6";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -900,6 +900,15 @@ async function runNarrow() {
   showScreen("aiOptions");
 }
 
+// Loose comparison so "A cold beer" and "a cold beer." count as the same option.
+function normalizeOption(s) {
+  return String(s || "")
+    .toLowerCase()
+    .replace(/[\s ]+/g, " ")
+    .replace(/[.!?,;:]+$/, "")
+    .trim();
+}
+
 // DOWN / "OTHER OPTIONS": ask for a different set at the same level, keeping
 // the draft the same (the message so far hasn't changed, just the next choices).
 async function refreshOptions() {
@@ -926,9 +935,16 @@ async function refreshOptions() {
   if (seq !== narrowSeq) return;
   aiBusy = false;
 
-  const options = (result.options || []).filter(Boolean).slice(0, 3);
+  // Drop anything already shown at this step, so pressing OTHER OPTIONS never
+  // surfaces a repeat even if the model returns one.
+  const seenNorm = aiAvoid.map(normalizeOption);
+  const options = (result.options || [])
+    .filter(Boolean)
+    .map(String)
+    .filter(function (o) { return seenNorm.indexOf(normalizeOption(o)) === -1; })
+    .slice(0, 3);
   if (!options.length) {
-    renderAiOptions(top.options, top.draft); // nothing new; keep what he had
+    renderAiOptions(top.options, top.draft); // nothing genuinely new; keep what he had
     showScreen("aiOptions");
     return;
   }

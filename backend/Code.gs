@@ -6,6 +6,11 @@ const DAD_MESSAGE_SHEET_NAME = 'FireTVHomeDadMessages';
 // AI call, so the family can add rows any time with no redeploy. Care mode never
 // reads this.
 const PROFILE_SHEET_NAME = 'FireTVHomeProfile';
+// How many choices deep he must be before Say mode brings in personal profile
+// details. Below this, options stay broad and general so early narrowing is
+// about direction, not specifics. 1 = the first AI screen (right after he picks
+// a category); 2 = after his first AI choice. Tune freely.
+const PROFILE_MIN_DEPTH = 2;
 const SPREADSHEET_ID = '1fHph8O83oAL9wC-j8swiMLDo8uYWNb6aL-vSpMvoP-w';
 
 const DAD_MESSAGE_HEADERS = [
@@ -867,10 +872,14 @@ function narrow_(mode, path, avoid, draft) {
   const steps = Array.isArray(path) ? path.map(function (s) { return String(s || ''); }) : [];
   const avoidList = Array.isArray(avoid) ? avoid.map(function (s) { return String(s || ''); }).filter(function (s) { return s; }) : [];
   const draftText = String(draft || '').trim();
+  const depth = steps.length;
 
   // Personalization: real facts about him, his family, and his voice, read live
-  // from the Profile tab. Say mode only. Empty string if the tab is missing/empty.
-  const PEOPLE_CONTEXT = (String(mode) === 'say') ? getProfileContext_() : '';
+  // from the Profile tab. Say mode only, and only once he is a little way down the
+  // path (depth >= PROFILE_MIN_DEPTH) so the first, broad choices stay general and
+  // concrete instead of jumping straight to personal specifics. Empty otherwise.
+  const PEOPLE_CONTEXT = (String(mode) === 'say' && depth >= PROFILE_MIN_DEPTH)
+    ? getProfileContext_() : '';
 
   const systemPrompt =
     'You are helping a man who cannot speak compose a message to his family, ' +
@@ -901,7 +910,18 @@ function narrow_(mode, path, avoid, draft) {
     'example "Name that favorite drink", "Which memory", "Choose the person"), then your ' +
     'options MUST be concrete, specific instances he can choose from (for a drink: coffee, ' +
     'a cold beer, red wine, iced tea, a favorite soda), never abstract aspects like "what ' +
-    'it meant to me". He picks one, and only then does the message name it.' +
+    'it meant to me". He picks one, and only then does the message name it.\n\n' +
+    'PACING - move from broad to specific. When he has made only a choice or two so ' +
+    'far, keep the options broad, plain, and structural: the general directions or ' +
+    'kinds of thing he might mean, the sort of choices that would fit anyone. Do NOT ' +
+    'introduce specific personal names, places, or private facts in these early ' +
+    'choices. Only once the message has a clear direction should the options and the ' +
+    'draft begin using specific, personal detail, and only when it genuinely fits what ' +
+    'he is building.\n\n' +
+    'A message can be something he wants to SAY or a QUESTION he wants to ASK (for ' +
+    'example, asking about his own recovery, what happens next, or whether something ' +
+    'will change for him). When he is heading that way, offer question-shaped options ' +
+    'and let the draft be that question, phrased in his own voice.' +
     (PEOPLE_CONTEXT ? ('\n\n' + PEOPLE_CONTEXT) : '');
 
   const tool = {
@@ -922,12 +942,14 @@ function narrow_(mode, path, avoid, draft) {
     'His choices, broad to specific: ' + (steps.length ? steps.join(' > ') : '(none yet)') +
     (steps.length ? ('\nHis most recent choice: "' + steps[steps.length - 1] + '"') : '') +
     (avoidList.length
-      ? ('\n\nHe asked for OTHER OPTIONS at this same step. Offer a different set of ' +
-         'the SAME KIND as the ones already shown — more alternatives of the same type ' +
-         '(for example, if they were specific activities, give MORE specific activities; ' +
-         'if they were feelings, give more feelings). Do NOT switch to a different topic ' +
-         'or a different kind of choice, and do not repeat or trivially reword these: ' +
-         avoidList.join(' | '))
+      ? ('\n\nHe pressed OTHER OPTIONS: he did not want any of the choices already ' +
+         'shown and needs genuinely different ones. Every one of these has ALREADY ' +
+         'been shown to him - do NOT include any of them again, and do NOT reword ' +
+         'them: ' + avoidList.join(' | ') + '. Give a fresh set: first prefer more ' +
+         'options of the same kind that are clearly distinct from every choice listed ' +
+         'above; if you have genuinely run out of meaningfully different options of ' +
+         'that kind, broaden to a nearby angle rather than repeat. Never output a ' +
+         'choice that duplicates or barely rephrases anything in that list.')
       : '') +
     '\n\nUpdate the draft to reflect his most recent choice, building on the message so ' +
     'far, and propose the next options by calling the present tool.';
