@@ -63,7 +63,8 @@ function doGet(e) {
     let avoid = [];
     try { avoid = JSON.parse(e.parameter.avoid || '[]'); } catch (err) { avoid = []; }
     if (!Array.isArray(avoid)) avoid = [];
-    return output_(narrow_(mode, path, avoid), callback);
+    const draft = String(e.parameter.draft || '');
+    return output_(narrow_(mode, path, avoid, draft), callback);
   }
 
   if (action === 'mark_read') {
@@ -191,7 +192,8 @@ function doPost(e) {
     let avoid = [];
     try { avoid = JSON.parse(e.parameter.avoid || '[]'); } catch (err) { avoid = []; }
     if (!Array.isArray(avoid)) avoid = [];
-    return json_(narrow_(mode, path, avoid));
+    const draft = String(e.parameter.draft || '');
+    return json_(narrow_(mode, path, avoid, draft));
   }
 
   return json_({ ok: false, error: 'Unknown action' });
@@ -759,12 +761,12 @@ function getDadHeaderMap_(sheet) {
 // Calls the AI once and prints the result to the Execution log, so you can see
 // exactly what happens without going through the web app.
 function testNarrow() {
-  const result = narrow_('say', ['About family'], []);
+  const result = narrow_('say', ['About family'], [], '');
   Logger.log(JSON.stringify(result));
   return result;
 }
 
-function narrow_(mode, path, avoid) {
+function narrow_(mode, path, avoid, draft) {
   const apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
   if (!apiKey) {
     return { ok: false, error: 'Missing ANTHROPIC_API_KEY' };
@@ -772,6 +774,7 @@ function narrow_(mode, path, avoid) {
 
   const steps = Array.isArray(path) ? path.map(function (s) { return String(s || ''); }) : [];
   const avoidList = Array.isArray(avoid) ? avoid.map(function (s) { return String(s || ''); }).filter(function (s) { return s; }) : [];
+  const draftText = String(draft || '').trim();
 
   // Placeholder for personalization. Later: names, relationships, a few notes
   // on how he speaks, so the drafted messages sound like him.
@@ -798,7 +801,15 @@ function narrow_(mode, path, avoid) {
     'There is no limit on how deep he can go. Even when the message already feels ' +
     'specific, keep offering finer, meaningful ways to refine or extend it. Never say ' +
     'the message is finished and never stop offering options. Keep it heartfelt and ' +
-    'human; avoid flowery or generic filler.' +
+    'human; avoid flowery or generic filler.\n\n' +
+    'Keep the message CUMULATIVE: build on the message so far and never make the draft ' +
+    'shorter, more generic, or less detailed than it already is, unless he explicitly ' +
+    'chose to shorten or simplify it. Change only what his newest choice calls for.\n\n' +
+    'If his most recent choice asks to name, pick, choose, or specify something (for ' +
+    'example "Name that favorite drink", "Which memory", "Choose the person"), then your ' +
+    'options MUST be concrete, specific instances he can choose from (for a drink: coffee, ' +
+    'a cold beer, red wine, iced tea, a favorite soda), never abstract aspects like "what ' +
+    'it meant to me". He picks one, and only then does the message name it.' +
     (PEOPLE_CONTEXT ? ('\n\n' + PEOPLE_CONTEXT) : '');
 
   const tool = {
@@ -814,8 +825,10 @@ function narrow_(mode, path, avoid) {
     }
   };
 
-  const userText = 'Mode: a message to family.\nChoices so far: ' +
-    (steps.length ? steps.join(' > ') : '(none yet)') +
+  const userText = 'Mode: a message to family.\n' +
+    'Message so far: ' + (draftText ? ('"' + draftText + '"') : '(nothing yet)') + '\n' +
+    'His choices, broad to specific: ' + (steps.length ? steps.join(' > ') : '(none yet)') +
+    (steps.length ? ('\nHis most recent choice: "' + steps[steps.length - 1] + '"') : '') +
     (avoidList.length
       ? ('\n\nHe asked for OTHER OPTIONS at this same step. Offer a different set of ' +
          'the SAME KIND as the ones already shown — more alternatives of the same type ' +
@@ -824,7 +837,8 @@ function narrow_(mode, path, avoid) {
          'or a different kind of choice, and do not repeat or trivially reword these: ' +
          avoidList.join(' | '))
       : '') +
-    '\n\nPropose the next step by calling the present tool.';
+    '\n\nUpdate the draft to reflect his most recent choice, building on the message so ' +
+    'far, and propose the next options by calling the present tool.';
 
   const payload = {
     model: AI_MODEL,
@@ -881,13 +895,13 @@ function narrow_(mode, path, avoid) {
     .filter(function (o) { return o; })
     .slice(0, 3);
 
-  const draft = String(input.draft || '').trim();
+  const outDraft = String(input.draft || '').trim();
 
-  if (!options.length && !draft) {
+  if (!options.length && !outDraft) {
     return { ok: false, error: 'Empty response' };
   }
 
-  return { ok: true, options: options, draft: draft };
+  return { ok: true, options: options, draft: outDraft };
 }
 
 function formatDate_(value) {

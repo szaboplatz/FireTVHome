@@ -333,7 +333,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.4</div>
+    <div class="version-label">Talk v0.5</div>
   </div>
 
   <!-- START -->
@@ -437,7 +437,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.4";
+const PAGE_VERSION = "v0.5";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -783,12 +783,13 @@ function escapeHtml(value) {
 // center OK button is "SAY THIS".
 const AI_OPTION_DIRS = ["left", "up", "right"];
 
-async function callNarrow(path, avoid) {
+async function callNarrow(path, avoid, draft) {
   const formData = new URLSearchParams();
   formData.set("action", "narrow");
   formData.set("mode", "say");
   formData.set("path", JSON.stringify(path));
   formData.set("avoid", JSON.stringify(avoid || []));
+  formData.set("draft", draft || "");
 
   const response = await fetch(MESSAGES_API_URL, {
     method: "POST",
@@ -854,9 +855,13 @@ async function runNarrow() {
   aiBusy = true;
   showScreen("aiThinking");
 
+  // Carry the message so far into the next step so it builds up instead of
+  // being regenerated (and shrinking) from the terse breadcrumb each time.
+  const prevDraft = aiHistory.length ? (aiHistory[aiHistory.length - 1].draft || "") : "";
+
   let result;
   try {
-    result = await callNarrow(aiPath, []);
+    result = await callNarrow(aiPath, [], prevDraft);
   } catch (e) {
     if (seq !== narrowSeq) return; // user navigated away; ignore this result
     aiBusy = false;
@@ -908,7 +913,7 @@ async function refreshOptions() {
 
   let result;
   try {
-    result = await callNarrow(aiPath, aiAvoid);
+    result = await callNarrow(aiPath, aiAvoid, top.draft);
   } catch (e) {
     if (seq !== narrowSeq) return;
     aiBusy = false;
