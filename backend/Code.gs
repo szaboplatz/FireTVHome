@@ -1,6 +1,11 @@
 const SHEET_NAME = 'FireTVHomeMessages';
 const EVENT_SHEET_NAME = 'FireTVHomeEvents';
 const DAD_MESSAGE_SHEET_NAME = 'FireTVHomeDadMessages';
+// Living personalization profile for "Something to say" mode (Say mode only).
+// A two-column tab: Section | Detail, one true note per row. Read fresh on every
+// AI call, so the family can add rows any time with no redeploy. Care mode never
+// reads this.
+const PROFILE_SHEET_NAME = 'FireTVHomeProfile';
 const SPREADSHEET_ID = '1fHph8O83oAL9wC-j8swiMLDo8uYWNb6aL-vSpMvoP-w';
 
 const DAD_MESSAGE_HEADERS = [
@@ -8,6 +13,11 @@ const DAD_MESSAGE_HEADERS = [
   'from_name',
   'body',
   'created_at'
+];
+
+const PROFILE_HEADERS = [
+  'Section',
+  'Detail'
 ];
 
 /* AI narrowing (Talk / communicator "Something to say" mode). The Anthropic
@@ -755,6 +765,88 @@ function getDadHeaderMap_(sheet) {
   return map;
 }
 
+/* ---------- PERSONALIZATION PROFILE (Say mode only) ---------- */
+
+// Reads the Profile tab (Section | Detail) live and turns it into a context
+// block for the AI. Grouped by Section, in sheet order. Returns '' if the tab
+// is missing or has no notes. Runs on every Say-mode call so edits take effect
+// immediately with no redeploy.
+function getProfileContext_() {
+  let sheet;
+  try {
+    sheet = getProfileSheet_();
+  } catch (e) {
+    return '';
+  }
+
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+  if (lastRow < 2 || lastCol < 2) return '';
+
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+    .map(function (h) { return String(h || '').trim().toLowerCase(); });
+  let sectionCol = headers.indexOf('section');
+  let detailCol = headers.indexOf('detail');
+  if (sectionCol === -1) sectionCol = 0;
+  if (detailCol === -1) detailCol = 1;
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+
+  const order = [];
+  const bySection = {};
+  rows.forEach(function (row) {
+    const section = String(row[sectionCol] || '').trim();
+    const detail = String(row[detailCol] || '').trim();
+    if (!detail) return;
+    const key = section || 'Notes';
+    if (!bySection[key]) {
+      bySection[key] = [];
+      order.push(key);
+    }
+    bySection[key].push(detail);
+  });
+
+  if (!order.length) return '';
+
+  let block =
+    'TRUE FACTS ABOUT THIS MAN, HIS FAMILY, AND HIS VOICE.\n' +
+    'Use these real details to make the options and the message specific and personal, ' +
+    'and to make it sound like him. Prefer real names, places, and things from this list ' +
+    'over generic ones. NEVER invent a person, relationship, place, event, or detail that ' +
+    'is not listed here, and never state anything about his current health or situation ' +
+    'unless it appears here. If you are unsure, keep that part general rather than guessing.\n';
+
+  order.forEach(function (section) {
+    block += '\n[' + section + ']\n';
+    bySection[section].forEach(function (detail) {
+      block += '- ' + detail + '\n';
+    });
+  });
+
+  return block.trim();
+}
+
+function getProfileSheet_() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(PROFILE_SHEET_NAME);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(PROFILE_SHEET_NAME);
+    sheet.getRange(1, 1, 1, PROFILE_HEADERS.length).setValues([PROFILE_HEADERS]);
+    sheet.setFrozenRows(1);
+  }
+
+  return sheet;
+}
+
+// Runnable from the Run dropdown: prints the profile block the AI will see, so
+// you can confirm the tab is being read correctly.
+function testProfile() {
+  const context = getProfileContext_();
+  Logger.log(context ? context : '(no profile found — tab missing or empty)');
+  return context;
+}
+
 /* ---------- AI NARROWING (Anthropic) ---------- */
 
 // Runnable from the Apps Script editor's Run dropdown (no trailing underscore).
@@ -776,9 +868,9 @@ function narrow_(mode, path, avoid, draft) {
   const avoidList = Array.isArray(avoid) ? avoid.map(function (s) { return String(s || ''); }).filter(function (s) { return s; }) : [];
   const draftText = String(draft || '').trim();
 
-  // Placeholder for personalization. Later: names, relationships, a few notes
-  // on how he speaks, so the drafted messages sound like him.
-  const PEOPLE_CONTEXT = '';
+  // Personalization: real facts about him, his family, and his voice, read live
+  // from the Profile tab. Say mode only. Empty string if the tab is missing/empty.
+  const PEOPLE_CONTEXT = (String(mode) === 'say') ? getProfileContext_() : '';
 
   const systemPrompt =
     'You are helping a man who cannot speak compose a message to his family, ' +
