@@ -182,6 +182,7 @@ body {
 .tile-latest-photos { background: #d62728; }
 .tile-videos { background: #9467bd; }
 .tile-misc-videos { background: #5f7f1f; }
+.tile-talk { background: #e8735a; }
 .tile-send { background: #444; }
 
 .unread-badge {
@@ -1024,7 +1025,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.5.8 spatial</div>
+    <div class="version-label">Fire TV Home v1.5.9 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -1055,8 +1056,8 @@ textarea:focus {
         <span class="tile-update-text hidden"></span>
       </div>
 
-      <div class="home-tile tile-videos spatial-item" id="tileVideos" data-nav-group="home" data-action="link" data-url="https://dakboard.com/screen/uuid/69dd4317-14e487-7750-c0bfa2942983">
-        <span class="tile-main-label">VIDEOS</span>
+      <div class="home-tile tile-talk spatial-item" id="tileTalk" data-nav-group="home" data-action="link" data-url="communicator.html">
+        <span class="tile-main-label">TALK</span>
         <span class="tile-update-badge hidden">UPDATED</span>
         <span class="tile-update-text hidden"></span>
       </div>
@@ -1264,7 +1265,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.5.8";
+const PAGE_VERSION = "v1.5.9";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1288,7 +1289,7 @@ const MANUAL_UPDATES = {
   mainPhotosLoop:   { badge: false, text: "" },
   mainPhotos:       { badge: false, text: "" },
   latestPhotos:     { badge: false, text: "" },
-  videos:           { badge: false, text: "" },
+  talk:             { badge: false, text: "" },
   wrestlingVideos:  { badge: false, text: "" },
   miscVideos:       { badge: false, text: "new tile" }
 };
@@ -1654,7 +1655,7 @@ function applyManualUpdateUI() {
   applyTileUpdate("tileMainPhotosLoop", MANUAL_UPDATES.mainPhotosLoop);
   applyTileUpdate("tileMainPhotos", MANUAL_UPDATES.mainPhotos);
   applyTileUpdate("tileLatestPhotos", MANUAL_UPDATES.latestPhotos);
-  applyTileUpdate("tileVideos", MANUAL_UPDATES.videos);
+  applyTileUpdate("tileTalk", MANUAL_UPDATES.talk);
   applyTileUpdate("tileWrestlingVideos", MANUAL_UPDATES.wrestlingVideos);
   applyTileUpdate("tileMiscVideos", MANUAL_UPDATES.miscVideos);
   applyVideoHeaderUpdateUI(currentVideoPlaylistKey);
