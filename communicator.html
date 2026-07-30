@@ -427,7 +427,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.12</div>
+    <div class="version-label">Talk v0.13</div>
   </div>
 
   <!-- START -->
@@ -541,7 +541,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.12";
+const PAGE_VERSION = "v0.13";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -593,7 +593,31 @@ const CARE_TREE = {
           children: {
             left: { label: "Move my left arm" },
             right: { label: "Move my right arm" },
-            up: { label: "Move my leg(s)" },
+            up: {
+              label: "Move my legs",
+              children: {
+                left: { label: "Straighten my legs" },
+                up: { label: "Bend / prop up my knees" },
+                right: {
+                  label: "Shift my legs",
+                  children: {
+                    left: { label: "Move my legs to the left" },
+                    right: { label: "Move my legs to the right" },
+                    up: { label: "Move my legs apart" },
+                    down: { label: "Bring my legs together" }
+                  }
+                },
+                down: {
+                  label: "Lift or cushion my legs",
+                  children: {
+                    left: { label: "Lift my legs higher" },
+                    right: { label: "Lower my legs" },
+                    up: { label: "Pillow under my knees" },
+                    down: { label: "Cushion my heels / take pressure off" }
+                  }
+                }
+              }
+            },
             down: { label: "Straighten the sheets" }
           }
         },
