@@ -440,7 +440,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.16</div>
+    <div class="version-label">Talk v0.17</div>
   </div>
 
   <!-- START -->
@@ -561,7 +561,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.16";
+const PAGE_VERSION = "v0.17";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -734,26 +734,26 @@ const SAY_TREE = {
     left: {
       label: "Ask how someone is",
       children: {
-        left: { label: "Betty (Mom)", seed: "Ask his wife Betty (Mom) how she is doing", say: "How are you doing, Mom? I think about you." },
+        left: { label: "Betty (Mom)", to: "Betty", seed: "Ask his wife Betty (Mom) how she is doing", say: "How are you doing, Mom? I think about you." },
         up: {
           label: "A grandchild",
           children: {
-            left: { label: "Patrick", seed: "Ask his grandson Patrick how he is doing", say: "How are you doing, Patrick? I'm thinking of you." },
-            up: { label: "Teagan", seed: "Ask his granddaughter Teagan how she is doing", say: "How are you doing, Teagan? I'm so proud of you." },
-            right: { label: "Lucy", seed: "Ask his granddaughter Lucy how she is doing", say: "How are you doing, Lucy? PomPom loves you." },
-            down: { label: "Jamie", seed: "Ask his granddaughter Jamie how she is doing", say: "How are you doing, Jamie? PomPom loves you." }
+            left: { label: "Patrick", to: "Patrick", seed: "Ask his grandson Patrick how he is doing", say: "How are you doing, Patrick? I'm thinking of you." },
+            up: { label: "Teagan", to: "Teagan", seed: "Ask his granddaughter Teagan how she is doing", say: "How are you doing, Teagan? I'm so proud of you." },
+            right: { label: "Lucy", to: "Lucy", seed: "Ask his granddaughter Lucy how she is doing", say: "How are you doing, Lucy? PomPom loves you." },
+            down: { label: "Jamie", to: "Jamie", seed: "Ask his granddaughter Jamie how she is doing", say: "How are you doing, Jamie? PomPom loves you." }
           }
         },
         right: {
           label: "One of my kids",
           children: {
-            left: { label: "Michael", seed: "Ask his son Michael how he is doing", say: "How are you doing, Michael? I'm thinking of you." },
-            up: { label: "Dan", seed: "Ask his son Dan how he is doing", say: "How are you doing, Dan? I'm thinking of you." },
-            right: { label: "Sharon", seed: "Ask his daughter Sharon how she is doing", say: "How are you doing, Sharon? I'm thinking of you." },
+            left: { label: "Michael", to: "Michael", seed: "Ask his son Michael how he is doing", say: "How are you doing, Michael? I'm thinking of you." },
+            up: { label: "Dan", to: "Dan", seed: "Ask his son Dan how he is doing", say: "How are you doing, Dan? I'm thinking of you." },
+            right: { label: "Sharon", to: "Sharon", seed: "Ask his daughter Sharon how she is doing", say: "How are you doing, Sharon? I'm thinking of you." },
             down: { label: "Someone else", seed: "Help him ask how someone is — offer the people and friends you know from his profile, and let him pick", say: "How are you doing? I'm thinking of you." }
           }
         },
-        down: { label: "Everyone / the family", seed: "Ask how the whole family is doing", say: "How is everyone doing? I think about you all." }
+        down: { label: "Everyone / the family", to: "Everyone", seed: "Ask how the whole family is doing", say: "How is everyone doing? I think about you all." }
       }
     },
     up: {
@@ -813,6 +813,7 @@ let sayFromAi = false;       // did the current sayConfirm message come from AI?
 let currentDraft = "";       // the running AI draft he could send right now
 let aiAvoid = [];            // options already shown at this level (for "other options")
 let seedFallbackText = "";   // plain phrase to fall back on if a seed leaf's AI call fails
+let currentRecipient = "";   // who this message is for, inferred from the tree path (to_name)
 
 // Family-occasion entry (reached from the Home reminder via ?occasion=...).
 let occasionMode = false;    // did he arrive here for a family occasion?
@@ -1351,6 +1352,7 @@ function showOccasion(occ) {
   aiHistory = [];
   aiAvoid = [];
   aiFallbackNode = null;
+  currentRecipient = (occ && occ.who) ? occ.who : "";
 
   app.classList.remove("mode-care", "mode-say");
   app.classList.add("mode-occasion");
@@ -1441,6 +1443,7 @@ function startMode(m) {
   currentDraft = "";
   aiAvoid = [];
   seedFallbackText = "";
+  currentRecipient = "";
   narrowSeq++;
   setModeClass();
   updateBreadcrumb();
@@ -1456,6 +1459,7 @@ function choose(dir) {
   const next = node.children[dir];
   nodeStack.push(next);
   pathLabels.push(next.label);
+  if (next.to) currentRecipient = next.to;   // remember who the message is for
   updateBreadcrumb();
 
   // Branch node -> keep walking the tree (Care and Say both walk locally now).
@@ -1592,6 +1596,7 @@ function goToStart() {
   mode = null;
   occasionMode = false;
   seedFallbackText = "";
+  currentRecipient = "";
   nodeStack = [];
   pathLabels = [];
   sending = false;
@@ -1625,6 +1630,7 @@ async function sendToFamilyPage(text) {
   const formData = new URLSearchParams();
   formData.set("action", "add_dad_message");
   formData.set("from_name", "Dad");
+  formData.set("to_name", currentRecipient || "");
   formData.set("body", text);
 
   const response = await fetch(MESSAGES_API_URL, {

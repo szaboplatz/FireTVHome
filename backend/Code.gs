@@ -18,15 +18,16 @@ const DATES_HEADERS = ['Date', 'Who', 'Occasion', 'Canned'];
 const OCCASION_LEAD_DAYS = 5;
 const OCCASION_GRACE_DAYS = 1;
 // How many choices deep he must be before Say mode brings in personal profile
-// details. Below this, options stay broad and general so early narrowing is
-// about direction, not specifics. 1 = the first AI screen (right after he picks
-// a category); 2 = after his first AI choice. Tune freely.
-const PROFILE_MIN_DEPTH = 2;
+// details. With the curated Say tree, the AI is only ever entered at an already-
+// specific seeded intent (e.g. "ask Teagan how she is"), so the profile should
+// inform it from the very first step. 1 = the first AI screen. Tune freely.
+const PROFILE_MIN_DEPTH = 1;
 const SPREADSHEET_ID = '1fHph8O83oAL9wC-j8swiMLDo8uYWNb6aL-vSpMvoP-w';
 
 const DAD_MESSAGE_HEADERS = [
   'id',
   'from_name',
+  'to_name',
   'body',
   'created_at'
 ];
@@ -205,13 +206,14 @@ function doPost(e) {
 
   if (action === 'add_dad_message') {
     const fromName = (e.parameter.from_name || '').trim();
+    const toName = (e.parameter.to_name || '').trim();
     const body = (e.parameter.body || '').trim();
 
     if (!body) {
       return json_({ ok: false, error: 'Missing body' });
     }
 
-    return json_(addDadMessage_(fromName, body));
+    return json_(addDadMessage_(fromName, body, toName));
   }
 
   if (action === 'narrow') {
@@ -683,7 +685,7 @@ function getHeaderMap_(sheet) {
 
 /* ---------- DAD MESSAGE FUNCTIONS (composed on the TV, sent to family) ---------- */
 
-function addDadMessage_(fromName, body) {
+function addDadMessage_(fromName, body, toName) {
   const sheet = getDadMessageSheet_();
   const headers = getDadHeaderMap_(sheet);
   const row = new Array(sheet.getLastColumn()).fill('');
@@ -692,6 +694,7 @@ function addDadMessage_(fromName, body) {
 
   row[headers.id - 1] = id;
   row[headers.from_name - 1] = fromName || 'Dad';
+  if (headers.to_name) row[headers.to_name - 1] = toName || '';
   row[headers.body - 1] = body;
   row[headers.created_at - 1] = now;
 
@@ -725,6 +728,7 @@ function listDadMessages_(params) {
     return {
       id: String(obj.id || ''),
       from_name: String(obj.from_name || ''),
+      to_name: String(obj.to_name || ''),
       body: String(obj.body || ''),
       created_at: formatDate_(obj.created_at)
     };
@@ -1146,7 +1150,11 @@ function narrow_(mode, path, avoid, draft) {
     'A message can be something he wants to SAY or a QUESTION he wants to ASK (for ' +
     'example asking about his own recovery, what happens next, or whether something will ' +
     'change for him). When he is heading that way, offer question-shaped options and let ' +
-    'the draft be that question in his own voice.' +
+    'the draft be that question in his own voice.\n\n' +
+    'Today is ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'EEEE, MMMM d, yyyy') +
+    '. Use it to keep tense and timing right: speak of things that have not happened yet as ' +
+    'upcoming, and things already past as past (for example, a school year or a season that ' +
+    'starts later in the year is still ahead until then).' +
     (PEOPLE_CONTEXT ? ('\n\n' + PEOPLE_CONTEXT) : '');
 
   const tool = {

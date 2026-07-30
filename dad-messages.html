@@ -102,6 +102,37 @@ body {
   margin-bottom: 20px;
 }
 
+.filter-chips {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.chip {
+  border: 2px solid #e8735a;
+  border-radius: 999px;
+  background: transparent;
+  color: #f0a58f;
+  font-size: 22px;
+  font-weight: bold;
+  padding: 8px 20px;
+  cursor: pointer;
+}
+
+.chip.active {
+  background: #e8735a;
+  color: #000;
+}
+
+.message-to {
+  font-size: 22px;
+  font-weight: bold;
+  color: #f0a58f;
+  margin-bottom: 8px;
+}
+
 .message-list {
   display: flex;
   flex-direction: column;
@@ -148,7 +179,7 @@ body {
 <body>
   <div class="top-bar">
     <div class="datetime" id="datetimeBar">Loading time…</div>
-    <div class="version">Messages from Dad v0.1</div>
+    <div class="version">Messages from Dad v0.2</div>
   </div>
 
   <div class="page">
@@ -162,6 +193,8 @@ body {
     </div>
 
     <div class="status-line" id="statusLine">Loading messages…</div>
+
+    <div class="filter-chips" id="filterChips"></div>
 
     <div id="messageList" class="message-list"></div>
 
@@ -178,6 +211,10 @@ const datetimeBar = document.getElementById("datetimeBar");
 const refreshButton = document.getElementById("refreshButton");
 const statusLine = document.getElementById("statusLine");
 const messageList = document.getElementById("messageList");
+const filterChips = document.getElementById("filterChips");
+
+let allMessages = [];      // everything last loaded
+let activeFilter = "All";  // "All" or a specific recipient name
 
 function updateDateTimeBar() {
   const now = new Date();
@@ -229,23 +266,17 @@ async function loadMessages() {
       throw new Error((data && data.error) || "Load failed");
     }
 
-    const messages = data.messages || [];
-    messageList.innerHTML = "";
+    allMessages = data.messages || [];
 
-    if (!messages.length) {
+    if (!allMessages.length) {
+      filterChips.innerHTML = "";
       messageList.innerHTML = '<div class="empty">No messages from Dad yet.</div>';
       statusLine.textContent = "No messages yet.";
       return;
     }
 
-    messages.forEach((msg) => {
-      const card = document.createElement("div");
-      card.className = "message-card";
-      card.innerHTML =
-        '<div class="message-body">' + escapeHtml(msg.body || "") + '</div>' +
-        '<div class="message-meta">' + formatDateTime(msg.created_at) + '</div>';
-      messageList.appendChild(card);
-    });
+    renderChips();
+    renderList();
 
     const now = new Date();
     statusLine.textContent = "Last refreshed " + now.toLocaleTimeString(undefined, {
@@ -259,6 +290,59 @@ async function loadMessages() {
   } finally {
     refreshButton.disabled = false;
   }
+}
+
+// Build the filter row: "All" plus one chip per recipient that actually has a
+// message. Filtering is a convenience only — every chip is visible to anyone.
+function renderChips() {
+  const names = [];
+  allMessages.forEach((msg) => {
+    const to = String(msg.to_name || "").trim();
+    if (to && names.indexOf(to) === -1) names.push(to);
+  });
+  names.sort((a, b) => a.localeCompare(b));
+
+  if (activeFilter !== "All" && names.indexOf(activeFilter) === -1) {
+    activeFilter = "All"; // the person we were filtering to no longer has messages
+  }
+
+  const chips = ["All"].concat(names);
+  filterChips.innerHTML = "";
+  chips.forEach((name) => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip" + (name === activeFilter ? " active" : "");
+    chip.textContent = name;
+    chip.addEventListener("click", () => {
+      activeFilter = name;
+      renderChips();
+      renderList();
+    });
+    filterChips.appendChild(chip);
+  });
+}
+
+function renderList() {
+  const visible = activeFilter === "All"
+    ? allMessages
+    : allMessages.filter((msg) => String(msg.to_name || "").trim() === activeFilter);
+
+  messageList.innerHTML = "";
+  if (!visible.length) {
+    messageList.innerHTML = '<div class="empty">No messages for ' + escapeHtml(activeFilter) + ' yet.</div>';
+    return;
+  }
+
+  visible.forEach((msg) => {
+    const to = String(msg.to_name || "").trim();
+    const card = document.createElement("div");
+    card.className = "message-card";
+    card.innerHTML =
+      (to ? '<div class="message-to">To: ' + escapeHtml(to) + '</div>' : '') +
+      '<div class="message-body">' + escapeHtml(msg.body || "") + '</div>' +
+      '<div class="message-meta">' + formatDateTime(msg.created_at) + '</div>';
+    messageList.appendChild(card);
+  });
 }
 
 refreshButton.addEventListener("click", loadMessages);
