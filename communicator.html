@@ -440,7 +440,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.14</div>
+    <div class="version-label">Talk v0.15</div>
   </div>
 
   <!-- START -->
@@ -561,7 +561,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.14";
+const PAGE_VERSION = "v0.15";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -1216,6 +1216,20 @@ function getQueryParam(name) {
   catch (e) { return ""; }
 }
 
+// Once he sends a greeting for an occasion, remember it (per this year's date)
+// so the Home reminder for it drops away. Stored in localStorage, which the Home
+// page shares (same origin), and keyed by year so it comes back next time round.
+function occasionDoneKey(occ) {
+  if (!occ || !occ.id) return "";
+  const year = (occ.date && /^\d{4}/.test(occ.date)) ? occ.date.slice(0, 4) : String(new Date().getFullYear());
+  return "occasionDone:" + occ.id + ":" + year;
+}
+function markOccasionDone(occ) {
+  const key = occasionDoneKey(occ);
+  if (!key) return;
+  try { localStorage.setItem(key, String(Date.now())); } catch (e) {}
+}
+
 // Frontend fallback lines (mirrors the backend) for when the occasions fetch
 // fails but we still know who/what from the URL.
 function defaultOccasionCanned(who, what) {
@@ -1277,9 +1291,10 @@ function occasionHeading(occ) {
 function showOccasion(occ) {
   occasionMode = true;
   occasionData = occ;
+  const greetName = (occ && occ.greeting) ? occ.greeting : (occ && occ.who);
   const lines = (occ && occ.canned && occ.canned.length)
     ? occ.canned
-    : defaultOccasionCanned(occ && occ.who, occ && occ.occasion);
+    : defaultOccasionCanned(greetName, occ && occ.occasion);
   occasionCanned = lines.slice(0, 3);
 
   mode = null;
@@ -1311,6 +1326,7 @@ async function initOccasion() {
 
   const who = getQueryParam("who");
   const what = getQueryParam("what");
+  const greet = getQueryParam("greet") || who;
 
   let occ = null;
   try {
@@ -1321,7 +1337,7 @@ async function initOccasion() {
   } catch (e) {}
 
   if (!occ && (who || what)) {
-    occ = { id: oid, who: who, occasion: what, canned: defaultOccasionCanned(who, what) };
+    occ = { id: oid, who: who, greeting: greet, occasion: what, canned: defaultOccasionCanned(greet, what) };
   }
 
   if (!occ) return false;
@@ -1596,6 +1612,7 @@ async function handleSay(channel) {
     try {
       await sendToFamilyPage(text);
       sending = false;
+      if (occasionMode) markOccasionDone(occasionData);
       logEvent("say_message_sent", text, { channel: "family_page" });
       showSayResult("SENT ✓", "sent", "Press BACK to start a new message.");
     } catch (e) {
@@ -1603,6 +1620,7 @@ async function handleSay(channel) {
       try {
         await sendToEmail(text);
         sending = false;
+        if (occasionMode) markOccasionDone(occasionData);
         logEvent("say_message_sent", text, { channel: "email_fallback" });
         showSayResult("SENT BY EMAIL ✓", "sent", "The family page was unavailable, so this was emailed instead. Press BACK to start over.");
       } catch (e2) {
@@ -1619,6 +1637,7 @@ async function handleSay(channel) {
   try {
     await sendToEmail(text);
     sending = false;
+    if (occasionMode) markOccasionDone(occasionData);
     logEvent("say_message_sent", text, { channel: "email" });
     showSayResult("SENT ✓", "sent", "Press BACK to start a new message.");
   } catch (e) {

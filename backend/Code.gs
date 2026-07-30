@@ -15,7 +15,7 @@ const DATES_SHEET_NAME = 'FireTVHomeDates';
 const DATES_HEADERS = ['Date', 'Who', 'Occasion', 'Canned'];
 // Default reminder window: show an occasion from a day before through this many
 // days ahead. Overridable per request with ?lead=NN.
-const OCCASION_LEAD_DAYS = 14;
+const OCCASION_LEAD_DAYS = 5;
 const OCCASION_GRACE_DAYS = 1;
 // How many choices deep he must be before Say mode brings in personal profile
 // details. Below this, options stay broad and general so early narrowing is
@@ -935,7 +935,9 @@ function getOccasions_(params) {
     const parts = parseDateParts_(row[dateCol], tz);
     if (!parts) return;
 
-    const who = String(row[whoCol] || '').trim();
+    const parsedWho = splitWho_(row[whoCol]);
+    const who = parsedWho.display;       // full name, shown in the reminder
+    const greeting = parsedWho.greeting; // preferred name, used inside greetings
     const occ = String(row[occCol] || '').trim();
     if (!who && !occ) return;
 
@@ -953,11 +955,12 @@ function getOccasions_(params) {
     }
 
     let canned = parseCanned_(row[cannedCol]);
-    if (!canned.length) canned = defaultOccasionCanned_(who, occ, yearsSince);
+    if (!canned.length) canned = defaultOccasionCanned_(greeting, occ, yearsSince);
 
     out.push({
       id: makeOccasionId_(who, occ, parts.month, parts.day),
       who: who,
+      greeting: greeting,
       occasion: occ,
       date: Utilities.formatDate(occDate, tz, 'yyyy-MM-dd'),
       month: parts.month,
@@ -1005,6 +1008,21 @@ function parseDateParts_(raw, tz) {
 function validParts_(year, month, day) {
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
   return { year: year, month: month, day: day };
+}
+
+// A "Who" cell may carry a preferred greeting name in brackets, e.g.
+// "Tom McGuinness [Tom]": the full name is shown in the reminder, but the
+// bracketed name is what a generated greeting uses ("Happy birthday, Tom!").
+// With no brackets, the greeting name is just the whole value.
+function splitWho_(raw) {
+  const s = String(raw == null ? '' : raw).trim();
+  const m = s.match(/^(.*?)\s*\[([^\]]+)\]\s*$/);
+  if (m) {
+    const display = m[1].trim();
+    const greeting = m[2].trim();
+    return { display: display || greeting, greeting: greeting || display };
+  }
+  return { display: s, greeting: s };
 }
 
 function parseCanned_(raw) {

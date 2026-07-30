@@ -1072,7 +1072,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.6.0 spatial</div>
+    <div class="version-label">Fire TV Home v1.6.1 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -1317,7 +1317,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.6.0";
+const PAGE_VERSION = "v1.6.1";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1363,6 +1363,7 @@ const homeReminderText = document.getElementById("homeReminderText");
 
 /* Family occasions (birthdays / anniversaries) shown as a Home-screen reminder. */
 let upcomingOccasions = [];
+let activeOccasion = null;      // the occasion currently shown (soonest not-yet-greeted)
 let reminderSelected = false;   // is the Home reminder bar the focused item?
 let reminderAutoFocused = false; // only pull focus to the reminder once per load
 
@@ -1744,10 +1745,25 @@ async function loadOccasions() {
   renderReminder();
 }
 
+// Once a greeting has been sent for an occasion (recorded by the Talk page in
+// shared localStorage, keyed by this year's date), it drops off the reminder.
+function occasionDone(occ) {
+  if (!occ || !occ.id) return false;
+  try {
+    const year = (occ.date && /^\d{4}/.test(occ.date)) ? occ.date.slice(0, 4) : String(new Date().getFullYear());
+    return !!localStorage.getItem("occasionDone:" + occ.id + ":" + year);
+  } catch (e) {
+    return false;
+  }
+}
+
 function renderReminder() {
   if (!homeReminder) return;
 
-  if (!upcomingOccasions.length) {
+  const pending = upcomingOccasions.filter(occ => !occasionDone(occ));
+  activeOccasion = pending.length ? pending[0] : null;
+
+  if (!activeOccasion) {
     homeReminder.classList.add("hidden");
     if (reminderSelected) {
       reminderSelected = false;
@@ -1756,7 +1772,7 @@ function renderReminder() {
     return;
   }
 
-  const occ = upcomingOccasions[0];
+  const occ = activeOccasion;
   const whenText = occ.when || "soon";
   const who = occ.who || "Family";
   const what = occ.occasion || "special day";
@@ -1776,13 +1792,14 @@ function renderReminder() {
 }
 
 function activateOccasionReminder() {
-  const occ = upcomingOccasions[0];
+  const occ = activeOccasion;
   if (!occ) return;
   logEvent("occasion_open", `${occ.who || ""} ${occ.occasion || ""}`.trim(), { id: occ.id || "" });
   const params = new URLSearchParams();
   params.set("occasion", occ.id || "");
   params.set("who", occ.who || "");
   params.set("what", occ.occasion || "");
+  params.set("greet", occ.greeting || occ.who || "");
   window.location.href = "communicator.html?" + params.toString();
 }
 
