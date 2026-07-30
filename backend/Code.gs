@@ -819,7 +819,16 @@ function getProfileContext_() {
     'and to make it sound like him. Prefer real names, places, and things from this list ' +
     'over generic ones. NEVER invent a person, relationship, place, event, or detail that ' +
     'is not listed here, and never state anything about his current health or situation ' +
-    'unless it appears here. If you are unsure, keep that part general rather than guessing.\n';
+    'unless it appears here. If you are unsure, keep that part general rather than guessing.\n' +
+    '\nSENSITIVE - handle with care. Some facts are included ONLY so you understand his ' +
+    'situation and never offer false hope or a tone-deaf choice - especially anything under ' +
+    'a section whose name mentions "private", "context only", or "do not repeat", and ' +
+    'anything about his prognosis, that he may not improve or go home again, that he is DNR ' +
+    'or receiving palliative or comfort care, or that his spirits are low. Let these quietly ' +
+    'shape the options so they stay realistic and gentle, but NEVER state, quote, hint at, ' +
+    'or ask him to confirm any of them, and NEVER put them into the options or the draft. If ' +
+    'HE clearly chooses to bring such a thing up himself, help him say it in his own plain ' +
+    'words - but you must never introduce or surface it on your own.\n';
 
   order.forEach(function (section) {
     block += '\n[' + section + ']\n';
