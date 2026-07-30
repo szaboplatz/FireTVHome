@@ -889,7 +889,8 @@ function narrow_(mode, path, avoid, draft) {
     '- draft: the message SO FAR, in his own plain first-person voice.\n' +
     '  CRITICAL: the draft may contain ONLY what he has actually chosen. Do NOT invent, ' +
     'assume, or add events, feelings, reasons, names, or details he has not picked, and ' +
-    'do NOT pad it with extra sentences to sound heartfelt. Start VERY short (even a few ' +
+    'do NOT pad it with extra sentences or emotional colour he did not choose. Start ' +
+    'VERY short (even a few ' +
     'words) and let it grow ONLY when a choice adds something. It must read cleanly with ' +
     'no placeholders, blanks, or brackets like "[activity]"; if a detail has not been ' +
     'chosen yet, just leave it out rather than guessing.\n' +

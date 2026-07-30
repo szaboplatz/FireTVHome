@@ -212,6 +212,38 @@ body {
   font-weight: bold;
 }
 
+/* SAY: show the message full-screen for someone in the room. Like the care
+   banner but deliberately NOT the care coral — a calm dark screen, big text. */
+.say-banner {
+  width: 100%;
+  height: 100%;
+  background: #0b0e14;
+  color: #f2f8ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5vh 6vw 11vh;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.say-banner-text {
+  font-size: 96px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.say-banner-hint {
+  position: absolute;
+  bottom: 18px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 20px;
+  color: var(--muted);
+  font-weight: bold;
+}
+
 /* SAY confirm + sent. */
 .say-panel {
   position: absolute;
@@ -345,6 +377,7 @@ body {
 }
 .ai-draft-label { display: none; }
 .ai-draft-text {
+  display: block;
   font-size: 44px;
   line-height: 1.1;
   font-weight: 800;
@@ -394,7 +427,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.11</div>
+    <div class="version-label">Talk v0.12</div>
   </div>
 
   <!-- START -->
@@ -430,11 +463,14 @@ body {
 
   <!-- SAY CONFIRM -->
   <section id="sayConfirmScreen" class="screen dpad">
-    <div class="screen-title">Send this?</div>
     <div class="say-panel">
       <div class="say-panel-quote" id="sayConfirmText"></div>
     </div>
     <div class="field grid-field">
+      <div class="tile dir-up" data-choose="say-show">
+        <span class="arrow">&#8593;</span>
+        <span class="tile-label">SHOW ON SCREEN</span>
+      </div>
       <div class="tile dir-left" data-choose="say-send-family">
         <span class="arrow">&#8592;</span>
         <span class="tile-label">SEND TO FAMILY PAGE</span>
@@ -448,7 +484,15 @@ body {
         <span class="tile-label">START OVER</span>
       </div>
     </div>
-    <div class="screen-hint">Press LEFT or RIGHT to send. Press BACK to change your message.</div>
+    <div class="screen-hint">UP shows it on this screen &middot; LEFT / RIGHT send it &middot; DOWN starts over &middot; BACK edits</div>
+  </section>
+
+  <!-- SAY: SHOW ON THIS SCREEN (for someone in the room) -->
+  <section id="sayBannerScreen" class="screen">
+    <div class="say-banner">
+      <div class="say-banner-text" id="sayBannerText"></div>
+    </div>
+    <div class="say-banner-hint">Press BACK to go back</div>
   </section>
 
   <!-- SAY SENDING / SENT -->
@@ -497,7 +541,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.11";
+const PAGE_VERSION = "v0.12";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -701,6 +745,7 @@ const screens = {
   options: document.getElementById("optionsScreen"),
   careFinal: document.getElementById("careFinalScreen"),
   sayConfirm: document.getElementById("sayConfirmScreen"),
+  sayBanner: document.getElementById("sayBannerScreen"),
   sayResult: document.getElementById("sayResultScreen"),
   aiThinking: document.getElementById("aiThinkingScreen"),
   aiOptions: document.getElementById("aiOptionsScreen"),
@@ -710,6 +755,7 @@ const optionsTitle = document.getElementById("optionsTitle");
 const optionsField = document.getElementById("optionsField");
 const careFinalText = document.getElementById("careFinalText");
 const sayConfirmText = document.getElementById("sayConfirmText");
+const sayBannerText = document.getElementById("sayBannerText");
 const sayResultText = document.getElementById("sayResultText");
 const sayResultHint = document.getElementById("sayResultHint");
 const aiOptionsField = document.getElementById("aiOptionsField");
@@ -782,7 +828,7 @@ function showScreen(name) {
   Object.keys(screens).forEach(key => {
     screens[key].classList.toggle("active", key === name);
   });
-  if (name === "aiOptions" || name === "sayConfirm") {
+  if (name === "aiOptions" || name === "sayConfirm" || name === "sayBanner") {
     // Wait for the now-visible screen to lay out, then size the message to fit.
     requestAnimationFrame(fitCurrentScreen);
   }
@@ -794,10 +840,16 @@ function showScreen(name) {
 // of a scrollbar the whole message always stays visible however long it grows.
 function fitText(box, el, maxPx, minPx) {
   if (!box || !el) return;
+  // Measure the text element against the box's inner height (clientHeight minus
+  // padding). Comparing the child directly is reliable even when the box centers
+  // it with flexbox (box.scrollHeight misreads overflow in that case).
+  const cs = getComputedStyle(box);
+  const availH = box.clientHeight - parseFloat(cs.paddingTop || 0) - parseFloat(cs.paddingBottom || 0);
+  const availW = box.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0);
   let size = maxPx;
   el.style.fontSize = size + "px";
   let guard = 0;
-  while (size > minPx && box.scrollHeight > box.clientHeight && guard < 80) {
+  while (size > minPx && (el.scrollHeight > availH + 1 || el.scrollWidth > availW + 1) && guard < 90) {
     size -= 2;
     el.style.fontSize = size + "px";
     guard++;
@@ -809,7 +861,16 @@ function fitCurrentScreen() {
     fitText(aiDraftText.parentElement, aiDraftText, 44, 22);
   } else if (currentScreen === "sayConfirm") {
     fitText(sayConfirmText.parentElement, sayConfirmText, 46, 22);
+  } else if (currentScreen === "sayBanner") {
+    fitText(sayBannerText.parentElement, sayBannerText, 110, 30);
   }
+}
+
+// Show the composed message full-screen for someone in the room (neutral, not
+// the care coral).
+function showSayBanner() {
+  sayBannerText.textContent = currentFinalText || currentDraft || "";
+  showScreen("sayBanner");
 }
 
 function setModeClass() {
@@ -1169,6 +1230,11 @@ function stepBack() {
     return;
   }
 
+  if (currentScreen === "sayBanner") {
+    showScreen("sayConfirm");
+    return;
+  }
+
   if (currentScreen === "sayConfirm") {
     // If the message came from AI, go back to the last AI options round.
     if (sayFromAi) {
@@ -1408,9 +1474,16 @@ document.addEventListener("keydown", function(event) {
   }
 
   if (currentScreen === "sayConfirm") {
+    if (dir === "up") showSayBanner();
     if (dir === "left") handleSay("family");
     if (dir === "right") handleSay("email");
     if (dir === "down") startMode("say");
+    return;
+  }
+
+  if (currentScreen === "sayBanner") {
+    // Sticky on purpose: keep the message up for the person in the room.
+    // Arrows/OK do nothing; BACK returns to the send options.
     return;
   }
 
@@ -1452,6 +1525,7 @@ document.addEventListener("click", function(event) {
   if (choose === "start-care") { startMode("care"); return; }
   if (choose === "start-say") { startMode("say"); return; }
   if (choose === "option") { chooseOption(dir); return; }
+  if (choose === "say-show") { showSayBanner(); return; }
   if (choose === "say-send-family") { handleSay("family"); return; }
   if (choose === "say-send-email") { handleSay("email"); return; }
   if (choose === "say-again") { startMode("say"); return; }
