@@ -148,11 +148,58 @@ body {
 }
 
 /* HOME VIEW */
+#homeView.view.active {
+  display: flex;
+  flex-direction: column;
+}
+
+.home-reminder {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex: 0 0 auto;
+  margin-bottom: 10px;
+  padding: 14px 24px;
+  border-radius: 16px;
+  background: linear-gradient(120deg, #8a4b00, #b8860b, #e0a92e);
+  border: 4px solid #ffd45e;
+  color: #fff;
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.home-reminder-emoji {
+  font-size: 46px;
+  line-height: 1;
+}
+
+.home-reminder-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.home-reminder-cta {
+  flex: 0 0 auto;
+  background: rgba(0, 0, 0, 0.28);
+  border: 3px solid rgba(255, 255, 255, 0.55);
+  border-radius: 12px;
+  padding: 8px 16px;
+  font-size: 26px;
+  white-space: nowrap;
+}
+
 .home-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   height: calc(var(--app-height) - 88px);
+}
+
+#homeView .home-grid {
+  height: auto;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .home-tile {
@@ -1025,11 +1072,16 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.5.9 spatial</div>
+    <div class="version-label">Fire TV Home v1.6.0 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
   <section id="homeView" class="view active">
+    <div class="home-reminder spatial-item hidden" id="homeReminder" data-nav-group="homeReminder" data-action="occasion">
+      <span class="home-reminder-emoji">🎉</span>
+      <span class="home-reminder-text" id="homeReminderText"></span>
+      <span class="home-reminder-cta">SEND A NOTE</span>
+    </div>
     <div class="home-grid" id="homeGrid">
       <div class="home-tile tile-talk spatial-item" id="tileTalk" data-nav-group="home" data-action="link" data-url="communicator.html">
         <span class="tile-main-label">TALK</span>
@@ -1265,7 +1317,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.5.9";
+const PAGE_VERSION = "v1.6.0";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -1305,6 +1357,14 @@ const views = {
 
 const datetimeBar = document.getElementById("datetimeBar");
 const unreadBadge = document.getElementById("unreadBadge");
+
+const homeReminder = document.getElementById("homeReminder");
+const homeReminderText = document.getElementById("homeReminderText");
+
+/* Family occasions (birthdays / anniversaries) shown as a Home-screen reminder. */
+let upcomingOccasions = [];
+let reminderSelected = false;   // is the Home reminder bar the focused item?
+let reminderAutoFocused = false; // only pull focus to the reminder once per load
 
 const messagesStatus = document.getElementById("messagesStatus");
 const messagesList = document.getElementById("messagesList");
@@ -1475,7 +1535,14 @@ function showView(name) {
   window.scrollTo(0, 0);
 
   if (name === "home") {
-    setSelected("home", selected.home || 0);
+    reminderSelected = false;
+    clearGroupSelection("homeReminder");
+    if (reminderVisible()) {
+      reminderSelected = true;
+      setSelected("homeReminder", 0);
+    } else {
+      setSelected("home", selected.home || 0);
+    }
   }
   if (name === "messages") {
     clearGroupSelection("messagesHeader");
@@ -1659,6 +1726,64 @@ function applyManualUpdateUI() {
   applyTileUpdate("tileWrestlingVideos", MANUAL_UPDATES.wrestlingVideos);
   applyTileUpdate("tileMiscVideos", MANUAL_UPDATES.miscVideos);
   applyVideoHeaderUpdateUI(currentVideoPlaylistKey);
+}
+
+/* ---------- FAMILY OCCASIONS (Home reminder) ---------- */
+
+function reminderVisible() {
+  return homeReminder && !homeReminder.classList.contains("hidden");
+}
+
+async function loadOccasions() {
+  try {
+    const data = await loadJsonp(MESSAGES_API_URL, { action: "occasions" });
+    upcomingOccasions = (data && data.ok && Array.isArray(data.occasions)) ? data.occasions : [];
+  } catch (e) {
+    upcomingOccasions = [];
+  }
+  renderReminder();
+}
+
+function renderReminder() {
+  if (!homeReminder) return;
+
+  if (!upcomingOccasions.length) {
+    homeReminder.classList.add("hidden");
+    if (reminderSelected) {
+      reminderSelected = false;
+      if (currentView === "home") setSelected("home", selected.home || 0);
+    }
+    return;
+  }
+
+  const occ = upcomingOccasions[0];
+  const whenText = occ.when || "soon";
+  const who = occ.who || "Family";
+  const what = occ.occasion || "special day";
+  homeReminderText.textContent = `It's ${who}'s ${what} — ${whenText}`;
+  homeReminder.dataset.oid = occ.id || "";
+  homeReminder.classList.remove("hidden");
+
+  // On first appearance while sitting on the Home screen, pull focus to the
+  // reminder so it's the first thing he lands on — the whole point is to lower
+  // the activation energy of reaching out.
+  if (!reminderAutoFocused && currentView === "home") {
+    reminderAutoFocused = true;
+    reminderSelected = true;
+    clearGroupSelection("home");
+    setSelected("homeReminder", 0);
+  }
+}
+
+function activateOccasionReminder() {
+  const occ = upcomingOccasions[0];
+  if (!occ) return;
+  logEvent("occasion_open", `${occ.who || ""} ${occ.occasion || ""}`.trim(), { id: occ.id || "" });
+  const params = new URLSearchParams();
+  params.set("occasion", occ.id || "");
+  params.set("who", occ.who || "");
+  params.set("what", occ.occasion || "");
+  window.location.href = "communicator.html?" + params.toString();
 }
 
 /* ---------- MESSAGES ---------- */
@@ -2649,6 +2774,7 @@ function handleSubmit(event) {
 function startPeriodicRefresh() {
   setInterval(async () => {
     await refreshMessages();
+    await loadOccasions();
   }, MESSAGE_REFRESH_INTERVAL_MS);
 
   setInterval(async () => {
@@ -2790,6 +2916,25 @@ document.addEventListener("keydown", function(event) {
   }
 
   if (currentView === "home") {
+    if (reminderSelected) {
+      if (key === "ArrowDown") {
+        reminderSelected = false;
+        clearGroupSelection("homeReminder");
+        setSelected("home", 0);
+        return;
+      }
+      if (isActivationKey(key)) activateOccasionReminder();
+      return; // Up / Left / Right do nothing while the reminder is focused
+    }
+
+    if (key === "ArrowUp" && reminderVisible() && (selected.home || 0) < 2) {
+      // Top row of the grid: Up jumps to the reminder bar above it.
+      reminderSelected = true;
+      clearGroupSelection("home");
+      setSelected("homeReminder", 0);
+      return;
+    }
+
     if (key.startsWith("Arrow")) moveGrid("home", 2, key);
     if (isActivationKey(key)) activateHomeItem();
     return;
@@ -3022,7 +3167,8 @@ document.addEventListener("click", function(event) {
     if (index >= 0) setSelected(group, index);
   }
 
-  if (group === "home") activateHomeItem();
+  if (group === "homeReminder") { reminderSelected = true; activateOccasionReminder(); }
+  if (group === "home") { reminderSelected = false; activateHomeItem(); }
   if (group === "messagesHeader" || group === "videosHeader" || group === "sendHeader") activateHeaderHome();
   if (group === "replyHeader") {
     renderMessageDetail();
@@ -3092,6 +3238,7 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 
   loadMessages();
+  loadOccasions();
   loadAllVideoPlaylists();
   startPeriodicRefresh();
 

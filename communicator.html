@@ -170,6 +170,19 @@ body {
 /* Say tiles keep the dark tile + teal edge (distinct from home's yellow focus). */
 .mode-say .tile { border-color: var(--say); box-shadow: 0 0 30px -8px var(--say); }
 .mode-say .tile .arrow { color: var(--say); }
+/* Occasion tiles: warm gold, matching the celebratory Home reminder. Canned
+   lines are full sentences, so their labels are smaller and clipped to the box. */
+.mode-occasion .tile { border-color: #e0a92e; box-shadow: 0 0 30px -8px #e0a92e; }
+.mode-occasion .tile .arrow { color: #e0a92e; }
+#occasionScreen .grid-field .tile { overflow: hidden; }
+#occasionScreen .grid-field .tile .tile-label,
+#occasionScreen .grid-field .tile.dir-left .tile-label,
+#occasionScreen .grid-field .tile.dir-right .tile-label,
+#occasionScreen .grid-field .tile.dir-up .tile-label,
+#occasionScreen .grid-field .tile.dir-down .tile-label {
+  font-size: 26px;
+  line-height: 1.12;
+}
 
 /* Tap/hover feedback (for phone testing); the remote uses direct selection. */
 .tile:active {
@@ -427,7 +440,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.13</div>
+    <div class="version-label">Talk v0.14</div>
   </div>
 
   <!-- START -->
@@ -444,6 +457,13 @@ body {
       </div>
     </div>
     <div class="screen-hint">Press LEFT or RIGHT. Press BACK to return to the Home screen.</div>
+  </section>
+
+  <!-- OCCASION (family date entry from the Home reminder) -->
+  <section id="occasionScreen" class="screen dpad">
+    <div class="screen-title" id="occasionTitle"></div>
+    <div class="field grid-field" id="occasionField"></div>
+    <div class="screen-hint">Pick a message to send &middot; DOWN to say it your own way &middot; BACK returns Home</div>
   </section>
 
   <!-- OPTIONS (narrowing rounds) -->
@@ -541,7 +561,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.13";
+const PAGE_VERSION = "v0.14";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -760,12 +780,18 @@ let sayFromAi = false;       // did the current sayConfirm message come from AI?
 let currentDraft = "";       // the running AI draft he could send right now
 let aiAvoid = [];            // options already shown at this level (for "other options")
 
+// Family-occasion entry (reached from the Home reminder via ?occasion=...).
+let occasionMode = false;    // did he arrive here for a family occasion?
+let occasionData = null;     // { id, who, occasion, canned, ... }
+let occasionCanned = [];     // ready-to-send lines for this occasion
+
 let cachedPublicIp = localStorage.getItem(PUBLIC_IP_STORAGE_KEY) || "";
 
 const app = document.querySelector(".app");
 const breadcrumbEl = document.getElementById("breadcrumb");
 const screens = {
   start: document.getElementById("startScreen"),
+  occasion: document.getElementById("occasionScreen"),
   options: document.getElementById("optionsScreen"),
   careFinal: document.getElementById("careFinalScreen"),
   sayConfirm: document.getElementById("sayConfirmScreen"),
@@ -777,6 +803,8 @@ const screens = {
 };
 const optionsTitle = document.getElementById("optionsTitle");
 const optionsField = document.getElementById("optionsField");
+const occasionTitle = document.getElementById("occasionTitle");
+const occasionField = document.getElementById("occasionField");
 const careFinalText = document.getElementById("careFinalText");
 const sayConfirmText = document.getElementById("sayConfirmText");
 const sayBannerText = document.getElementById("sayBannerText");
@@ -898,7 +926,7 @@ function showSayBanner() {
 }
 
 function setModeClass() {
-  app.classList.remove("mode-care", "mode-say");
+  app.classList.remove("mode-care", "mode-say", "mode-occasion");
   if (mode === "care") app.classList.add("mode-care");
   if (mode === "say") app.classList.add("mode-say");
 }
@@ -1161,6 +1189,8 @@ function aiBack() {
     updateBreadcrumb();
     renderAiOptions(prev.options, prev.draft);
     showScreen("aiOptions");
+  } else if (occasionMode) {
+    showOccasion(occasionData);
   } else {
     goToSayRoot();
   }
@@ -1179,9 +1209,168 @@ function goToSayRoot() {
   showScreen("options");
 }
 
+/* ---------- FAMILY OCCASIONS ---------- */
+
+function getQueryParam(name) {
+  try { return new URLSearchParams(window.location.search).get(name) || ""; }
+  catch (e) { return ""; }
+}
+
+// Frontend fallback lines (mirrors the backend) for when the occasions fetch
+// fails but we still know who/what from the URL.
+function defaultOccasionCanned(who, what) {
+  const name = who || "you";
+  const o = String(what || "").toLowerCase();
+  if (o.indexOf("anniv") !== -1) return [
+    "Happy anniversary, " + name + "! Congratulations on so many wonderful years together.",
+    "Happy anniversary! I love you both and I am so proud of you.",
+    "Thinking of you both today. Wishing you a very happy anniversary."
+  ];
+  if (o.indexOf("birth") !== -1) return [
+    "Happy birthday, " + name + "! Wishing I could be there to celebrate with you.",
+    "Happy birthday! I love you and I am so proud of the person you are.",
+    "Have a wonderful birthday, " + name + ". You mean the world to me."
+  ];
+  return [
+    "Thinking of you, " + name + ". Sending my love today.",
+    "I love you, " + name + ", and I am thinking of you.",
+    "Wishing you all the best today, " + name + "."
+  ];
+}
+
+// Canned lines go in LEFT / RIGHT (the roomy tall panels) then UP; DOWN is
+// always "say it my own way" (hand off to the Say composer, seeded with the
+// occasion).
+const OCCASION_DIRS = ["left", "right", "up"];
+
+function renderOccasion() {
+  occasionField.innerHTML = "";
+
+  occasionCanned.slice(0, OCCASION_DIRS.length).forEach(function (line, i) {
+    const dir = OCCASION_DIRS[i];
+    const tile = document.createElement("div");
+    tile.className = "tile dir-" + dir;
+    tile.dataset.choose = "occasion-canned";
+    tile.dataset.index = String(i);
+    tile.dataset.dir = dir;
+    tile.innerHTML =
+      '<span class="arrow">' + arrowGlyph(dir) + '</span>' +
+      '<span class="tile-label">' + escapeHtml(line) + '</span>';
+    occasionField.appendChild(tile);
+  });
+
+  const own = document.createElement("div");
+  own.className = "tile dir-down";
+  own.dataset.choose = "occasion-own";
+  own.dataset.dir = "down";
+  own.innerHTML =
+    '<span class="arrow">' + arrowGlyph("down") + '</span>' +
+    '<span class="tile-label">SAY IT MY OWN WAY</span>';
+  occasionField.appendChild(own);
+}
+
+function occasionHeading(occ) {
+  if (occ && occ.who) return occ.who + "’s " + (occ.occasion || "day");
+  return (occ && occ.occasion) ? occ.occasion : "A special day";
+}
+
+function showOccasion(occ) {
+  occasionMode = true;
+  occasionData = occ;
+  const lines = (occ && occ.canned && occ.canned.length)
+    ? occ.canned
+    : defaultOccasionCanned(occ && occ.who, occ && occ.occasion);
+  occasionCanned = lines.slice(0, 3);
+
+  mode = null;
+  nodeStack = [];
+  pathLabels = [];
+  sending = false;
+  sayFromAi = false;
+  currentDraft = "";
+  currentFinalText = "";
+  aiPath = [];
+  aiHistory = [];
+  aiAvoid = [];
+  aiFallbackNode = null;
+
+  app.classList.remove("mode-care", "mode-say");
+  app.classList.add("mode-occasion");
+
+  const heading = occasionHeading(occ);
+  occasionTitle.textContent = heading;
+  breadcrumbEl.textContent = heading;
+  renderOccasion();
+  showScreen("occasion");
+  logEvent("occasion_screen", heading, { id: (occ && occ.id) || "" });
+}
+
+async function initOccasion() {
+  const oid = getQueryParam("occasion");
+  if (!oid) return false;
+
+  const who = getQueryParam("who");
+  const what = getQueryParam("what");
+
+  let occ = null;
+  try {
+    const data = await loadJsonp(MESSAGES_API_URL, { action: "occasions" });
+    if (data && data.ok && Array.isArray(data.occasions)) {
+      occ = data.occasions.filter(function (o) { return o && o.id === oid; })[0] || null;
+    }
+  } catch (e) {}
+
+  if (!occ && (who || what)) {
+    occ = { id: oid, who: who, occasion: what, canned: defaultOccasionCanned(who, what) };
+  }
+
+  if (!occ) return false;
+  showOccasion(occ);
+  return true;
+}
+
+function chooseOccasionCanned(index) {
+  const line = occasionCanned[index];
+  if (line == null) return;
+  currentFinalText = line;
+  sayFromAi = false;
+  mode = "say"; // gives the confirm screen its Say styling; back/over stay occasion
+  app.classList.remove("mode-occasion");
+  app.classList.add("mode-say");
+  sayConfirmText.textContent = "“" + line + "”";
+  logEvent("occasion_canned_chosen", line, { id: occasionData ? occasionData.id : "" });
+  showScreen("sayConfirm");
+}
+
+// "Say it my own way": hand off to the Say composer, seeding the AI with the
+// occasion so its narrowing is about this message. Falls back to the family
+// branch of the static tree if the AI is unreachable.
+function occasionOwnWay() {
+  const occ = occasionData;
+  const who = occ && occ.who ? occ.who : "";
+  const what = occ && occ.occasion ? occ.occasion : "";
+  const seed = "A message for " + (who ? who + "’s " : "") + (what || "this occasion");
+
+  mode = "say";
+  app.classList.remove("mode-occasion");
+  app.classList.add("mode-say");
+  logEvent("occasion_own_way", seed, { id: occ ? occ.id : "" });
+
+  if (ENABLE_AI) {
+    beginAiSay(seed, SAY_TREE.children.left);
+  } else {
+    nodeStack = [SAY_TREE, SAY_TREE.children.left];
+    pathLabels = ["About family"];
+    updateBreadcrumb();
+    renderOptions();
+    showScreen("options");
+  }
+}
+
 /* ---------- FLOW ---------- */
 
 function startMode(m) {
+  occasionMode = false;
   mode = m;
   nodeStack = [m === "care" ? CARE_TREE : SAY_TREE];
   pathLabels = [];
@@ -1259,7 +1448,18 @@ function stepBack() {
     return;
   }
 
+  if (currentScreen === "occasion") {
+    goHome();
+    return;
+  }
+
   if (currentScreen === "sayConfirm") {
+    // A canned occasion line: BACK returns to the occasion's message choices.
+    if (occasionMode && !sayFromAi) {
+      showOccasion(occasionData);
+      return;
+    }
+
     // If the message came from AI, go back to the last AI options round.
     if (sayFromAi) {
       const prev = aiHistory[aiHistory.length - 1];
@@ -1319,6 +1519,7 @@ function stepBack() {
 
 function goToStart() {
   mode = null;
+  occasionMode = false;
   nodeStack = [];
   pathLabels = [];
   sending = false;
@@ -1485,6 +1686,14 @@ document.addEventListener("keydown", function(event) {
     return;
   }
 
+  if (currentScreen === "occasion") {
+    if (dir === "down") { occasionOwnWay(); return; }
+    if (!dir) return;
+    const tile = occasionField.querySelector('.tile[data-dir="' + dir + '"][data-choose="occasion-canned"]');
+    if (tile) chooseOccasionCanned(Number(tile.dataset.index || "0"));
+    return;
+  }
+
   if (currentScreen === "options") {
     if (dir) choose(dir);
     return;
@@ -1501,7 +1710,7 @@ document.addEventListener("keydown", function(event) {
     if (dir === "up") showSayBanner();
     if (dir === "left") handleSay("family");
     if (dir === "right") handleSay("email");
-    if (dir === "down") startMode("say");
+    if (dir === "down") { if (occasionMode) showOccasion(occasionData); else startMode("say"); }
     return;
   }
 
@@ -1549,10 +1758,12 @@ document.addEventListener("click", function(event) {
   if (choose === "start-care") { startMode("care"); return; }
   if (choose === "start-say") { startMode("say"); return; }
   if (choose === "option") { chooseOption(dir); return; }
+  if (choose === "occasion-canned") { chooseOccasionCanned(Number(tile.dataset.index || "0")); return; }
+  if (choose === "occasion-own") { occasionOwnWay(); return; }
   if (choose === "say-show") { showSayBanner(); return; }
   if (choose === "say-send-family") { handleSay("family"); return; }
   if (choose === "say-send-email") { handleSay("email"); return; }
-  if (choose === "say-again") { startMode("say"); return; }
+  if (choose === "say-again") { if (occasionMode) showOccasion(occasionData); else startMode("say"); return; }
   if (choose === "ai-option") { chooseAiOption(Number(tile.dataset.index || "0")); return; }
   if (choose === "ai-other") { refreshOptions(); return; }
   if (choose === "ai-say") { chooseAiSay(); return; }
@@ -1586,6 +1797,10 @@ document.addEventListener("DOMContentLoaded", function() {
   refreshPublicIp().then(() => {
     logEvent("communicator_open", "Talk opened");
   });
+
+  // If we arrived from the Home reminder (?occasion=...), open straight into the
+  // occasion's message choices instead of the normal Care/Say start screen.
+  initOccasion();
 
   window.addEventListener("resize", onViewportResize);
   if (window.visualViewport) {

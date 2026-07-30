@@ -6,6 +6,17 @@ const DAD_MESSAGE_SHEET_NAME = 'FireTVHomeDadMessages';
 // AI call, so the family can add rows any time with no redeploy. Care mode never
 // reads this.
 const PROFILE_SHEET_NAME = 'FireTVHomeProfile';
+// Family occasions (birthdays / anniversaries) that drive the Home-screen
+// reminder. A simple tab: Date | Who | Occasion | Canned. Read fresh on every
+// request, so the family can add dates any time with no redeploy. The optional
+// Canned column holds ready-to-send lines (newline- or pipe-separated); if it is
+// empty the backend supplies sensible defaults.
+const DATES_SHEET_NAME = 'FireTVHomeDates';
+const DATES_HEADERS = ['Date', 'Who', 'Occasion', 'Canned'];
+// Default reminder window: show an occasion from a day before through this many
+// days ahead. Overridable per request with ?lead=NN.
+const OCCASION_LEAD_DAYS = 14;
+const OCCASION_GRACE_DAYS = 1;
 // How many choices deep he must be before Say mode brings in personal profile
 // details. Below this, options stay broad and general so early narrowing is
 // about direction, not specifics. 1 = the first AI screen (right after he picks
@@ -80,6 +91,10 @@ function doGet(e) {
     if (!Array.isArray(avoid)) avoid = [];
     const draft = String(e.parameter.draft || '');
     return output_(narrow_(mode, path, avoid, draft), callback);
+  }
+
+  if (action === 'occasions') {
+    return output_(getOccasions_(e.parameter || {}), callback);
   }
 
   if (action === 'mark_read') {
@@ -859,6 +874,192 @@ function testProfile() {
   const context = getProfileContext_();
   Logger.log(context ? context : '(no profile found — tab missing or empty)');
   return context;
+}
+
+/* ---------- FAMILY OCCASIONS (Home-screen reminder) ---------- */
+
+function getDatesSheet_() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(DATES_SHEET_NAME);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(DATES_SHEET_NAME);
+    sheet.getRange(1, 1, 1, DATES_HEADERS.length).setValues([DATES_HEADERS]);
+    sheet.setFrozenRows(1);
+  }
+
+  return sheet;
+}
+
+// Return the family occasions falling inside the reminder window, soonest first.
+// Each occasion carries its next date, how many days away it is, a human "when"
+// label, how many years (for anniversaries with an origin year), and up to three
+// ready-to-send lines. Never throws to the caller — an empty list on any trouble.
+function getOccasions_(params) {
+  let leadDays = OCCASION_LEAD_DAYS;
+  const leadParam = params && params.lead ? parseInt(params.lead, 10) : NaN;
+  if (!isNaN(leadParam) && leadParam >= 0 && leadParam <= 366) leadDays = leadParam;
+
+  let sheet;
+  try {
+    sheet = getDatesSheet_();
+  } catch (e) {
+    return { ok: true, occasions: [] };
+  }
+
+  const lastRow = sheet.getLastRow();
+  const lastCol = Math.max(sheet.getLastColumn(), DATES_HEADERS.length);
+  if (lastRow < 2) return { ok: true, occasions: [] };
+
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+    .map(function (h) { return String(h || '').trim().toLowerCase(); });
+  let dateCol = headers.indexOf('date');
+  let whoCol = headers.indexOf('who');
+  let occCol = headers.indexOf('occasion');
+  let cannedCol = headers.indexOf('canned');
+  if (dateCol === -1) dateCol = 0;
+  if (whoCol === -1) whoCol = 1;
+  if (occCol === -1) occCol = 2;
+  if (cannedCol === -1) cannedCol = 3;
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  const tz = Session.getScriptTimeZone();
+  const now = new Date();
+  const todayY = Number(Utilities.formatDate(now, tz, 'yyyy'));
+  const todayM = Number(Utilities.formatDate(now, tz, 'MM'));
+  const todayD = Number(Utilities.formatDate(now, tz, 'dd'));
+  const today = new Date(todayY, todayM - 1, todayD);
+
+  const out = [];
+  rows.forEach(function (row) {
+    const parts = parseDateParts_(row[dateCol], tz);
+    if (!parts) return;
+
+    const who = String(row[whoCol] || '').trim();
+    const occ = String(row[occCol] || '').trim();
+    if (!who && !occ) return;
+
+    let occDate = new Date(todayY, parts.month - 1, parts.day);
+    let daysUntil = Math.round((occDate.getTime() - today.getTime()) / 86400000);
+    if (daysUntil < -OCCASION_GRACE_DAYS) {
+      occDate = new Date(todayY + 1, parts.month - 1, parts.day);
+      daysUntil = Math.round((occDate.getTime() - today.getTime()) / 86400000);
+    }
+    if (daysUntil < -OCCASION_GRACE_DAYS || daysUntil > leadDays) return;
+
+    let yearsSince = 0;
+    if (parts.year && parts.year > 1900 && parts.year < occDate.getFullYear()) {
+      yearsSince = occDate.getFullYear() - parts.year;
+    }
+
+    let canned = parseCanned_(row[cannedCol]);
+    if (!canned.length) canned = defaultOccasionCanned_(who, occ, yearsSince);
+
+    out.push({
+      id: makeOccasionId_(who, occ, parts.month, parts.day),
+      who: who,
+      occasion: occ,
+      date: Utilities.formatDate(occDate, tz, 'yyyy-MM-dd'),
+      month: parts.month,
+      day: parts.day,
+      daysUntil: daysUntil,
+      yearsSince: yearsSince,
+      when: humanWhen_(daysUntil, occDate, tz),
+      canned: canned
+    });
+  });
+
+  out.sort(function (a, b) { return a.daysUntil - b.daysUntil; });
+  return { ok: true, occasions: out };
+}
+
+// Accept a real Date cell or common text forms (yyyy-mm-dd, mm/dd/yyyy, mm-dd,
+// "Aug 15"). Returns { year, month, day } (year 0 when none given) or null.
+function parseDateParts_(raw, tz) {
+  if (Object.prototype.toString.call(raw) === '[object Date]' && !isNaN(raw.getTime())) {
+    return {
+      year: Number(Utilities.formatDate(raw, tz, 'yyyy')),
+      month: Number(Utilities.formatDate(raw, tz, 'MM')),
+      day: Number(Utilities.formatDate(raw, tz, 'dd'))
+    };
+  }
+
+  const s = String(raw == null ? '' : raw).trim();
+  if (!s) return null;
+
+  let m = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/);
+  if (m) return validParts_(Number(m[1]), Number(m[2]), Number(m[3]));
+
+  m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/);
+  if (m) return validParts_(Number(m[3]), Number(m[1]), Number(m[2]));
+
+  m = s.match(/^(\d{1,2})[-\/.](\d{1,2})$/);
+  if (m) return validParts_(0, Number(m[1]), Number(m[2]));
+
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return validParts_(d.getFullYear(), d.getMonth() + 1, d.getDate());
+
+  return null;
+}
+
+function validParts_(year, month, day) {
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return { year: year, month: month, day: day };
+}
+
+function parseCanned_(raw) {
+  const s = String(raw == null ? '' : raw).trim();
+  if (!s) return [];
+  return s.split(/\r?\n|\s*\|\s*/)
+    .map(function (x) { return x.trim(); })
+    .filter(function (x) { return x; })
+    .slice(0, 3);
+}
+
+function defaultOccasionCanned_(who, occ, yearsSince) {
+  const name = who || 'you';
+  const o = String(occ || '').toLowerCase();
+  if (o.indexOf('anniv') !== -1) {
+    const yrs = yearsSince ? (yearsSince + ' years') : 'so many wonderful years';
+    return [
+      'Happy anniversary, ' + name + '! Congratulations on ' + yrs + ' together.',
+      'Happy anniversary! I love you both and I am so proud of you.',
+      'Thinking of you both today. Wishing you a very happy anniversary.'
+    ];
+  }
+  if (o.indexOf('birth') !== -1) {
+    return [
+      'Happy birthday, ' + name + '! Wishing I could be there to celebrate with you.',
+      'Happy birthday! I love you and I am so proud of the person you are.',
+      'Have a wonderful birthday, ' + name + '. You mean the world to me.'
+    ];
+  }
+  return [
+    'Thinking of you, ' + name + '. Sending my love today.',
+    'I love you, ' + name + ', and I am thinking of you.',
+    'Wishing you all the best today, ' + name + '.'
+  ];
+}
+
+function humanWhen_(daysUntil, occDate, tz) {
+  if (daysUntil <= 0) return 'Today';
+  if (daysUntil === 1) return 'Tomorrow';
+  if (daysUntil <= 6) return 'This ' + Utilities.formatDate(occDate, tz, 'EEEE');
+  return Utilities.formatDate(occDate, tz, 'EEEE, MMM d');
+}
+
+function makeOccasionId_(who, occ, month, day) {
+  return (String(who) + '-' + String(occ) + '-' + month + '-' + day)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+// Runnable from the Run dropdown: prints the occasions the Home page will see.
+function testOccasions() {
+  const result = getOccasions_({});
+  Logger.log(JSON.stringify(result, null, 2));
+  return result;
 }
 
 /* ---------- AI NARROWING (Anthropic) ---------- */
