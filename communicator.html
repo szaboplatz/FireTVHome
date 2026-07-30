@@ -287,6 +287,24 @@ body {
 #aiOptionsScreen .grid-field { grid-template-rows: 2fr 0.8fr 0.6fr; }
 #optionsScreen .grid-field   { grid-template-rows: 1fr 0.22fr 1fr; }
 
+/* Confirm screen: the message sits in a bounded box on top (its font auto-fits
+   so even a long message stays fully visible), the send options in the grid
+   below — the two regions can't overlap. */
+#sayConfirmScreen .say-panel {
+  position: static;
+  transform: none;
+  width: auto;
+  flex: 1.3 1 auto;
+  min-height: 0;
+  margin: 8px 18px 4px;
+  padding: 12px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+#sayConfirmScreen .grid-field { flex: 1 1 auto; }
+
 .grid-field .tile {
   position: static;
   transform: none;
@@ -376,7 +394,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.9</div>
+    <div class="version-label">Talk v0.10</div>
   </div>
 
   <!-- START -->
@@ -411,12 +429,12 @@ body {
   </section>
 
   <!-- SAY CONFIRM -->
-  <section id="sayConfirmScreen" class="screen">
+  <section id="sayConfirmScreen" class="screen dpad">
     <div class="screen-title">Send this?</div>
     <div class="say-panel">
       <div class="say-panel-quote" id="sayConfirmText"></div>
     </div>
-    <div class="field">
+    <div class="field grid-field">
       <div class="tile dir-left" data-choose="say-send-family">
         <span class="arrow">&#8592;</span>
         <span class="tile-label">SEND TO FAMILY PAGE</span>
@@ -479,7 +497,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.9";
+const PAGE_VERSION = "v0.10";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -764,6 +782,34 @@ function showScreen(name) {
   Object.keys(screens).forEach(key => {
     screens[key].classList.toggle("active", key === name);
   });
+  if (name === "aiOptions" || name === "sayConfirm") {
+    // Wait for the now-visible screen to lay out, then size the message to fit.
+    requestAnimationFrame(fitCurrentScreen);
+  }
+}
+
+// Shrink a composed message's font until it fully fits its bounded, overflow-
+// hidden box, down to a readable floor. The message can't scroll (the remote
+// drives direct selection, so there's no way to steer up into it), so instead
+// of a scrollbar the whole message always stays visible however long it grows.
+function fitText(box, el, maxPx, minPx) {
+  if (!box || !el) return;
+  let size = maxPx;
+  el.style.fontSize = size + "px";
+  let guard = 0;
+  while (size > minPx && box.scrollHeight > box.clientHeight && guard < 80) {
+    size -= 2;
+    el.style.fontSize = size + "px";
+    guard++;
+  }
+}
+
+function fitCurrentScreen() {
+  if (currentScreen === "aiOptions") {
+    fitText(aiDraftText.parentElement, aiDraftText, 44, 22);
+  } else if (currentScreen === "sayConfirm") {
+    fitText(sayConfirmText.parentElement, sayConfirmText, 46, 22);
+  }
 }
 
 function setModeClass() {
@@ -1406,6 +1452,11 @@ function setMeasuredAppHeight() {
   document.documentElement.style.setProperty("--app-height", Math.floor(h) + "px");
 }
 
+function onViewportResize() {
+  setMeasuredAppHeight();
+  requestAnimationFrame(fitCurrentScreen);
+}
+
 /* ---------- INIT ---------- */
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -1416,9 +1467,9 @@ document.addEventListener("DOMContentLoaded", function() {
     logEvent("communicator_open", "Talk opened");
   });
 
-  window.addEventListener("resize", setMeasuredAppHeight);
+  window.addEventListener("resize", onViewportResize);
   if (window.visualViewport) {
-    window.visualViewport.addEventListener("resize", setMeasuredAppHeight);
+    window.visualViewport.addEventListener("resize", onViewportResize);
   }
 });
 </script>
