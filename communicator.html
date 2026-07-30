@@ -440,7 +440,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.15</div>
+    <div class="version-label">Talk v0.16</div>
   </div>
 
   <!-- START -->
@@ -561,7 +561,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.15";
+const PAGE_VERSION = "v0.16";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -722,40 +722,73 @@ const CARE_TREE = {
   }
 };
 
+/* Curated "Something to say" tree. Most of what he starts is a QUESTION, so the
+   tree leads with asking. Two kinds of leaves:
+   - Plain leaves ({ label }) are ready statements -> straight to the confirm
+     screen, instant and offline.
+   - Seed leaves ({ label, seed, say }) hand to the AI, which personalises the
+     wording from his profile. `seed` is the instruction sent to the AI; `say`
+     is the plain fallback used verbatim if the AI can't be reached. */
 const SAY_TREE = {
   children: {
     left: {
-      label: "About family",
+      label: "Ask how someone is",
       children: {
-        left: { label: "I love you" },
-        up: { label: "I'm proud of you" },
-        right: { label: "I'm thinking about you" },
-        down: { label: "I miss doing things together" }
+        left: { label: "Betty (Mom)", seed: "Ask his wife Betty (Mom) how she is doing", say: "How are you doing, Mom? I think about you." },
+        up: {
+          label: "A grandchild",
+          children: {
+            left: { label: "Patrick", seed: "Ask his grandson Patrick how he is doing", say: "How are you doing, Patrick? I'm thinking of you." },
+            up: { label: "Teagan", seed: "Ask his granddaughter Teagan how she is doing", say: "How are you doing, Teagan? I'm so proud of you." },
+            right: { label: "Lucy", seed: "Ask his granddaughter Lucy how she is doing", say: "How are you doing, Lucy? PomPom loves you." },
+            down: { label: "Jamie", seed: "Ask his granddaughter Jamie how she is doing", say: "How are you doing, Jamie? PomPom loves you." }
+          }
+        },
+        right: {
+          label: "One of my kids",
+          children: {
+            left: { label: "Michael", seed: "Ask his son Michael how he is doing", say: "How are you doing, Michael? I'm thinking of you." },
+            up: { label: "Dan", seed: "Ask his son Dan how he is doing", say: "How are you doing, Dan? I'm thinking of you." },
+            right: { label: "Sharon", seed: "Ask his daughter Sharon how she is doing", say: "How are you doing, Sharon? I'm thinking of you." },
+            down: { label: "Someone else", seed: "Help him ask how someone is — offer the people and friends you know from his profile, and let him pick", say: "How are you doing? I'm thinking of you." }
+          }
+        },
+        down: { label: "Everyone / the family", seed: "Ask how the whole family is doing", say: "How is everyone doing? I think about you all." }
       }
     },
     up: {
-      label: "A feeling to share",
+      label: "Tell them something",
       children: {
-        left: { label: "I'm scared right now" },
-        up: { label: "I'm frustrated with all this" },
-        right: { label: "I'm grateful for everyone here" },
-        down: { label: "I'm tired of fighting this" }
+        left: { label: "I love you" },
+        up: { label: "I'm proud of you" },
+        right: { label: "I'm thinking of you" },
+        down: { label: "I miss you" }
       }
     },
     right: {
-      label: "Something practical",
+      label: "Ask about something",
       children: {
-        left: { label: "Can you check on the house or bills" },
-        up: { label: "I want to know what the doctors said" },
-        right: { label: "I want a specific visitor" },
-        down: { label: "Something needs to be taken care of" }
+        left: { label: "The house and home", seed: "Ask how things are going at the house", say: "How are things at the house?" },
+        up: { label: "My money / investments", seed: "Ask how his finances and investments are doing, including his IBM and Tyler Technologies stock", say: "How are my investments doing?" },
+        right: { label: "What the doctors say", seed: "Ask what the doctors are saying about his condition", say: "What are the doctors saying about me?" },
+        down: { label: "Catch me up — just talk to me", seed: "Ask whoever he is with to just talk to him — a story, their news, anything going on — and catch him up", say: "Tell me something — a story, your news, anything at all. Catch me up." }
       }
     },
     down: {
-      label: "A memory or story",
+      label: "What's on my mind",
       children: {
-        left: { label: "I've been thinking about an old memory" },
-        right: { label: "I want to tell a story from before" }
+        left: {
+          label: "How I'm feeling",
+          children: {
+            left: { label: "I'm scared" },
+            up: { label: "I'm frustrated" },
+            right: { label: "I'm grateful for you all" },
+            down: { label: "I'm tired" }
+          }
+        },
+        up: { label: "My care and what's ahead", seed: "Help him bring up his medical care and his thoughts about the future, in his own plain words", say: "I want to talk about my care and what's ahead." },
+        right: { label: "A memory I want to share", seed: "Help him share a memory or a story from his life", say: "I've been thinking about a memory I want to share." },
+        down: { label: "Let me say it my own way", seed: "Help him say whatever is on his mind, in his own words", say: "I have something I want to say." }
       }
     }
   }
@@ -779,6 +812,7 @@ let narrowSeq = 0;           // guards against a stale response landing after BA
 let sayFromAi = false;       // did the current sayConfirm message come from AI?
 let currentDraft = "";       // the running AI draft he could send right now
 let aiAvoid = [];            // options already shown at this level (for "other options")
+let seedFallbackText = "";   // plain phrase to fall back on if a seed leaf's AI call fails
 
 // Family-occasion entry (reached from the Home reminder via ?occasion=...).
 let occasionMode = false;    // did he arrive here for a family occasion?
@@ -1079,6 +1113,15 @@ async function runNarrow() {
       showScreen("options");
       return;
     }
+    // A seed leaf that couldn't reach the AI: use its plain fallback phrase so
+    // he still lands on a sendable message instead of an error screen.
+    if (!aiHistory.length && seedFallbackText) {
+      currentFinalText = seedFallbackText;
+      sayFromAi = false;
+      sayConfirmText.textContent = "“" + currentFinalText + "”";
+      showScreen("sayConfirm");
+      return;
+    }
     showScreen("aiError");
     return;
   }
@@ -1376,7 +1419,7 @@ function occasionOwnWay() {
     beginAiSay(seed, SAY_TREE.children.left);
   } else {
     nodeStack = [SAY_TREE, SAY_TREE.children.left];
-    pathLabels = ["About family"];
+    pathLabels = [SAY_TREE.children.left.label];
     updateBreadcrumb();
     renderOptions();
     showScreen("options");
@@ -1397,6 +1440,7 @@ function startMode(m) {
   sayFromAi = false;
   currentDraft = "";
   aiAvoid = [];
+  seedFallbackText = "";
   narrowSeq++;
   setModeClass();
   updateBreadcrumb();
@@ -1409,31 +1453,42 @@ function choose(dir) {
   const node = currentNode();
   if (!node || !node.children || !node.children[dir]) return;
 
-  // In Say mode, once he picks a top-level category, hand off to AI narrowing.
-  // Care mode and the static fallback keep walking the local tree below.
-  if (mode === "say" && ENABLE_AI && nodeStack.length === 1) {
-    beginAiSay(node.children[dir].label, node.children[dir]);
-    return;
-  }
-
   const next = node.children[dir];
   nodeStack.push(next);
   pathLabels.push(next.label);
   updateBreadcrumb();
 
+  // Branch node -> keep walking the tree (Care and Say both walk locally now).
   if (next.children) {
     renderOptions();
     showScreen("options");
     return;
   }
 
-  // Leaf reached -> final phrase.
+  // Say-mode seed leaf: hand to the AI to personalise from his profile. If the
+  // AI can't be reached, `say` is used verbatim (see runNarrow's fallback).
+  if (mode === "say" && next.seed) {
+    seedFallbackText = next.say || next.label;
+    if (ENABLE_AI) {
+      beginAiSay(next.seed, null);
+    } else {
+      currentFinalText = seedFallbackText;
+      sayFromAi = false;
+      sayConfirmText.textContent = "“" + currentFinalText + "”";
+      logEvent("say_phrase_drafted", currentFinalText);
+      showScreen("sayConfirm");
+    }
+    return;
+  }
+
+  // Plain leaf -> ready phrase.
   currentFinalText = next.label;
   if (mode === "care") {
     careFinalText.textContent = currentFinalText;
     logEvent("care_phrase_shown", currentFinalText);
     showScreen("careFinal");
   } else {
+    sayFromAi = false;
     sayConfirmText.textContent = "“" + currentFinalText + "”";
     logEvent("say_phrase_drafted", currentFinalText);
     showScreen("sayConfirm");
@@ -1536,6 +1591,7 @@ function stepBack() {
 function goToStart() {
   mode = null;
   occasionMode = false;
+  seedFallbackText = "";
   nodeStack = [];
   pathLabels = [];
   sending = false;
