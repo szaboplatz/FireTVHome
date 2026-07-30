@@ -394,7 +394,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.10</div>
+    <div class="version-label">Talk v0.11</div>
   </div>
 
   <!-- START -->
@@ -497,7 +497,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.10";
+const PAGE_VERSION = "v0.11";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -1353,6 +1353,27 @@ function isBackKey(key) {
   return key === "Escape" || key === "Backspace";
 }
 
+// Fire TV / Silk delivers the remote BACK button as browser history-back, not a
+// catchable key event, so a naive page just leaves to the Home screen. Trap it:
+// keep a dummy history entry armed, and on each popstate step back INSIDE the
+// app (re-arming), only leaving to Home from the Talk start screen (stepBack()
+// calls goHome there). A short debounce ignores a duplicate BACK on any device
+// that fires both a keydown and a popstate for one press.
+let lastBackAt = 0;
+function doBack() {
+  const now = Date.now();
+  if (now - lastBackAt < 350) return;
+  lastBackAt = now;
+  stepBack();
+}
+function primeBackTrap() {
+  try { history.pushState({ talk: true }, ""); } catch (e) {}
+}
+window.addEventListener("popstate", function() {
+  primeBackTrap();  // re-arm: the armed entry was just consumed by this BACK
+  doBack();
+});
+
 document.addEventListener("keydown", function(event) {
   const key = event.key;
 
@@ -1362,7 +1383,7 @@ document.addEventListener("keydown", function(event) {
   }
 
   if (isBackKey(key)) {
-    stepBack();
+    doBack();
     return;
   }
 
@@ -1462,6 +1483,7 @@ function onViewportResize() {
 document.addEventListener("DOMContentLoaded", function() {
   setMeasuredAppHeight();
   window.scrollTo(0, 0);
+  primeBackTrap();   // arm the hardware-BACK trap (see doBack / popstate above)
   updateBreadcrumb();
   refreshPublicIp().then(() => {
     logEvent("communicator_open", "Talk opened");
