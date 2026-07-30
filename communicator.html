@@ -160,8 +160,13 @@ body {
 /* Colour the tiles by the active mode so the two modes never blur together. */
 /* Care tiles are solid coral (like the nurse banner) so they read as buttons,
    not as the glowing "selected" outline the Fire TV home screen uses. */
-.mode-care .tile { background: var(--care); border-color: var(--care); box-shadow: none; color: var(--ink); }
-.mode-care .tile .arrow { color: rgba(11, 14, 20, 0.72); }
+.mode-care .tile {
+  background: linear-gradient(158deg, #f4906f 0%, #e8735a 52%, #d15a44 100%);
+  border: 4px solid #bf513c;
+  box-shadow: 0 7px 15px -6px rgba(0, 0, 0, 0.6), inset 0 3px 0 rgba(255, 255, 255, 0.3);
+  color: var(--ink);
+}
+.mode-care .tile .arrow { color: rgba(11, 14, 20, 0.78); }
 /* Say tiles keep the dark tile + teal edge (distinct from home's yellow focus). */
 .mode-say .tile { border-color: var(--say); box-shadow: 0 0 30px -8px var(--say); }
 .mode-say .tile .arrow { color: var(--say); }
@@ -242,78 +247,86 @@ body {
 .say-status.sent { color: #66ff9e; }
 .say-status.error { color: #ff8888; }
 
-/* AI dynamic-narrowing screen. Laid out as a flex column (draft / d-pad /
-   hint) with the tiles on a 3x3 grid, so nothing overlaps no matter how short
-   the browser viewport gets — Silk's bottom toolbar eats real height on the TV.
-   LEFT and RIGHT are tall side panels; UP / SAY THIS / DOWN stack in the
-   middle column. */
-#aiOptionsScreen.active {
+/* ---------- Shared d-pad grid for option screens ----------
+   Both the Care/static-narrowing screen and the AI narrowing screen lay out as
+   a flex column with the tiles on a 3x3 grid, so tiles never overlap no matter
+   how short the viewport gets (Silk's toolbar eats real height on the TV).
+   LEFT and RIGHT are tall side panels that carry the roomiest text; the center
+   column stacks UP / (SAY THIS) / DOWN with a short middle row so UP and DOWN
+   get real vertical breathing room. */
+.screen.dpad.active {
   display: flex;
   flex-direction: column;
 }
-
-.ai-draft-panel {
+.screen.dpad > .screen-title {
   position: static;
   flex: 0 0 auto;
-  margin: 8px 14px 0;
-  max-height: 40%;
-  overflow: hidden;
-  background: #151a24;
-  border: 3px solid var(--say);
-  border-radius: 14px;
-  padding: 6px 20px 10px;
-  text-align: center;
+  margin: 8px 0 0;
+}
+.screen.dpad > .screen-hint {
+  position: static;
+  flex: 0 0 auto;
+  margin: 2px 0 10px;
 }
 
-.ai-draft-label {
-  color: var(--say);
-  font-weight: 900;
-  font-size: 18px;
-  letter-spacing: 1px;
-  display: block;
-  margin-bottom: 2px;
-}
-
-.ai-draft-text {
-  font-size: 36px;
-  line-height: 1.16;
-  font-weight: 800;
-}
-
-.field.ai-field {
+.grid-field {
   position: static;
   inset: auto;
   flex: 1 1 auto;
   min-height: 0;
-  margin: 12px;
+  margin: 10px 14px;
   display: grid;
-  grid-template-columns: 1fr 1.12fr 1fr;
-  grid-template-rows: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1.1fr 1fr;
+  grid-template-rows: 1.3fr 0.8fr 1.3fr;
   gap: 12px 16px;
 }
 
-.ai-field .tile {
+.grid-field .tile {
   position: static;
   transform: none;
   width: auto;
   min-height: 0;
   margin: 0;
-  padding: 8px 14px;
+  padding: 6px 16px;
   gap: 4px;
   overflow: hidden;
 }
 
-.ai-field .tile.dir-left  { grid-column: 1; grid-row: 1 / 4; }
-.ai-field .tile.dir-right { grid-column: 3; grid-row: 1 / 4; }
-.ai-field .tile.dir-up    { grid-column: 2; grid-row: 1; }
-.ai-field .tile.dir-down  { grid-column: 2; grid-row: 3; }
+.grid-field .tile.dir-left  { grid-column: 1; grid-row: 1 / 4; }
+.grid-field .tile.dir-right { grid-column: 3; grid-row: 1 / 4; }
+.grid-field .tile.dir-up    { grid-column: 2; grid-row: 1; }
+.grid-field .tile.dir-down  { grid-column: 2; grid-row: 3; }
 
-.ai-field .tile .arrow { font-size: 26px; }
-.ai-field .tile .tile-label { font-size: 32px; line-height: 1.08; }
+/* Big, tile-filling text; the tall LEFT/RIGHT panels carry the largest. */
+.grid-field .tile .arrow { font-size: 24px; }
+.grid-field .tile .tile-label { font-size: 36px; line-height: 1.06; }
+.grid-field .tile.dir-left .tile-label,
+.grid-field .tile.dir-right .tile-label { font-size: 42px; }
 
-.ai-center {
+/* ---------- AI narrowing screen extras ---------- */
+/* Running draft sits at the very top: no label (its position says what it is),
+   no border, minimal padding — every pixel goes to readable text. */
+.ai-draft-panel {
   position: static;
-  transform: none;
+  flex: 0 0 auto;
+  margin: 6px 18px 0;
+  max-height: 40%;
+  overflow: hidden;
+  background: transparent;
+  border: none;
+  padding: 2px 6px;
+  text-align: center;
+}
+.ai-draft-label { display: none; }
+.ai-draft-text {
+  font-size: 44px;
+  line-height: 1.1;
+  font-weight: 800;
+  color: #eaf7ff;
+}
+
+/* Center "SAY THIS": compact (short middle row), no sub-label. */
+.ai-center {
   grid-column: 2;
   grid-row: 2;
   width: auto;
@@ -323,43 +336,29 @@ body {
   border: 5px solid #00bcd4;
   border-radius: 16px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 8px;
+  padding: 6px 10px;
   box-shadow: 0 0 26px -8px #00bcd4;
 }
-
 .ai-center-main {
   font-size: 34px;
   font-weight: 900;
   color: #6df3ff;
-  line-height: 1.02;
+  line-height: 1.0;
 }
 
-.ai-center-sub {
-  font-size: 18px;
-  color: #a9eef5;
-  margin-top: 4px;
-}
-
-/* "OTHER OPTIONS" tile reads as a utility, not one of the choices. */
-.ai-field .tile.ai-other-tile {
+/* "OTHER OPTIONS" reads as a utility, not one of the choices. */
+.grid-field .tile.ai-other-tile {
   border-color: #7c8598;
   box-shadow: none;
   background: #12151c;
 }
-
-.ai-field .tile.ai-other-tile .arrow,
-.ai-field .tile.ai-other-tile .tile-label {
+.grid-field .tile.ai-other-tile .arrow,
+.grid-field .tile.ai-other-tile .tile-label {
   color: #c7d0dc;
-}
-
-#aiOptionsScreen .screen-hint {
-  position: static;
-  flex: 0 0 auto;
-  margin: 2px 0 10px;
+  font-size: 30px;
 }
 </style>
 </head>
@@ -368,7 +367,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.7</div>
+    <div class="version-label">Talk v0.8</div>
   </div>
 
   <!-- START -->
@@ -388,9 +387,9 @@ body {
   </section>
 
   <!-- OPTIONS (narrowing rounds) -->
-  <section id="optionsScreen" class="screen">
+  <section id="optionsScreen" class="screen dpad">
     <div class="screen-title" id="optionsTitle"></div>
-    <div class="field" id="optionsField"></div>
+    <div class="field grid-field" id="optionsField"></div>
     <div class="screen-hint">Press the direction of your choice. Press BACK to go back one step.</div>
   </section>
 
@@ -438,12 +437,11 @@ body {
   </section>
 
   <!-- AI OPTIONS (dynamic narrowing rounds) -->
-  <section id="aiOptionsScreen" class="screen">
+  <section id="aiOptionsScreen" class="screen dpad">
     <div class="ai-draft-panel">
-      <span class="ai-draft-label">YOU'D SAY:</span>
       <span class="ai-draft-text" id="aiDraftText"></span>
     </div>
-    <div class="field ai-field" id="aiOptionsField"></div>
+    <div class="field grid-field" id="aiOptionsField"></div>
     <div class="screen-hint">LEFT / UP / RIGHT go deeper &middot; DOWN for other options &middot; OK (center) sends &middot; BACK goes back</div>
   </section>
 
@@ -472,7 +470,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.7";
+const PAGE_VERSION = "v0.8";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -816,7 +814,10 @@ function escapeHtml(value) {
 
 // Options fill these directions; DOWN is reserved for "OTHER OPTIONS" and the
 // center OK button is "SAY THIS".
-const AI_OPTION_DIRS = ["left", "up", "right"];
+// LEFT and RIGHT are the tall, roomy panels, so the primary options go there
+// first; the third option takes the (shorter) UP slot. DOWN stays "OTHER
+// OPTIONS", center OK stays "SAY THIS".
+const AI_OPTION_DIRS = ["left", "right", "up"];
 
 async function callNarrow(path, avoid, draft) {
   const formData = new URLSearchParams();
@@ -872,8 +873,7 @@ function renderAiOptions(options, draft) {
   center.className = "ai-center";
   center.dataset.choose = "ai-say";
   center.innerHTML =
-    '<span class="ai-center-main">SAY THIS</span>' +
-    '<span class="ai-center-sub">press OK</span>';
+    '<span class="ai-center-main">SAY THIS</span>';
   aiOptionsField.appendChild(center);
 }
 
