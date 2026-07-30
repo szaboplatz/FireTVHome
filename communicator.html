@@ -274,12 +274,18 @@ body {
   inset: auto;
   flex: 1 1 auto;
   min-height: 0;
-  margin: 10px 14px;
+  margin: 8px 14px;
   display: grid;
   grid-template-columns: 1fr 1.1fr 1fr;
   grid-template-rows: 1.3fr 0.8fr 1.3fr;
-  gap: 12px 16px;
+  gap: 8px 14px;
 }
+
+/* Center-column row weights differ by screen. On the AI screen UP is a real
+   choice, so it gets most of the height while SAY THIS and OTHER OPTIONS stay
+   short; Care keeps UP and DOWN balanced with a thin empty middle row. */
+#aiOptionsScreen .grid-field { grid-template-rows: 2fr 0.8fr 0.6fr; }
+#optionsScreen .grid-field   { grid-template-rows: 1fr 0.22fr 1fr; }
 
 .grid-field .tile {
   position: static;
@@ -302,6 +308,8 @@ body {
 .grid-field .tile .tile-label { font-size: 36px; line-height: 1.06; }
 .grid-field .tile.dir-left .tile-label,
 .grid-field .tile.dir-right .tile-label { font-size: 42px; }
+.grid-field .tile.dir-up .tile-label,
+.grid-field .tile.dir-down .tile-label { font-size: 40px; }
 
 /* ---------- AI narrowing screen extras ---------- */
 /* Running draft sits at the very top: no label (its position says what it is),
@@ -339,26 +347,27 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 6px 10px;
+  padding: 2px 10px;
   box-shadow: 0 0 26px -8px #00bcd4;
 }
 .ai-center-main {
-  font-size: 34px;
+  font-size: 38px;
   font-weight: 900;
   color: #6df3ff;
   line-height: 1.0;
 }
 
-/* "OTHER OPTIONS" reads as a utility, not one of the choices. */
+/* "OTHER OPTIONS" reads as a utility, not one of the choices — kept short and
+   padding-free (no arrow, added in the markup) so UP gets the room. */
 .grid-field .tile.ai-other-tile {
-  border-color: #7c8598;
+  border: 3px solid #7c8598;
   box-shadow: none;
   background: #12151c;
+  padding: 2px 14px;
 }
-.grid-field .tile.ai-other-tile .arrow,
 .grid-field .tile.ai-other-tile .tile-label {
   color: #c7d0dc;
-  font-size: 30px;
+  font-size: 32px;
 }
 </style>
 </head>
@@ -367,7 +376,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.8</div>
+    <div class="version-label">Talk v0.9</div>
   </div>
 
   <!-- START -->
@@ -470,7 +479,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.8";
+const PAGE_VERSION = "v0.9";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -864,7 +873,6 @@ function renderAiOptions(options, draft) {
   other.dataset.choose = "ai-other";
   other.dataset.dir = "down";
   other.innerHTML =
-    '<span class="arrow">' + arrowGlyph("down") + '</span>' +
     '<span class="tile-label">OTHER OPTIONS</span>';
   aiOptionsField.appendChild(other);
 
