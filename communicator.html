@@ -158,8 +158,11 @@ body {
 .tile.dir-right { right: 3%; top: 50%; transform: translateY(-50%); }
 
 /* Colour the tiles by the active mode so the two modes never blur together. */
-.mode-care .tile { border-color: var(--care); box-shadow: 0 0 30px -8px var(--care); }
-.mode-care .tile .arrow { color: var(--care); }
+/* Care tiles are solid coral (like the nurse banner) so they read as buttons,
+   not as the glowing "selected" outline the Fire TV home screen uses. */
+.mode-care .tile { background: var(--care); border-color: var(--care); box-shadow: none; color: var(--ink); }
+.mode-care .tile .arrow { color: rgba(11, 14, 20, 0.72); }
+/* Say tiles keep the dark tile + teal edge (distinct from home's yellow focus). */
 .mode-say .tile { border-color: var(--say); box-shadow: 0 0 30px -8px var(--say); }
 .mode-say .tile .arrow { color: var(--say); }
 
@@ -239,57 +242,83 @@ body {
 .say-status.sent { color: #66ff9e; }
 .say-status.error { color: #ff8888; }
 
-/* AI dynamic-narrowing screen: running draft on top, 4 option tiles around a
-   center "SAY THIS" tile that maps to the remote's center OK button. */
+/* AI dynamic-narrowing screen. Laid out as a flex column (draft / d-pad /
+   hint) with the tiles on a 3x3 grid, so nothing overlaps no matter how short
+   the browser viewport gets — Silk's bottom toolbar eats real height on the TV.
+   LEFT and RIGHT are tall side panels; UP / SAY THIS / DOWN stack in the
+   middle column. */
+#aiOptionsScreen.active {
+  display: flex;
+  flex-direction: column;
+}
+
 .ai-draft-panel {
-  position: absolute;
-  top: 12px;
-  left: 20px;
-  right: 20px;
-  max-height: 24%;
+  position: static;
+  flex: 0 0 auto;
+  margin: 8px 14px 0;
+  max-height: 40%;
   overflow: hidden;
   background: #151a24;
   border: 3px solid var(--say);
   border-radius: 14px;
-  padding: 12px 18px;
+  padding: 6px 20px 10px;
   text-align: center;
 }
 
 .ai-draft-label {
   color: var(--say);
   font-weight: 900;
-  font-size: 20px;
+  font-size: 18px;
+  letter-spacing: 1px;
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .ai-draft-text {
-  font-size: 30px;
-  line-height: 1.22;
+  font-size: 36px;
+  line-height: 1.16;
   font-weight: 800;
 }
 
 .field.ai-field {
-  top: 27%;
+  position: static;
+  inset: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1.12fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  gap: 12px 16px;
 }
 
 .ai-field .tile {
-  width: 28%;
-  min-height: 15%;
-  padding: 12px 12px;
-  gap: 6px;
+  position: static;
+  transform: none;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 8px 14px;
+  gap: 4px;
+  overflow: hidden;
 }
 
-.ai-field .tile .arrow { font-size: 30px; }
-.ai-field .tile .tile-label { font-size: 26px; }
+.ai-field .tile.dir-left  { grid-column: 1; grid-row: 1 / 4; }
+.ai-field .tile.dir-right { grid-column: 3; grid-row: 1 / 4; }
+.ai-field .tile.dir-up    { grid-column: 2; grid-row: 1; }
+.ai-field .tile.dir-down  { grid-column: 2; grid-row: 3; }
+
+.ai-field .tile .arrow { font-size: 26px; }
+.ai-field .tile .tile-label { font-size: 32px; line-height: 1.08; }
 
 .ai-center {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 30%;
-  min-height: 15%;
+  position: static;
+  transform: none;
+  grid-column: 2;
+  grid-row: 2;
+  width: auto;
+  min-height: 0;
+  margin: 0;
   background: #00323a;
   border: 5px solid #00bcd4;
   border-radius: 16px;
@@ -298,21 +327,21 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 10px;
-  box-shadow: 0 0 30px -6px #00bcd4;
+  padding: 8px;
+  box-shadow: 0 0 26px -8px #00bcd4;
 }
 
 .ai-center-main {
-  font-size: 30px;
+  font-size: 34px;
   font-weight: 900;
   color: #6df3ff;
-  line-height: 1.05;
+  line-height: 1.02;
 }
 
 .ai-center-sub {
   font-size: 18px;
   color: #a9eef5;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 /* "OTHER OPTIONS" tile reads as a utility, not one of the choices. */
@@ -326,6 +355,12 @@ body {
 .ai-field .tile.ai-other-tile .tile-label {
   color: #c7d0dc;
 }
+
+#aiOptionsScreen .screen-hint {
+  position: static;
+  flex: 0 0 auto;
+  margin: 2px 0 10px;
+}
 </style>
 </head>
 
@@ -333,7 +368,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.6</div>
+    <div class="version-label">Talk v0.7</div>
   </div>
 
   <!-- START -->
@@ -437,7 +472,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.6";
+const PAGE_VERSION = "v0.7";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
