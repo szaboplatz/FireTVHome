@@ -4,7 +4,7 @@
 //  app returns at  <web-app URL>?action=version  — so you can confirm the TV is
 //  running this exact version. Bump it on every deploy-worthy change.
 // ============================================================================
-const BACKEND_VERSION = '2026-07-31-p15 (email-auth test helper; log dad_email events)';
+const BACKEND_VERSION = '2026-07-31-p16 (testEmail sends to a real contact)';
 // ============================================================================
 
 const SHEET_NAME = 'FireTVHomeMessages';
@@ -1223,14 +1223,21 @@ function testOccasions() {
   return result;
 }
 
-// Run this ONCE from the editor (Run > testEmail) after adding the email
-// feature. Sending mail needs a permission the earlier deploys never had, so
-// the first run pops Google's consent screen — approve "Send email as you".
-// A test note then lands in your own inbox, proving the send works. If it
-// throws instead, the error names exactly what's still missing.
+// Run this from the editor (Run > testEmail) to prove the send actually works.
+// It sends a note to a REAL address — your own Contacts row first (Dan), then
+// Betty's — because the fallback is intentionally empty (no CC on real
+// messages). If the note lands in that inbox, sending works end to end. If it
+// throws, the error names exactly what's wrong. (If running it ever pops a
+// Google consent screen, approve "Send email as you" — but if it doesn't, the
+// permission is already granted.)
 function testEmail() {
-  const to = fallbackEmail_();
-  if (!to) { Logger.log('No fallback email available'); return { ok: false, error: 'no address' }; }
+  const to = firstAddress_(getContactEmail_('Dan'))
+          || firstAddress_(getContactEmail_('Betty'))
+          || firstAddress_(fallbackEmail_());
+  if (!to) {
+    Logger.log('No address to test with — add a Dan or Betty row (with an email) to the Contacts tab.');
+    return { ok: false, error: 'no address' };
+  }
   MailApp.sendEmail(
     to,
     'Fire TV email test',
@@ -1238,6 +1245,11 @@ function testEmail() {
   );
   Logger.log('Test email sent to ' + to);
   return { ok: true, to: to };
+}
+
+// First address from a cell that may hold several (comma/semicolon separated).
+function firstAddress_(s) {
+  return String(s || '').replace(/;/g, ',').split(',')[0].trim();
 }
 
 /* ---------- AI NARROWING (Anthropic) ---------- */
