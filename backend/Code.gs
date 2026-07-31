@@ -834,8 +834,10 @@ function getProfileContext_() {
 
   let block =
     'TRUE FACTS ABOUT THIS MAN, HIS FAMILY, AND HIS VOICE.\n' +
-    'Use these real details to make the options and the message specific and personal, ' +
-    'and to make it sound like him. Prefer real names, places, and things from this list ' +
+    'Use these real details to offer specific, personal OPTIONS and to word things the way ' +
+    'he would. They are background, NOT choices he has made: do not weave these facts into ' +
+    'the draft on your own - a fact belongs in the message only once HE has picked it as an ' +
+    'option. Prefer real names, places, and things from this list ' +
     'over generic ones. NEVER invent a person, relationship, place, event, or detail that ' +
     'is not listed here, and never state anything about his current health or situation ' +
     'unless it appears here. If you are unsure, keep that part general rather than guessing.\n' +
@@ -1125,18 +1127,35 @@ function narrow_(mode, path, avoid, draft) {
     'VERY short (even a few ' +
     'words) and let it grow ONLY when a choice adds something. It must read cleanly with ' +
     'no placeholders, blanks, or brackets like "[activity]"; if a detail has not been ' +
-    'chosen yet, just leave it out rather than guessing.\n' +
+    'chosen yet, just leave it out rather than guessing. The personal facts you are given ' +
+    'are BACKGROUND - to help you offer good, specific options and to word things the way ' +
+    'he would - NOT choices he has made. Never put a specific fact from them (a person, a ' +
+    'stock, a place, an amount, an event) into the draft on your own; such a fact belongs ' +
+    'in the message only once he has actually picked it as an option. On the first step the ' +
+    'draft is just a plain, general version of his intent (for example "How are my finances ' +
+    'doing?" - not a breakdown of which stocks he owns).\n' +
+    '  NATURAL WORDING: each round, REWRITE the whole draft so it reads as one clean, ' +
+    'natural sentence (or two) in his plain voice, with a newly chosen detail folded ' +
+    'smoothly in - never tacked on as a separate clause or an explanatory aside. A question ' +
+    'stays a single clean question: if he is asking about particular stocks, write "How are ' +
+    'my IBM and Tyler stocks doing?", NOT "How are my finances doing? Mostly IBM stock, but ' +
+    'I also have Tyler stock." Rewording for natural flow is expected and good; just never ' +
+    'drop meaning he has chosen or add meaning he has not.\n' +
     '- options: up to 3 next choices (2 to 6 words each). Each must be a genuinely ' +
     'DIFFERENT direction the message could go next - clearly distinct from one another ' +
     'AND from anything already shown - so that picking one truly narrows toward a single ' +
     'message. Never offer three rewordings of the same idea. Keep them concrete and easy ' +
-    'to read on a TV.\n\n' +
+    'to read on a TV. Never offer an option that just means finish or send (like "Send this ' +
+    'as is", "That is all", or "Nothing to add") - he always has a separate SAY THIS button ' +
+    'to send whenever he wants, so every option must ADD something or open a new direction.\n\n' +
     'Move him toward a complete, sendable message quickly and sensibly. Each round must ' +
     'follow naturally from his LAST choice and stay on that thread - never wander to an ' +
-    'unrelated topic. Keep what he has already built: a new choice adds to or refines the ' +
-    'message, it does not erase earlier parts, unless he explicitly chose to change or ' +
-    'shorten it. He can send now or keep going deeper at any time, so do not pad - keep ' +
-    'the message tight and honest to his actual choices.\n\n' +
+    'unrelated topic. Keep the MEANING he has already built: a new choice adds to or refines ' +
+    'the message and never drops what he has chosen, unless he explicitly chose to change or ' +
+    'shorten it - but you should freely reword the whole draft so it stays natural (keeping ' +
+    'the meaning is the rule, not keeping the exact earlier words). He can send now or keep ' +
+    'going deeper at any time, so do not pad - keep the message tight and honest to his ' +
+    'actual choices.\n\n' +
     'PACING - broad to specific. On his first choice or two, keep the options broad and ' +
     'structural (the general kind of thing he might mean), with no specific personal ' +
     'names, places, or private facts, and keep the draft correspondingly short and ' +
