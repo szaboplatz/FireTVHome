@@ -448,7 +448,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.26</div>
+    <div class="version-label">Talk v0.27</div>
   </div>
 
   <!-- START -->
@@ -569,7 +569,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.26";
+const PAGE_VERSION = "v0.27";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -1152,7 +1152,7 @@ async function runNarrow() {
   if (seq !== narrowSeq) return;
   aiBusy = false;
 
-  const options = (result.options || []).filter(Boolean).slice(0, 3);
+  const options = stripMetaOptions(result.options || []).slice(0, 3);
   const draft = result.draft || result.sentence || ""; // tolerate the older backend shape
 
   // He can always send the draft, so a round with a draft but no options is fine.
@@ -1179,6 +1179,40 @@ function normalizeOption(s) {
     .replace(/[\s ]+/g, " ")
     .replace(/[.!?,;:]+$/, "")
     .trim();
+}
+
+// The model keeps offering "meta" options that are instructions about the
+// message (send it, start over, edit it, pick a recipient) instead of content -
+// and they do nothing here, since SAY THIS / OTHER OPTIONS / BACK are permanent
+// buttons. The prompt tells it not to, but it does anyway, so we strip them
+// deterministically before they are ever shown. Content options ("Send my love
+// to the kids") are preserved by the negative look-ahead on the first pattern.
+const META_OPTION_PATTERNS = [
+  /^\s*send\b(?!\s+(my|her|his|their|your|our)\b)/i,   // "Send this now", "Send now" (not "Send my love")
+  /\bsend (this|it|now|the message|a message)\b/i,
+  /\band send\b/i,
+  /\bstop here\b/i,
+  /\bkeep it as is\b/i,
+  /\b(start over|start again|start a new|a new message|never mind)\b/i,
+  /\bnothing (more|else|to add|left)\b/i,
+  /\b(that'?s|that is) all\b/i,
+  /\bleave (it|this|the message)\b/i,
+  /\b(change|edit) (this|the) message\b/i,
+  /\b(who to send|add (a )?recipient|add who|send it to|choose (a )?recipient)\b/i
+];
+function isMetaOption(opt) {
+  const s = String(opt || "").trim();
+  if (!s) return true;
+  return META_OPTION_PATTERNS.some(function (re) { return re.test(s); });
+}
+function stripMetaOptions(options) {
+  const kept = [];
+  const dropped = [];
+  (options || []).filter(Boolean).map(String).forEach(function (o) {
+    (isMetaOption(o) ? dropped : kept).push(o);
+  });
+  if (dropped.length) logSay("say_ai_stripped", dropped.join(" | "), { dropped: dropped, path: aiPath.join(" > ") });
+  return kept;
 }
 
 // DOWN / "OTHER OPTIONS": ask for a different set at the same level, keeping
@@ -1212,9 +1246,7 @@ async function refreshOptions() {
   // Drop anything already shown at this step, so pressing OTHER OPTIONS never
   // surfaces a repeat even if the model returns one.
   const seenNorm = aiAvoid.map(normalizeOption);
-  const options = (result.options || [])
-    .filter(Boolean)
-    .map(String)
+  const options = stripMetaOptions(result.options || [])
     .filter(function (o) { return seenNorm.indexOf(normalizeOption(o)) === -1; })
     .slice(0, 3);
   if (!options.length) {
