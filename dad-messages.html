@@ -102,29 +102,70 @@ body {
   margin-bottom: 20px;
 }
 
-.filter-chips {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 18px;
-}
-
-.chip {
-  border: 2px solid #e8735a;
-  border-radius: 999px;
-  background: transparent;
+/* Picker view: a screen of just the people-chips, chosen before any messages. */
+.picker-prompt {
+  text-align: center;
+  font-size: 30px;
   color: #f0a58f;
-  font-size: 22px;
-  font-weight: bold;
-  padding: 8px 20px;
-  cursor: pointer;
+  margin: 10px 0 26px;
 }
 
-.chip.active {
+.picker-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.picker-chip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  border: 3px solid #e8735a;
+  border-radius: 16px;
+  background: #17110f;
+  color: #fff;
+  font-size: 34px;
+  font-weight: bold;
+  padding: 22px 28px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.picker-chip.all {
   background: #e8735a;
   color: #000;
 }
+
+.picker-chip-count {
+  font-size: 26px;
+  color: #f0a58f;
+  font-weight: bold;
+}
+
+.picker-chip.all .picker-chip-count { color: #3a1a12; }
+
+.back-button {
+  border: 3px solid #e8735a;
+  border-radius: 12px;
+  background: transparent;
+  color: #f0a58f;
+  font-size: 26px;
+  font-weight: bold;
+  padding: 12px 22px;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.list-heading {
+  font-size: 34px;
+  font-weight: bold;
+  margin: 6px 0 18px;
+}
+
+.hidden { display: none; }
 
 .message-to {
   font-size: 22px;
@@ -179,7 +220,7 @@ body {
 <body>
   <div class="top-bar">
     <div class="datetime" id="datetimeBar">Loading time…</div>
-    <div class="version">Messages from Dad v0.2</div>
+    <div class="version">Messages from Dad v0.3</div>
   </div>
 
   <div class="page">
@@ -194,9 +235,18 @@ body {
 
     <div class="status-line" id="statusLine">Loading messages…</div>
 
-    <div class="filter-chips" id="filterChips"></div>
+    <!-- PICKER: choose a person (or All) before any messages are shown. -->
+    <div id="pickerView">
+      <div class="picker-prompt">Whose messages do you want to see?</div>
+      <div class="picker-chips" id="pickerChips"></div>
+    </div>
 
-    <div id="messageList" class="message-list"></div>
+    <!-- LIST: the messages for the person picked. -->
+    <div id="listView" class="hidden">
+      <button class="back-button" id="backButton" type="button">← All people</button>
+      <div class="list-heading" id="listHeading"></div>
+      <div id="messageList" class="message-list"></div>
+    </div>
 
     <div class="help">
       This page updates on its own every few minutes. Press REFRESH NOW to check right away.
@@ -211,10 +261,14 @@ const datetimeBar = document.getElementById("datetimeBar");
 const refreshButton = document.getElementById("refreshButton");
 const statusLine = document.getElementById("statusLine");
 const messageList = document.getElementById("messageList");
-const filterChips = document.getElementById("filterChips");
+const pickerView = document.getElementById("pickerView");
+const pickerChips = document.getElementById("pickerChips");
+const listView = document.getElementById("listView");
+const backButton = document.getElementById("backButton");
+const listHeading = document.getElementById("listHeading");
 
-let allMessages = [];      // everything last loaded
-let activeFilter = "All";  // "All" or a specific recipient name
+let allMessages = [];        // everything last loaded
+let currentFilter = null;    // null = on the picker; "All" or a name = viewing that list
 
 function updateDateTimeBar() {
   const now = new Date();
@@ -268,68 +322,91 @@ async function loadMessages() {
 
     allMessages = data.messages || [];
 
-    if (!allMessages.length) {
-      filterChips.innerHTML = "";
-      messageList.innerHTML = '<div class="empty">No messages from Dad yet.</div>';
-      statusLine.textContent = "No messages yet.";
-      return;
-    }
-
-    renderChips();
-    renderList();
-
     const now = new Date();
-    statusLine.textContent = "Last refreshed " + now.toLocaleTimeString(undefined, {
-      hour: "numeric",
-      minute: "2-digit"
-    });
+    statusLine.textContent = allMessages.length
+      ? "Last refreshed " + now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
+      : "No messages yet.";
+
+    // Re-render whichever view is showing so a refresh updates counts/messages
+    // in place without kicking the reader back to the picker.
+    renderPicker();
+    if (currentFilter !== null) renderList();
   } catch (error) {
     console.error(error);
     statusLine.textContent = "Could not load messages.";
-    messageList.innerHTML = '<div class="empty">Error loading messages.</div>';
+    if (currentFilter === null) {
+      pickerChips.innerHTML = '<div class="empty">Error loading messages.</div>';
+    } else {
+      messageList.innerHTML = '<div class="empty">Error loading messages.</div>';
+    }
   } finally {
     refreshButton.disabled = false;
   }
 }
 
-// Build the filter row: "All" plus one chip per recipient that actually has a
-// message. Filtering is a convenience only — every chip is visible to anyone.
-function renderChips() {
+function recipientNames() {
   const names = [];
   allMessages.forEach((msg) => {
     const to = String(msg.to_name || "").trim();
     if (to && names.indexOf(to) === -1) names.push(to);
   });
   names.sort((a, b) => a.localeCompare(b));
+  return names;
+}
 
-  if (activeFilter !== "All" && names.indexOf(activeFilter) === -1) {
-    activeFilter = "All"; // the person we were filtering to no longer has messages
+function countFor(filter) {
+  return filter === "All"
+    ? allMessages.length
+    : allMessages.filter((m) => String(m.to_name || "").trim() === filter).length;
+}
+
+// PICKER: one big chip per person who has a message, plus All. No messages are
+// shown until a chip is chosen.
+function renderPicker() {
+  pickerChips.innerHTML = "";
+  if (!allMessages.length) {
+    pickerChips.innerHTML = '<div class="empty">No messages from Dad yet.</div>';
+    return;
   }
 
-  const chips = ["All"].concat(names);
-  filterChips.innerHTML = "";
+  const chips = ["All"].concat(recipientNames());
   chips.forEach((name) => {
     const chip = document.createElement("button");
     chip.type = "button";
-    chip.className = "chip" + (name === activeFilter ? " active" : "");
-    chip.textContent = name;
-    chip.addEventListener("click", () => {
-      activeFilter = name;
-      renderChips();
-      renderList();
-    });
-    filterChips.appendChild(chip);
+    chip.className = "picker-chip" + (name === "All" ? " all" : "");
+    chip.innerHTML =
+      '<span>' + escapeHtml(name === "All" ? "All messages" : name) + '</span>' +
+      '<span class="picker-chip-count">' + countFor(name) + '</span>';
+    chip.addEventListener("click", () => openList(name));
+    pickerChips.appendChild(chip);
   });
 }
 
+function openList(filter) {
+  currentFilter = filter;
+  listHeading.textContent = filter === "All" ? "All messages" : "Messages for " + filter;
+  renderList();
+  pickerView.classList.add("hidden");
+  listView.classList.remove("hidden");
+  window.scrollTo(0, 0);
+}
+
+function showPicker() {
+  currentFilter = null;
+  listView.classList.add("hidden");
+  pickerView.classList.remove("hidden");
+  renderPicker();
+  window.scrollTo(0, 0);
+}
+
 function renderList() {
-  const visible = activeFilter === "All"
+  const visible = currentFilter === "All"
     ? allMessages
-    : allMessages.filter((msg) => String(msg.to_name || "").trim() === activeFilter);
+    : allMessages.filter((msg) => String(msg.to_name || "").trim() === currentFilter);
 
   messageList.innerHTML = "";
   if (!visible.length) {
-    messageList.innerHTML = '<div class="empty">No messages for ' + escapeHtml(activeFilter) + ' yet.</div>';
+    messageList.innerHTML = '<div class="empty">No messages here yet.</div>';
     return;
   }
 
@@ -337,8 +414,10 @@ function renderList() {
     const to = String(msg.to_name || "").trim();
     const card = document.createElement("div");
     card.className = "message-card";
+    // In the "All" list the recipient is useful context; in a person's own list
+    // it's redundant, so only show it under All.
     card.innerHTML =
-      (to ? '<div class="message-to">To: ' + escapeHtml(to) + '</div>' : '') +
+      (to && currentFilter === "All" ? '<div class="message-to">To: ' + escapeHtml(to) + '</div>' : '') +
       '<div class="message-body">' + escapeHtml(msg.body || "") + '</div>' +
       '<div class="message-meta">' + formatDateTime(msg.created_at) + '</div>';
     messageList.appendChild(card);
@@ -346,6 +425,7 @@ function renderList() {
 }
 
 refreshButton.addEventListener("click", loadMessages);
+backButton.addEventListener("click", showPicker);
 
 document.addEventListener("DOMContentLoaded", () => {
   updateDateTimeBar();

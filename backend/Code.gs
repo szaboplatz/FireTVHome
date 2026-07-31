@@ -4,7 +4,7 @@
 //  app returns at  <web-app URL>?action=version  — so you can confirm the TV is
 //  running this exact version. Bump it on every deploy-worthy change.
 // ============================================================================
-const BACKEND_VERSION = '2026-07-31-p12 (Sonnet 5 model + one-person + no-diet-coke + voice/date)';
+const BACKEND_VERSION = '2026-07-31-p13 (send-to-recipient email + Sonnet 5)';
 // ============================================================================
 
 const SHEET_NAME = 'FireTVHomeMessages';
@@ -22,6 +22,15 @@ const PROFILE_SHEET_NAME = 'FireTVHomeProfile';
 // empty the backend supplies sensible defaults.
 const DATES_SHEET_NAME = 'FireTVHomeDates';
 const DATES_HEADERS = ['Date', 'Who', 'Occasion', 'Canned'];
+// Email addresses for the people his messages can be sent to. A simple tab:
+// Name | Email, where Name matches the recipient captured from the Talk tree
+// (e.g. "Sharon", "Betty"). Email may hold several comma-separated addresses
+// (e.g. a couple). "SEND BY EMAIL" looks the recipient up here.
+const CONTACTS_SHEET_NAME = 'FireTVHomeContacts';
+const CONTACTS_HEADERS = ['Name', 'Email'];
+// If a message has no known recipient email, it falls back to this address.
+// Leave '' to use the account that owns/deploys the script.
+const FALLBACK_EMAIL = '';
 // Default reminder window: show an occasion from a day before through this many
 // days ahead. Overridable per request with ?lead=NN.
 const OCCASION_LEAD_DAYS = 5;
@@ -230,6 +239,18 @@ function doPost(e) {
     }
 
     return json_(addDadMessage_(fromName, body, toName));
+  }
+
+  if (action === 'send_dad_email') {
+    const fromName = (e.parameter.from_name || '').trim();
+    const toName = (e.parameter.to_name || '').trim();
+    const body = (e.parameter.body || '').trim();
+
+    if (!body) {
+      return json_({ ok: false, error: 'Missing body' });
+    }
+
+    return json_(sendDadEmail_(fromName, body, toName));
   }
 
   if (action === 'narrow') {
@@ -721,6 +742,87 @@ function addDadMessage_(fromName, body, toName) {
     id,
     created_at: formatDate_(now)
   };
+}
+
+// Record the message on the family page (durable copy) AND email it to the
+// recipient looked up in the Contacts tab. Recording happens first so a message
+// is never lost even if the email step fails.
+function sendDadEmail_(fromName, body, toName) {
+  const rec = addDadMessage_(fromName, body, toName);
+
+  const email = getContactEmail_(toName);
+  const target = email || fallbackEmail_();
+  let emailed = false;
+  let error = '';
+
+  if (target) {
+    try {
+      MailApp.sendEmail(
+        target,
+        'A message from Dad (via his Fire TV)',
+        body + '\n\n—\nSent from Dad\'s Fire TV communicator.'
+      );
+      emailed = true;
+    } catch (e) {
+      error = String((e && e.message) || e);
+    }
+  } else {
+    error = 'No recipient email and no fallback';
+  }
+
+  return {
+    ok: true,
+    id: rec.id,
+    created_at: rec.created_at,
+    emailed: emailed,
+    matched: !!email,
+    error: error
+  };
+}
+
+function fallbackEmail_() {
+  if (FALLBACK_EMAIL) return FALLBACK_EMAIL;
+  try { return Session.getEffectiveUser().getEmail() || ''; } catch (e) { return ''; }
+}
+
+// Look up an email for a recipient name (case-insensitive). The Email cell may
+// hold several addresses separated by commas or semicolons (e.g. a couple).
+function getContactEmail_(name) {
+  const want = String(name || '').trim().toLowerCase();
+  if (!want) return '';
+
+  let sheet;
+  try { sheet = getContactsSheet_(); } catch (e) { return ''; }
+
+  const lastRow = sheet.getLastRow();
+  const lastCol = Math.max(sheet.getLastColumn(), CONTACTS_HEADERS.length);
+  if (lastRow < 2) return '';
+
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+    .map(function (h) { return String(h || '').trim().toLowerCase(); });
+  let nameCol = headers.indexOf('name');
+  let emailCol = headers.indexOf('email');
+  if (nameCol === -1) nameCol = 0;
+  if (emailCol === -1) emailCol = 1;
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  for (let i = 0; i < rows.length; i++) {
+    if (String(rows[i][nameCol] || '').trim().toLowerCase() === want) {
+      return String(rows[i][emailCol] || '').trim().replace(/;/g, ',');
+    }
+  }
+  return '';
+}
+
+function getContactsSheet_() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(CONTACTS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(CONTACTS_SHEET_NAME);
+    sheet.getRange(1, 1, 1, CONTACTS_HEADERS.length).setValues([CONTACTS_HEADERS]);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
 }
 
 function listDadMessages_(params) {

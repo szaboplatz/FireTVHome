@@ -451,7 +451,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.28</div>
+    <div class="version-label">Talk v0.29</div>
   </div>
 
   <!-- START -->
@@ -572,7 +572,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.28";
+const PAGE_VERSION = "v0.29";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -1740,6 +1740,29 @@ async function sendToEmail(text) {
   return true;
 }
 
+// Backend: records the message on the family page AND emails it to the
+// recipient (looked up in the Contacts tab by the name we captured from the
+// tree). Returns { emailed, matched, ... }.
+async function sendDadEmail(text) {
+  const formData = new URLSearchParams();
+  formData.set("action", "send_dad_email");
+  formData.set("from_name", "Dad");
+  formData.set("to_name", currentRecipient || "");
+  formData.set("body", text);
+
+  const response = await fetch(MESSAGES_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+    body: formData.toString()
+  });
+
+  const result = await response.json();
+  if (!response.ok || !result.ok) {
+    throw new Error(result && result.error ? result.error : "Email send failed");
+  }
+  return result;
+}
+
 async function handleSay(channel) {
   if (sending) return;
   const text = currentFinalText;
@@ -1773,18 +1796,34 @@ async function handleSay(channel) {
     return;
   }
 
-  // Email channel.
-  logSay("say_message_send_attempt", text, { channel: "email" });
+  // Email channel: record on the family page AND email the recipient.
+  const hint = "Press OK to say something else · Press BACK for the Home screen.";
+  logSay("say_message_send_attempt", text, { channel: "email", to: currentRecipient || "" });
   try {
-    await sendToEmail(text);
+    const res = await sendDadEmail(text);
     sending = false;
     if (occasionMode) markOccasionDone(occasionData);
-    logSay("say_message_sent", text, { channel: "email" });
-    showSayResult("SENT ✓", "sent", "Press OK to say something else · Press BACK for the Home screen.");
+    logSay("say_message_sent", text, { channel: "email", emailed: !!res.emailed, matched: !!res.matched, to: currentRecipient || "" });
+    if (res.emailed && res.matched) {
+      showSayResult("EMAIL SENT ✓", "sent", hint);
+    } else if (res.emailed) {
+      showSayResult("SENT ✓", "sent", hint);   // emailed the fallback (no contact on file)
+    } else {
+      showSayResult("SAVED TO FAMILY PAGE ✓", "sent", "It's on the family page; email couldn't be sent right now. " + hint);
+    }
   } catch (e) {
-    sending = false;
-    logSay("say_message_error", text, { channel: "email" });
-    showSayResult("COULD NOT SEND", "error", "Please try again — press BACK to go back and resend.");
+    // Backend unreachable: fall back to the old email so his words aren't lost.
+    try {
+      await sendToEmail(text);
+      sending = false;
+      if (occasionMode) markOccasionDone(occasionData);
+      logSay("say_message_sent", text, { channel: "email_fallback" });
+      showSayResult("SENT BY EMAIL ✓", "sent", hint);
+    } catch (e2) {
+      sending = false;
+      logSay("say_message_error", text, { channel: "email" });
+      showSayResult("COULD NOT SEND", "error", "Please try again — press BACK to go back and resend.");
+    }
   }
 }
 
