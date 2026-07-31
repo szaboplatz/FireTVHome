@@ -4,7 +4,7 @@
 //  app returns at  <web-app URL>?action=version  — so you can confirm the TV is
 //  running this exact version. Bump it on every deploy-worthy change.
 // ============================================================================
-const BACKEND_VERSION = '2026-07-31-p11 (one-person + no-diet-coke + no-send-options + voice/date)';
+const BACKEND_VERSION = '2026-07-31-p12 (Sonnet 5 model + one-person + no-diet-coke + voice/date)';
 // ============================================================================
 
 const SHEET_NAME = 'FireTVHomeMessages';
@@ -48,7 +48,10 @@ const PROFILE_HEADERS = [
 
 /* AI narrowing (Talk / communicator "Something to say" mode). The Anthropic
    API key lives in Script Properties as ANTHROPIC_API_KEY, never in the page. */
-const AI_MODEL = 'claude-haiku-4-5';
+// Sonnet follows the layered Say-mode rules far more reliably than Haiku did
+// (fewer conflations, cleaner voice/wording). If you ever want to trade quality
+// for lower cost/latency, 'claude-haiku-4-5' is the fallback.
+const AI_MODEL = 'claude-sonnet-5';
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 
 const MESSAGE_HEADERS = [
