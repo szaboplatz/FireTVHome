@@ -1190,6 +1190,14 @@ function narrow_(mode, path, avoid, draft) {
     'a greeting should be genuinely different DIRECTIONS - how they are, what is new with ' +
     'them, one specific thing to ask them about - not the same hello with a location or ' +
     'activity attached.\n\n' +
+    'MONEY AND HIS LEGACY - keep it in the background. Do NOT, on your own, offer options or ' +
+    'a draft about his money running low, the cost of his care, or his savings or ' +
+    'inheritance being eaten up by medical bills - not even when he is on a finances topic ' +
+    'or a "what is ahead" topic. This worry is real for him but must not be put in front of ' +
+    'him. A finances topic is simply about how his investments are doing - his stocks (IBM, ' +
+    'Tyler) and the market - and a "my care and the future" topic is about his health, his ' +
+    'days, and what to expect, NOT about affording it. Only if he EXPLICITLY steers into that ' +
+    'money worry himself may you then help him say it in his own plain words.\n\n' +
     'Today is ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'EEEE, MMMM d, yyyy') +
     '. Use it to keep tense and timing right: speak of things that have not happened yet as ' +
     'upcoming, and things already past as past (for example, a school year or a season that ' +

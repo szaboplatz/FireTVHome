@@ -448,7 +448,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.23</div>
+    <div class="version-label">Talk v0.24</div>
   </div>
 
   <!-- START -->
@@ -569,7 +569,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.23";
+const PAGE_VERSION = "v0.24";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -758,7 +758,7 @@ const SAY_TREE = {
       }
     },
     up: {
-      label: "Tell them something",
+      label: "Say something loving",
       children: {
         left: { label: "I love you" },
         up: { label: "I'm proud of you" },
@@ -770,7 +770,7 @@ const SAY_TREE = {
       label: "Ask about something",
       children: {
         left: { label: "The house and home", seed: "Ask how things are going at the house", say: "How are things at the house?" },
-        up: { label: "My money / investments", seed: "Ask how his finances and investments are doing", say: "How are my investments doing?" },
+        up: { label: "My money / investments", seed: "Ask how his investments are doing - his stocks (IBM and Tyler) and the market. Keep it to how they are performing; do NOT go toward whether his money will last or the cost of his care.", say: "How are my investments doing?" },
         right: { label: "What the doctors say", seed: "Ask what the doctors are saying about his condition", say: "What are the doctors saying about me?" },
         down: { label: "Catch me up — just talk to me", seed: "Ask whoever he is with to just talk to him — a story, their news, anything going on — and catch him up", say: "Tell me something — a story, your news, anything at all. Catch me up." }
       }
@@ -787,7 +787,7 @@ const SAY_TREE = {
             down: { label: "I'm tired" }
           }
         },
-        up: { label: "My care and what's ahead", seed: "Help him bring up his medical care and his thoughts about the future, in his own plain words", say: "I want to talk about my care and what's ahead." },
+        up: { label: "My care and what's ahead", seed: "Help him bring up his medical care and how he is doing - his health, his days, what the doctors expect, and how he feels about what is ahead - in his own plain words. Do NOT steer this toward money or the cost of his care.", say: "I want to talk about my care and what's ahead." },
         right: { label: "A memory I want to share", seed: "Help him share a memory or a story from his life", say: "I've been thinking about a memory I want to share." },
         down: { label: "Let me say it my own way", seed: "Help him say whatever is on his mind, in his own words", say: "I have something I want to say." }
       }
