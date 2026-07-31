@@ -189,9 +189,17 @@ body {
   filter: brightness(1.2);
 }
 
-/* START screen big mode tiles. */
-.start-care { border-color: var(--care) !important; box-shadow: 0 0 34px -6px var(--care); }
-.start-care .arrow { color: var(--care); }
+/* START screen big mode tiles. The CARE tile is a solid coral button — the same
+   look as the Care-mode tiles — so it reads as a button, not the glowing
+   "selected" outline the home screen uses. SAY keeps the teal-edged look of
+   Say-mode tiles, so the two tiles preview their modes. */
+.start-care {
+  background: linear-gradient(158deg, #f4906f 0%, #e8735a 52%, #d15a44 100%);
+  border: 4px solid #bf513c !important;
+  box-shadow: 0 7px 15px -6px rgba(0, 0, 0, 0.6), inset 0 3px 0 rgba(255, 255, 255, 0.3);
+  color: var(--ink);
+}
+.start-care .arrow { color: rgba(11, 14, 20, 0.78); }
 .start-say  { border-color: var(--say) !important; box-shadow: 0 0 34px -6px var(--say); }
 .start-say .arrow { color: var(--say); }
 
@@ -440,7 +448,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.17</div>
+    <div class="version-label">Talk v0.18</div>
   </div>
 
   <!-- START -->
@@ -561,7 +569,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.17";
+const PAGE_VERSION = "v0.18";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -769,7 +777,7 @@ const SAY_TREE = {
       label: "Ask about something",
       children: {
         left: { label: "The house and home", seed: "Ask how things are going at the house", say: "How are things at the house?" },
-        up: { label: "My money / investments", seed: "Ask how his finances and investments are doing, including his IBM and Tyler Technologies stock", say: "How are my investments doing?" },
+        up: { label: "My money / investments", seed: "Ask how his finances and investments are doing", say: "How are my investments doing?" },
         right: { label: "What the doctors say", seed: "Ask what the doctors are saying about his condition", say: "What are the doctors saying about me?" },
         down: { label: "Catch me up — just talk to me", seed: "Ask whoever he is with to just talk to him — a story, their news, anything going on — and catch him up", say: "Tell me something — a story, your news, anything at all. Catch me up." }
       }
