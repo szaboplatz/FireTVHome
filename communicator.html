@@ -448,7 +448,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.22</div>
+    <div class="version-label">Talk v0.23</div>
   </div>
 
   <!-- START -->
@@ -569,7 +569,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.22";
+const PAGE_VERSION = "v0.23";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -754,7 +754,7 @@ const SAY_TREE = {
             right: { label: "Sharon", to: "Sharon", seed: "Ask his daughter Sharon how she is doing", say: "How are you doing, Sharon? I'm thinking of you." }
           }
         },
-        down: { label: "A friend or someone else", seed: "He wants to ask how a friend or someone outside his household is doing. Offer several SPECIFIC named people ONLY from his profile's 'People he keeps up with now' list - for example Bill Gordon, Andy Zaharchuk, Bob Nedbalski, his sister Pat, the Mannings, or his Thailand friends Gigg and Su. Do NOT offer anyone who is not on that list. Keep the draft a plain greeting with no name until he picks who, then make it about that person.", say: "How are you doing? I'm thinking of you." }
+        down: { label: "A friend or someone else", seed: "He wants to ask how a friend or someone outside his immediate household is doing. Offer people ONLY from his profile's 'People he keeps up with now' list, and LEAD with his friends and extended family - Bill Gordon, Andy Zaharchuk, Bob Nedbalski, the Mannings, Gigg, Su, his sister Pat, Kal, Peggy, and Tu's parents Mai and Gio; his wife, children, and grandchildren already have their own buttons, so do not lead with them. Label each option with JUST the person's name - no parentheses, relationship, or location. Do NOT offer anyone not on that list. Keep the draft a plain greeting with no name until he picks who, then make it about that person.", say: "How are you doing? I'm thinking of you." }
       }
     },
     up: {

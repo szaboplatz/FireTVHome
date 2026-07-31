@@ -1180,7 +1180,11 @@ function narrow_(mode, path, avoid, draft) {
     'on that list, even if they appear elsewhere in his profile: people from his childhood, ' +
     'old neighborhoods, former jobs, or who have died belong to his memories and stories, ' +
     'NOT to a present-tense "how are you". (If that roster section is not present, offer only ' +
-    'his wife, his children, and his grandchildren.) And keep a simple greeting simple: ' +
+    'his wife, his children, and his grandchildren.) When you offer people to pick from, ' +
+    'label each option with JUST the person\'s name (first name, or first and last only if ' +
+    'two people would otherwise be confused) - never add a parenthetical, a relationship, a ' +
+    'description, or a location: write "Brenda", not "Brenda (Michael\'s wife)"; "Sharon and ' +
+    'Terry", not "Sharon and Terry at the lake". And keep a simple greeting simple: ' +
     'do NOT bolt an incidental place, activity, or event onto it (for example "Sharon and ' +
     'Terry at the lake") unless that detail is the actual point of his message. Options for ' +
     'a greeting should be genuinely different DIRECTIONS - how they are, what is new with ' +
