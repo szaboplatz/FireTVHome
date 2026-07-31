@@ -4,7 +4,7 @@
 //  app returns at  <web-app URL>?action=version  — so you can confirm the TV is
 //  running this exact version. Bump it on every deploy-worthy change.
 // ============================================================================
-const BACKEND_VERSION = '2026-07-31-p14 (log dad_email events with recipient)';
+const BACKEND_VERSION = '2026-07-31-p15 (email-auth test helper; log dad_email events)';
 // ============================================================================
 
 const SHEET_NAME = 'FireTVHomeMessages';
@@ -1221,6 +1221,23 @@ function testOccasions() {
   const result = getOccasions_({});
   Logger.log(JSON.stringify(result, null, 2));
   return result;
+}
+
+// Run this ONCE from the editor (Run > testEmail) after adding the email
+// feature. Sending mail needs a permission the earlier deploys never had, so
+// the first run pops Google's consent screen — approve "Send email as you".
+// A test note then lands in your own inbox, proving the send works. If it
+// throws instead, the error names exactly what's still missing.
+function testEmail() {
+  const to = fallbackEmail_();
+  if (!to) { Logger.log('No fallback email available'); return { ok: false, error: 'no address' }; }
+  MailApp.sendEmail(
+    to,
+    'Fire TV email test',
+    'If you are reading this, Dad\'s Fire TV can send email. Backend ' + BACKEND_VERSION
+  );
+  Logger.log('Test email sent to ' + to);
+  return { ok: true, to: to };
 }
 
 /* ---------- AI NARROWING (Anthropic) ---------- */
