@@ -1149,9 +1149,15 @@ function narrow_(mode, path, avoid, draft) {
     'DIFFERENT direction the message could go next - clearly distinct from one another ' +
     'AND from anything already shown - so that picking one truly narrows toward a single ' +
     'message. Never offer three rewordings of the same idea. Keep them concrete and easy ' +
-    'to read on a TV. Never offer an option that just means finish or send (like "Send this ' +
-    'as is", "That is all", or "Nothing to add") - he always has a separate SAY THIS button ' +
-    'to send whenever he wants, so every option must ADD something or open a new direction.\n\n' +
+    'to read on a TV. Every option must be about the CONTENT of the message - what he could ' +
+    'SAY next. NEVER offer an option that is an instruction about what to DO with the ' +
+    'message: not sending it ("Send this now", "Send now", "Keep it as is and send", "Stop ' +
+    'here and send"), not starting over ("Start a new message", "Never mind"), not editing ' +
+    'it ("Change this message", "Add something else"), and not picking who to send it to ' +
+    '("Add who to send it to", "Send to Sharon too"). Those actions all have their own ' +
+    'dedicated buttons and do nothing as options here. Word each option from HIS first-person ' +
+    'point of view, the way he would ("my time at AristaCare", "my care", not "his time at ' +
+    'AristaCare" or "for him").\n\n' +
     'Move him toward a complete, sendable message quickly and sensibly. Each round must ' +
     'follow naturally from his LAST choice and stay on that thread - never wander to an ' +
     'unrelated topic. Keep the MEANING he has already built: a new choice adds to or refines ' +
@@ -1190,6 +1196,18 @@ function narrow_(mode, path, avoid, draft) {
     'a greeting should be genuinely different DIRECTIONS - how they are, what is new with ' +
     'them, one specific thing to ask them about - not the same hello with a location or ' +
     'activity attached.\n\n' +
+    'ONE PERSON AT A TIME. When the message is about one specific person, use ONLY what you ' +
+    'know about THAT person. Never borrow another person\'s facts, activities, interests, or ' +
+    'places and attach them to someone else. For instance, the Lake Temagami trips and the ' +
+    'monthly newsletters belong to Bill Gordon - do NOT offer them when he is writing to Andy ' +
+    'or anyone else. If you are running low on things specific to this person, offer plain ' +
+    'warm options ("I have been thinking of you", "I hope you are well") rather than inventing ' +
+    'details or pulling them from someone else.\n\n' +
+    'THINGS HE CAN NO LONGER DO. He cannot eat or drink by mouth and is bedbound on a ' +
+    'ventilator. Never offer an option or draft that treats a food, drink, trip, or physical ' +
+    'activity he can no longer have as something current or possible - for example do NOT ' +
+    'suggest thanking someone for "bringing me Diet Coke", or ask about doing such things now. ' +
+    'These can be spoken of only as fond memories if HE steers there, never as the present.\n\n' +
     'MONEY AND HIS LEGACY - keep it in the background. Do NOT, on your own, offer options or ' +
     'a draft about his money running low, the cost of his care, or his savings or ' +
     'inheritance being eaten up by medical bills - not even when he is on a finances topic ' +
