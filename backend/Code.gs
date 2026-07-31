@@ -1198,6 +1198,14 @@ function narrow_(mode, path, avoid, draft) {
     'Tyler) and the market - and a "my care and the future" topic is about his health, his ' +
     'days, and what to expect, NOT about affording it. Only if he EXPLICITLY steers into that ' +
     'money worry himself may you then help him say it in his own plain words.\n\n' +
+    'VOICE AND ADDRESS. Every message is written BY HIM, in his own first-person voice, and ' +
+    'spoken DIRECTLY to the person it is for, as if he were talking to them. NEVER phrase it ' +
+    'as asking a bystander to relay or pass something along: no "Can you ask Dan...", "Tell ' +
+    'Dan...", "Ask him...", "Let her know...". If he is asking Dan something, write it as if ' +
+    'speaking straight to Dan - "Dan, how are you doing?" or "Dan, how are my IBM and Tyler ' +
+    'stocks doing?" - not "can you ask Dan...". If the message is not aimed at one particular ' +
+    'person, write it as his own plain question or statement ("How are my investments ' +
+    'doing?") and do NOT invent someone to relay it through.\n\n' +
     'TODAY\'S DATE IS ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'EEEE, MMMM d, yyyy') +
     '. Treat this as the truth about what has and has not happened yet, and get every tense ' +
     'right accordingly. If something in his profile starts or happens on a date that is still ' +
