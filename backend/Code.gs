@@ -4,7 +4,7 @@
 //  app returns at  <web-app URL>?action=version  — so you can confirm the TV is
 //  running this exact version. Bump it on every deploy-worthy change.
 // ============================================================================
-const BACKEND_VERSION = '2026-07-31-p13 (send-to-recipient email + Sonnet 5)';
+const BACKEND_VERSION = '2026-07-31-p14 (log dad_email events with recipient)';
 // ============================================================================
 
 const SHEET_NAME = 'FireTVHomeMessages';
@@ -769,6 +769,25 @@ function sendDadEmail_(fromName, body, toName) {
   } else {
     error = 'No recipient email and no fallback';
   }
+
+  // Record an event so the log shows an email went out and exactly who it went
+  // to (or why it didn't). Never let a logging hiccup break the send.
+  try {
+    const who = String(toName || '').trim() || '(none)';
+    const label = emailed
+      ? (email ? ('EMAIL SENT to ' + who + ' <' + target + '>')
+               : ('EMAIL SENT to fallback <' + target + '> — no contact for "' + who + '"'))
+      : ('NOT EMAILED to ' + who + ' — ' + (error || 'unknown'));
+    logEvent_({
+      event_type: 'dad_email',
+      event_label: label,
+      page_version: 'backend ' + BACKEND_VERSION,
+      extra: JSON.stringify({
+        to_name: who, matched: !!email, emailed: emailed,
+        target: target || '', message_id: rec.id, error: error || ''
+      })
+    });
+  } catch (e) { /* logging is best-effort */ }
 
   return {
     ok: true,
