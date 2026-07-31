@@ -387,9 +387,13 @@ body {
    no border, minimal padding — every pixel goes to readable text. */
 .ai-draft-panel {
   position: static;
-  flex: 0 0 38%;            /* fixed height: the option buttons below never move */
+  /* Size to the draft: a short line takes almost no room so the tiles get the
+     space; a long draft grows only up to the cap, where fitText shrinks it to
+     fit. The tiles move a little as the draft changes — that's fine. */
+  flex: 0 1 auto;
+  max-height: 38%;
   min-height: 0;
-  margin: 6px 18px 0;
+  margin: 6px 18px 4px;
   overflow: hidden;
   background: transparent;
   border: none;
@@ -451,7 +455,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.30</div>
+    <div class="version-label">Talk v0.31</div>
   </div>
 
   <!-- START -->
@@ -572,7 +576,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.30";
+const PAGE_VERSION = "v0.31";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -964,9 +968,34 @@ function fitText(box, el, maxPx, minPx) {
   }
 }
 
+// The draft panel sizes to its content but never taller than 38% of the screen.
+// Measure the text's full (unclipped) height against that FIXED budget — not the
+// panel's current height, which now changes with the content — so a short draft
+// keeps the big font in a small panel, and only a long draft shrinks, just
+// enough to fit the cap.
+function fitDraft() {
+  const el = aiDraftText;
+  const panel = el && el.parentElement;
+  const screen = panel && panel.closest(".screen");
+  if (!el || !panel || !screen) return;
+  const cs = getComputedStyle(panel);
+  const padV = parseFloat(cs.paddingTop || 0) + parseFloat(cs.paddingBottom || 0);
+  const padH = parseFloat(cs.paddingLeft || 0) + parseFloat(cs.paddingRight || 0);
+  const budgetH = Math.max(40, Math.round(screen.clientHeight * 0.38) - padV);
+  const availW = panel.clientWidth - padH;
+  let size = 44;
+  el.style.fontSize = size + "px";
+  let guard = 0;
+  while (size > 22 && (el.scrollHeight > budgetH + 1 || el.scrollWidth > availW + 1) && guard < 90) {
+    size -= 2;
+    el.style.fontSize = size + "px";
+    guard++;
+  }
+}
+
 function fitCurrentScreen() {
   if (currentScreen === "aiOptions") {
-    fitText(aiDraftText.parentElement, aiDraftText, 44, 22);
+    fitDraft();
   } else if (currentScreen === "sayConfirm") {
     fitText(sayConfirmText.parentElement, sayConfirmText, 46, 22);
   } else if (currentScreen === "sayBanner") {
