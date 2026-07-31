@@ -387,13 +387,16 @@ body {
    no border, minimal padding — every pixel goes to readable text. */
 .ai-draft-panel {
   position: static;
-  flex: 0 0 auto;
+  flex: 0 0 38%;            /* fixed height: the option buttons below never move */
+  min-height: 0;
   margin: 6px 18px 0;
-  max-height: 40%;
   overflow: hidden;
   background: transparent;
   border: none;
   padding: 2px 6px;
+  display: flex;            /* center the draft in its fixed box (short or long) */
+  align-items: center;
+  justify-content: center;
   text-align: center;
 }
 .ai-draft-label { display: none; }
@@ -448,7 +451,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.27</div>
+    <div class="version-label">Talk v0.28</div>
   </div>
 
   <!-- START -->
@@ -569,7 +572,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.27";
+const PAGE_VERSION = "v0.28";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
