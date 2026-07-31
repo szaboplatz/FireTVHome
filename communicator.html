@@ -448,7 +448,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.19</div>
+    <div class="version-label">Talk v0.20</div>
   </div>
 
   <!-- START -->
@@ -569,7 +569,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.19";
+const PAGE_VERSION = "v0.20";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -751,11 +751,10 @@ const SAY_TREE = {
           children: {
             left: { label: "Michael", to: "Michael", seed: "Ask his son Michael how he is doing", say: "How are you doing, Michael? I'm thinking of you." },
             up: { label: "Dan", to: "Dan", seed: "Ask his son Dan how he is doing", say: "How are you doing, Dan? I'm thinking of you." },
-            right: { label: "Sharon", to: "Sharon", seed: "Ask his daughter Sharon how she is doing", say: "How are you doing, Sharon? I'm thinking of you." },
-            down: { label: "Someone else", seed: "Help him ask how someone is — offer the people and friends you know from his profile, and let him pick", say: "How are you doing? I'm thinking of you." }
+            right: { label: "Sharon", to: "Sharon", seed: "Ask his daughter Sharon how she is doing", say: "How are you doing, Sharon? I'm thinking of you." }
           }
         },
-        down: { label: "Everyone / the family", to: "Everyone", seed: "Ask how the whole family is doing", say: "How is everyone doing? I think about you all." }
+        down: { label: "A friend or someone else", seed: "He wants to ask how a friend or someone outside his household is doing. From his profile, offer several SPECIFIC named people as the options to choose from - his friends (such as Bill Gordon, Andy Zaharchuk, Bob Nedbalski, Gil Smith), his sister Pat, cousins, former colleagues, or anyone else he keeps in touch with; you may also offer the whole family. Keep the draft a plain greeting with no name until he picks who, then make it about that person.", say: "How are you doing? I'm thinking of you." }
       }
     },
     up: {
