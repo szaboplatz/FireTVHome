@@ -1198,10 +1198,15 @@ function narrow_(mode, path, avoid, draft) {
     'Tyler) and the market - and a "my care and the future" topic is about his health, his ' +
     'days, and what to expect, NOT about affording it. Only if he EXPLICITLY steers into that ' +
     'money worry himself may you then help him say it in his own plain words.\n\n' +
-    'Today is ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'EEEE, MMMM d, yyyy') +
-    '. Use it to keep tense and timing right: speak of things that have not happened yet as ' +
-    'upcoming, and things already past as past (for example, a school year or a season that ' +
-    'starts later in the year is still ahead until then).' +
+    'TODAY\'S DATE IS ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'EEEE, MMMM d, yyyy') +
+    '. Treat this as the truth about what has and has not happened yet, and get every tense ' +
+    'right accordingly. If something in his profile starts or happens on a date that is still ' +
+    'in the FUTURE relative to today, it has NOT happened yet: speak of it as upcoming and ' +
+    'NEVER ask how it is "going". For example, if a grandchild only begins college, or a ' +
+    'sports season only starts, on a date later than today, do NOT ask how school or the ' +
+    'season "is going" - ask whether they are excited or ready for it. Only ask how something ' +
+    '"is going" once its start date has actually passed. Compare dates carefully before ' +
+    'choosing the tense.' +
     (PEOPLE_CONTEXT ? ('\n\n' + PEOPLE_CONTEXT) : '');
 
   const tool = {
