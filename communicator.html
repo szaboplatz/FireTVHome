@@ -448,7 +448,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.18</div>
+    <div class="version-label">Talk v0.19</div>
   </div>
 
   <!-- START -->
@@ -569,7 +569,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.18";
+const PAGE_VERSION = "v0.19";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -717,13 +717,7 @@ const CARE_TREE = {
             down: { label: "Itchy - legs or elsewhere" }
           }
         },
-        right: {
-          label: "Thirsty / hungry / dry mouth",
-          children: {
-            left: { label: "Mouth dry - swab please" },
-            right: { label: "Hungry or thirsty - feeding time?" }
-          }
-        },
+        right: { label: "My mouth is dry - please swab it" },
         down: { label: "Scared / anxious - need company" }
       }
     }
@@ -1418,7 +1412,8 @@ function occasionOwnWay() {
   const occ = occasionData;
   const who = occ && occ.who ? occ.who : "";
   const what = occ && occ.occasion ? occ.occasion : "";
-  const seed = "A message for " + (who ? who + "’s " : "") + (what || "this occasion");
+  const seed = "Help him write a short " + (what ? (what + " ") : "") + "message to " +
+    (who || "his family") + " in his own plain words";
 
   mode = "say";
   app.classList.remove("mode-occasion");

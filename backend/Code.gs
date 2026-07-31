@@ -1121,6 +1121,10 @@ function narrow_(mode, path, avoid, draft) {
     'picks only from the options you give. He decides when it is finished and sends it ' +
     'with the center button. ALWAYS reply by calling the present tool with BOTH:\n\n' +
     '- draft: the message SO FAR, in his own plain first-person voice.\n' +
+    '  The draft is ALWAYS the actual message he would send, ready to go as-is - NEVER a ' +
+    'description or announcement of what he wants to do. Write "Happy birthday, Betty. I love ' +
+    'you." - never "I want to say something to Betty on her birthday." No meta openers like ' +
+    '"I want to say...", "I would like to tell you...", or "Here is my message".\n' +
     '  CRITICAL: the draft may contain ONLY what he has actually chosen. Do NOT invent, ' +
     'assume, or add events, feelings, reasons, names, or details he has not picked, and ' +
     'do NOT pad it with extra sentences or emotional colour he did not choose. Start ' +
