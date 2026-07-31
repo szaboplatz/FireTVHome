@@ -448,7 +448,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.25</div>
+    <div class="version-label">Talk v0.26</div>
   </div>
 
   <!-- START -->
@@ -569,7 +569,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.25";
+const PAGE_VERSION = "v0.26";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -816,6 +816,7 @@ let aiAvoid = [];            // options already shown at this level (for "other 
 let seedFallbackText = "";   // plain phrase to fall back on if a seed leaf's AI call fails
 let currentRecipient = "";   // who this message is for, inferred from the tree path (to_name)
 let sayResultOk = false;     // did the last send succeed? (drives BACK on the result screen)
+let sayLogId = "";           // short id grouping one composition's trace events
 
 // Family-occasion entry (reached from the Home reminder via ?occasion=...).
 let occasionMode = false;    // did he arrive here for a family occasion?
@@ -910,6 +911,20 @@ function logEvent(eventType, eventLabel = "", extra = {}) {
   } catch (e) {}
 }
 
+/* ---------- SAY-FLOW TRACE LOGGING ----------
+   Detailed play-by-play of a "Something to say" composition so a dump of the
+   Events sheet reconstructs the whole walk: every choice, every AI round's
+   draft, and every set of options the AI offered - logged as it happens, so
+   even an abandoned path is captured. Each composition gets a short sid so the
+   events can be grouped back into one session. */
+function newSayLogId() {
+  sayLogId = Date.now().toString(36) + "-" + Math.floor(Math.random() * 1e6).toString(36);
+  return sayLogId;
+}
+function logSay(type, label, extra) {
+  logEvent(type, label, Object.assign({ sid: sayLogId }, extra || {}));
+}
+
 /* ---------- SCREEN + RENDER ---------- */
 
 function showScreen(name) {
@@ -958,7 +973,9 @@ function fitCurrentScreen() {
 // Show the composed message full-screen for someone in the room (neutral, not
 // the care coral).
 function showSayBanner() {
-  sayBannerText.textContent = currentFinalText || currentDraft || "";
+  const shown = currentFinalText || currentDraft || "";
+  sayBannerText.textContent = shown;
+  logSay("say_show_on_screen", shown, { to: currentRecipient || "" });
   showScreen("sayBanner");
 }
 
@@ -1086,6 +1103,7 @@ function beginAiSay(categoryLabel, staticCategoryNode) {
   aiHistory = [];
   aiAvoid = [];
   aiFallbackNode = staticCategoryNode || null;
+  logSay("say_ai_start", categoryLabel, { seed: categoryLabel, to: currentRecipient || "" });
   runNarrow();
 }
 
@@ -1104,11 +1122,12 @@ async function runNarrow() {
   } catch (e) {
     if (seq !== narrowSeq) return; // user navigated away; ignore this result
     aiBusy = false;
-    logEvent("say_ai_error", String((e && e.message) || e), { path: aiPath.join(" > ") });
+    logSay("say_ai_error", String((e && e.message) || e), { path: aiPath.join(" > ") });
 
     // If the very first round fails, fall back to the static tree for this
     // category so he can still compose a message with no network.
     if (!aiHistory.length && aiFallbackNode && aiFallbackNode.children) {
+      logSay("say_ai_fallback", "static tree", { path: aiPath.join(" > ") });
       nodeStack = [SAY_TREE, aiFallbackNode];
       pathLabels = [aiPath[0]];
       updateBreadcrumb();
@@ -1122,6 +1141,7 @@ async function runNarrow() {
       currentFinalText = seedFallbackText;
       sayFromAi = false;
       sayConfirmText.textContent = "“" + currentFinalText + "”";
+      logSay("say_ai_fallback", seedFallbackText, { path: aiPath.join(" > "), source: "seed-phrase" });
       showScreen("sayConfirm");
       return;
     }
@@ -1143,6 +1163,10 @@ async function runNarrow() {
 
   aiAvoid = options.slice();
   aiHistory.push({ path: aiPath.slice(), options: options, draft: draft });
+  // Trace: the exact draft the AI produced and every option it offered this round.
+  logSay("say_ai_round", draft, {
+    round: aiHistory.length, path: aiPath.join(" > "), draft: draft, options: options
+  });
   updateBreadcrumb();
   renderAiOptions(options, draft);
   showScreen("aiOptions");
@@ -1164,6 +1188,8 @@ async function refreshOptions() {
   const top = aiHistory[aiHistory.length - 1];
   if (!top) return;
 
+  logSay("say_ai_other", "OTHER OPTIONS", { path: aiPath.join(" > "), avoided: aiAvoid.slice() });
+
   const seq = ++narrowSeq;
   aiBusy = true;
   showScreen("aiThinking");
@@ -1174,7 +1200,7 @@ async function refreshOptions() {
   } catch (e) {
     if (seq !== narrowSeq) return;
     aiBusy = false;
-    logEvent("say_ai_error", String((e && e.message) || e), { path: aiPath.join(" > "), refresh: true });
+    logSay("say_ai_error", String((e && e.message) || e), { path: aiPath.join(" > "), refresh: true });
     renderAiOptions(top.options, top.draft); // keep what he had
     showScreen("aiOptions");
     return;
@@ -1199,6 +1225,9 @@ async function refreshOptions() {
 
   aiAvoid = aiAvoid.concat(options);
   top.options = options; // replace the level's options; draft stays the same
+  logSay("say_ai_round", top.draft, {
+    round: aiHistory.length, path: aiPath.join(" > "), draft: top.draft, options: options, other: true
+  });
   renderAiOptions(options, top.draft);
   showScreen("aiOptions");
 }
@@ -1209,6 +1238,7 @@ function chooseAiOption(index) {
   if (!current) return;
   const label = current.options[index];
   if (label == null) return;
+  logSay("say_ai_choice", label, { index: index, path: aiPath.join(" > "), from: current.options.slice() });
   aiPath.push(label);
   aiAvoid = [];
   runNarrow();
@@ -1221,7 +1251,7 @@ function chooseAiSay() {
   currentFinalText = currentDraft;
   sayFromAi = true;
   sayConfirmText.textContent = "“" + currentDraft + "”";
-  logEvent("say_ai_drafted", currentDraft, { path: aiPath.join(" > ") });
+  logSay("say_ai_drafted", currentDraft, { path: aiPath.join(" > "), draft: currentDraft, to: currentRecipient || "" });
   showScreen("sayConfirm");
 }
 
@@ -1359,12 +1389,13 @@ function showOccasion(occ) {
   app.classList.remove("mode-care", "mode-say");
   app.classList.add("mode-occasion");
 
+  newSayLogId();
   const heading = occasionHeading(occ);
   occasionTitle.textContent = heading;
   breadcrumbEl.textContent = heading;
   renderOccasion();
   showScreen("occasion");
-  logEvent("occasion_screen", heading, { id: (occ && occ.id) || "" });
+  logSay("occasion_screen", heading, { id: (occ && occ.id) || "", to: currentRecipient || "", canned: occasionCanned.slice() });
 }
 
 async function initOccasion() {
@@ -1401,7 +1432,7 @@ function chooseOccasionCanned(index) {
   app.classList.remove("mode-occasion");
   app.classList.add("mode-say");
   sayConfirmText.textContent = "“" + line + "”";
-  logEvent("occasion_canned_chosen", line, { id: occasionData ? occasionData.id : "" });
+  logSay("occasion_canned_chosen", line, { id: occasionData ? occasionData.id : "" });
   showScreen("sayConfirm");
 }
 
@@ -1418,7 +1449,7 @@ function occasionOwnWay() {
   mode = "say";
   app.classList.remove("mode-occasion");
   app.classList.add("mode-say");
-  logEvent("occasion_own_way", seed, { id: occ ? occ.id : "" });
+  logSay("occasion_own_way", seed, { id: occ ? occ.id : "" });
 
   if (ENABLE_AI) {
     beginAiSay(seed, SAY_TREE.children.left);
@@ -1448,9 +1479,10 @@ function startMode(m) {
   seedFallbackText = "";
   currentRecipient = "";
   narrowSeq++;
+  newSayLogId();
   setModeClass();
   updateBreadcrumb();
-  logEvent("communicator_mode_start", m === "care" ? "Care need" : "Something to say");
+  logSay("communicator_mode_start", m === "care" ? "Care need" : "Something to say", { mode: m });
   renderOptions();
   showScreen("options");
 }
@@ -1464,6 +1496,11 @@ function choose(dir) {
   pathLabels.push(next.label);
   if (next.to) currentRecipient = next.to;   // remember who the message is for
   updateBreadcrumb();
+
+  const kind = next.children ? "branch" : (next.seed ? "seed-leaf" : "statement-leaf");
+  logSay(mode === "care" ? "care_step" : "say_step", next.label, {
+    dir: dir, kind: kind, path: pathLabels.join(" > "), to: currentRecipient || ""
+  });
 
   // Branch node -> keep walking the tree (Care and Say both walk locally now).
   if (next.children) {
@@ -1482,7 +1519,7 @@ function choose(dir) {
       currentFinalText = seedFallbackText;
       sayFromAi = false;
       sayConfirmText.textContent = "“" + currentFinalText + "”";
-      logEvent("say_phrase_drafted", currentFinalText);
+      logSay("say_phrase_drafted", currentFinalText, { source: "seed-fallback" });
       showScreen("sayConfirm");
     }
     return;
@@ -1492,12 +1529,12 @@ function choose(dir) {
   currentFinalText = next.label;
   if (mode === "care") {
     careFinalText.textContent = currentFinalText;
-    logEvent("care_phrase_shown", currentFinalText);
+    logSay("care_phrase_shown", currentFinalText, {});
     showScreen("careFinal");
   } else {
     sayFromAi = false;
     sayConfirmText.textContent = "“" + currentFinalText + "”";
-    logEvent("say_phrase_drafted", currentFinalText);
+    logSay("say_phrase_drafted", currentFinalText, { source: "statement" });
     showScreen("sayConfirm");
   }
 }
@@ -1677,12 +1714,12 @@ async function handleSay(channel) {
   showSayResult("SENDING…", "sending", "");
 
   if (channel === "family") {
-    logEvent("say_message_send_attempt", text, { channel: "family_page" });
+    logSay("say_message_send_attempt", text, { channel: "family_page" });
     try {
       await sendToFamilyPage(text);
       sending = false;
       if (occasionMode) markOccasionDone(occasionData);
-      logEvent("say_message_sent", text, { channel: "family_page" });
+      logSay("say_message_sent", text, { channel: "family_page" });
       showSayResult("SENT ✓", "sent", "Press OK to say something else · Press BACK for the Home screen.");
     } catch (e) {
       // Do not lose his words: fall back to email so the message still goes out.
@@ -1690,11 +1727,11 @@ async function handleSay(channel) {
         await sendToEmail(text);
         sending = false;
         if (occasionMode) markOccasionDone(occasionData);
-        logEvent("say_message_sent", text, { channel: "email_fallback" });
+        logSay("say_message_sent", text, { channel: "email_fallback" });
         showSayResult("SENT BY EMAIL ✓", "sent", "The family page was unavailable, so this was emailed instead. Press OK to say something else · Press BACK for the Home screen.");
       } catch (e2) {
         sending = false;
-        logEvent("say_message_error", text, { channel: "family_page" });
+        logSay("say_message_error", text, { channel: "family_page" });
         showSayResult("COULD NOT SEND", "error", "Please try again — press BACK to go back and resend.");
       }
     }
@@ -1702,16 +1739,16 @@ async function handleSay(channel) {
   }
 
   // Email channel.
-  logEvent("say_message_send_attempt", text, { channel: "email" });
+  logSay("say_message_send_attempt", text, { channel: "email" });
   try {
     await sendToEmail(text);
     sending = false;
     if (occasionMode) markOccasionDone(occasionData);
-    logEvent("say_message_sent", text, { channel: "email" });
+    logSay("say_message_sent", text, { channel: "email" });
     showSayResult("SENT ✓", "sent", "Press OK to say something else · Press BACK for the Home screen.");
   } catch (e) {
     sending = false;
-    logEvent("say_message_error", text, { channel: "email" });
+    logSay("say_message_error", text, { channel: "email" });
     showSayResult("COULD NOT SEND", "error", "Please try again — press BACK to go back and resend.");
   }
 }
