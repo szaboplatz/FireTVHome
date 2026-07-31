@@ -4,7 +4,7 @@
 //  app returns at  <web-app URL>?action=version  — so you can confirm the TV is
 //  running this exact version. Bump it on every deploy-worthy change.
 // ============================================================================
-const BACKEND_VERSION = '2026-07-31-p18 (Phase 2: replies email back to sender)';
+const BACKEND_VERSION = '2026-07-31-p19 (get_message for Reply with Talk)';
 // ============================================================================
 
 const SHEET_NAME = 'FireTVHomeMessages';
@@ -165,6 +165,12 @@ function doGet(e) {
     const id = (e.parameter.id || '').trim();
     if (!id) return output_({ ok: false, error: 'Missing id' }, callback);
     return output_(getReply_(id), callback);
+  }
+
+  if (action === 'get_message') {
+    const id = (e.parameter.id || '').trim();
+    if (!id) return output_({ ok: false, error: 'Missing id' }, callback);
+    return output_(getMessage_(id), callback);
   }
 
   return output_({ ok: false, error: 'Unknown action' }, callback);
@@ -445,6 +451,24 @@ function getReply_(id) {
     id,
     replied_at: formatDate_(repliedAt),
     reply_body: replyBody
+  };
+}
+
+// One message's sender + text, for the Talk composer to seed a reply with the
+// original note as context (reached via ?action=get_message&id=...).
+function getMessage_(id) {
+  const row = findRowById_(id);
+  if (!row) return { ok: false, error: 'Message not found' };
+  const headers = getHeaderMap_(row.sheet);
+  const vals = row.sheet.getRange(row.rowNumber, 1, 1, row.sheet.getLastColumn()).getValues()[0];
+  const get = function (name) { return headers[name] ? String(vals[headers[name] - 1] || '') : ''; };
+  return {
+    ok: true,
+    id: id,
+    from_name: get('from_name'),
+    subject: get('subject'),
+    body: get('body'),
+    created_at: headers.created_at ? formatDate_(vals[headers.created_at - 1]) : ''
   };
 }
 

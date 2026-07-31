@@ -455,7 +455,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.31</div>
+    <div class="version-label">Talk v0.32</div>
   </div>
 
   <!-- START -->
@@ -576,7 +576,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.31";
+const PAGE_VERSION = "v0.32";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -825,6 +825,12 @@ let currentRecipient = "";   // who this message is for, inferred from the tree 
 let aiPicksRecipient = false; // in this AI flow, the first option he picks is the recipient (friend path)
 let sayResultOk = false;     // did the last send succeed? (drives BACK on the result screen)
 let sayLogId = "";           // short id grouping one composition's trace events
+
+// Reply entry (reached from a Home message via ?reply=1&msgid=...&to=...): he is
+// answering someone who wrote to him, composed with the AI and sent back to them.
+let replyMode = false;
+let replyMsgId = "";
+let replySeed = "";          // the AI seed, kept so "start over" can regenerate
 
 // Family-occasion entry (reached from the Home reminder via ?occasion=...).
 let occasionMode = false;    // did he arrive here for a family occasion?
@@ -1343,6 +1349,8 @@ function aiBack() {
     updateBreadcrumb();
     renderAiOptions(prev.options, prev.draft);
     showScreen("aiOptions");
+  } else if (replyMode) {
+    goHome();   // backing out of a reply leaves the composer
   } else if (occasionMode) {
     showOccasion(occasionData);
   } else {
@@ -1503,6 +1511,59 @@ async function initOccasion() {
   return true;
 }
 
+// Reply-with-Talk: arrive from a Home message, fetch the note for context, and
+// open straight into the AI composer seeded to answer that person.
+async function initReply() {
+  if (getQueryParam("reply") !== "1") return false;
+  const mid = getQueryParam("msgid");
+  if (!mid) return false;
+  const toParam = getQueryParam("to");
+
+  replyMode = true;
+  replyMsgId = mid;
+
+  let ctx = null;
+  try {
+    const data = await loadJsonp(MESSAGES_API_URL, { action: "get_message", id: mid });
+    if (data && data.ok) ctx = data;
+  } catch (e) {}
+
+  const who = (ctx && ctx.from_name) || toParam || "";
+  const note = (ctx && ctx.body) ? ctx.body : "";
+  currentRecipient = who;
+
+  mode = "say";
+  setModeClass();
+  newSayLogId();
+  applyReplyLabels();
+
+  replySeed = "He is replying to a message he just received from " + (who || "someone close to him") + ". " +
+    (note ? ("They wrote to him: \"" + String(note).slice(0, 600) + "\". ") : "") +
+    "Help him write a warm, personal reply in his own voice that answers what they said. " +
+    "Keep it first person and addressed to " + (who || "them") + " by name.";
+  seedFallbackText = "Thank you for your message. I love you.";
+
+  logSay("reply_start", who, { msgid: mid, to: who });
+  beginAiSay(replySeed, null, false);
+  return true;
+}
+
+// Regenerate the reply from scratch (DOWN / "start over" while in reply mode).
+function restartReply() {
+  if (!replyMode) return;
+  seedFallbackText = "Thank you for your message. I love you.";
+  beginAiSay(replySeed, null, false);
+}
+
+// In reply mode the two send tiles both just send the reply back to the sender,
+// so relabel them and drop the family-page/email distinction that doesn't apply.
+function applyReplyLabels() {
+  const fam = document.querySelector('[data-choose="say-send-family"] .tile-label');
+  const eml = document.querySelector('[data-choose="say-send-email"] .tile-label');
+  if (fam) fam.textContent = "SEND REPLY";
+  if (eml) eml.textContent = "SEND REPLY";
+}
+
 function chooseOccasionCanned(index) {
   const line = occasionCanned[index];
   if (line == null) return;
@@ -1546,6 +1607,7 @@ function occasionOwnWay() {
 
 function startMode(m) {
   occasionMode = false;
+  replyMode = false;
   mode = m;
   nodeStack = [m === "care" ? CARE_TREE : SAY_TREE];
   pathLabels = [];
@@ -1809,6 +1871,26 @@ async function sendDadEmail(text) {
   return result;
 }
 
+// Reply-with-Talk send: record his composed reply against the original message,
+// which (via the backend) emails it straight back to whoever wrote to him.
+async function sendTalkReply(text) {
+  const formData = new URLSearchParams();
+  formData.set("action", "add_reply");
+  formData.set("id", replyMsgId);
+  formData.set("reply_body", text);
+
+  const response = await fetch(MESSAGES_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+    body: formData.toString()
+  });
+  const result = await response.json();
+  if (!response.ok || !result.ok) {
+    throw new Error(result && result.error ? result.error : "Reply failed");
+  }
+  return result;
+}
+
 async function handleSay(channel) {
   if (sending) return;
   const text = currentFinalText;
@@ -1816,6 +1898,26 @@ async function handleSay(channel) {
 
   sending = true;
   showSayResult("SENDING…", "sending", "");
+
+  if (channel === "reply") {
+    const hint = "Press OK or BACK to return to the Home screen.";
+    logSay("say_message_send_attempt", text, { channel: "reply", to: currentRecipient || "", msgid: replyMsgId });
+    try {
+      const res = await sendTalkReply(text);
+      sending = false;
+      logSay("say_message_sent", text, { channel: "reply", emailed: !!res.emailed, matched: !!res.matched, to: currentRecipient || "" });
+      if (res.emailed) {
+        showSayResult("REPLY SENT TO " + (currentRecipient || "THEM").toUpperCase() + " ✓", "sent", hint);
+      } else {
+        showSayResult("REPLY SAVED ✓", "sent", "Your reply was saved. " + hint);
+      }
+    } catch (e) {
+      sending = false;
+      logSay("say_message_error", text, { channel: "reply" });
+      showSayResult("COULD NOT SEND", "error", "Please try again — press BACK to go back and resend.");
+    }
+    return;
+  }
 
   if (channel === "family") {
     logSay("say_message_send_attempt", text, { channel: "family_page" });
@@ -1953,9 +2055,9 @@ document.addEventListener("keydown", function(event) {
 
   if (currentScreen === "sayConfirm") {
     if (dir === "up") showSayBanner();
-    if (dir === "left") handleSay("family");
-    if (dir === "right") handleSay("email");
-    if (dir === "down") { if (occasionMode) showOccasion(occasionData); else startMode("say"); }
+    if (dir === "left") handleSay(replyMode ? "reply" : "family");
+    if (dir === "right") handleSay(replyMode ? "reply" : "email");
+    if (dir === "down") { if (replyMode) restartReply(); else if (occasionMode) showOccasion(occasionData); else startMode("say"); }
     return;
   }
 
@@ -1970,7 +2072,7 @@ document.addEventListener("keydown", function(event) {
   if (currentScreen === "sayResult") {
     // Once the send has settled: OK says something new; BACK goes Home (handled
     // in stepBack). On a failure, BACK instead returns to the send options.
-    if (isActivationKey(key) && !sending && sayResultOk) startMode("say");
+    if (isActivationKey(key) && !sending && sayResultOk) { if (replyMode) goHome(); else startMode("say"); }
     return;
   }
 
@@ -2009,9 +2111,9 @@ document.addEventListener("click", function(event) {
   if (choose === "occasion-canned") { chooseOccasionCanned(Number(tile.dataset.index || "0")); return; }
   if (choose === "occasion-own") { occasionOwnWay(); return; }
   if (choose === "say-show") { showSayBanner(); return; }
-  if (choose === "say-send-family") { handleSay("family"); return; }
-  if (choose === "say-send-email") { handleSay("email"); return; }
-  if (choose === "say-again") { if (occasionMode) showOccasion(occasionData); else startMode("say"); return; }
+  if (choose === "say-send-family") { handleSay(replyMode ? "reply" : "family"); return; }
+  if (choose === "say-send-email") { handleSay(replyMode ? "reply" : "email"); return; }
+  if (choose === "say-again") { if (replyMode) restartReply(); else if (occasionMode) showOccasion(occasionData); else startMode("say"); return; }
   if (choose === "ai-option") { chooseAiOption(Number(tile.dataset.index || "0")); return; }
   if (choose === "ai-other") { refreshOptions(); return; }
   if (choose === "ai-say") { chooseAiSay(); return; }
@@ -2046,9 +2148,10 @@ document.addEventListener("DOMContentLoaded", function() {
     logEvent("communicator_open", "Talk opened");
   });
 
-  // If we arrived from the Home reminder (?occasion=...), open straight into the
-  // occasion's message choices instead of the normal Care/Say start screen.
-  initOccasion();
+  // Deep-link entries: a reply to a Home message (?reply=1&msgid=...) opens the
+  // AI composer seeded to answer that person; a Home reminder (?occasion=...)
+  // opens the occasion's choices. Otherwise the normal Care/Say start screen.
+  initReply().then(function (started) { if (!started) initOccasion(); });
 
   window.addEventListener("resize", onViewportResize);
   if (window.visualViewport) {

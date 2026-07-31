@@ -1072,7 +1072,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.6.2 spatial</div>
+    <div class="version-label">Fire TV Home v1.6.3 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -1166,7 +1166,8 @@ textarea:focus {
         <button class="action-btn action-like spatial-item" data-nav-group="messageActions" data-action="like">👍 LIKE</button>
         <button class="action-btn action-yes spatial-item" data-nav-group="messageActions" data-action="yes">YES</button>
         <button class="action-btn action-no spatial-item" data-nav-group="messageActions" data-action="no">NO</button>
-        <button class="action-btn action-reply spatial-item" data-nav-group="messageActions" data-action="reply">↩ REPLY</button>
+        <button class="action-btn action-reply-talk spatial-item" data-nav-group="messageActions" data-action="reply_talk">🗣 REPLY WITH TALK</button>
+        <button class="action-btn action-reply spatial-item" data-nav-group="messageActions" data-action="reply">↩ REPLY (TYPE)</button>
         <button class="action-btn action-archive spatial-item" data-nav-group="messageActions" data-action="archive">📥 ARCHIVE</button>
         <button class="action-btn action-close spatial-item" data-nav-group="messageActions" data-action="close">CLOSE</button>
       </div>
@@ -1317,7 +1318,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.6.2";
+const PAGE_VERSION = "v1.6.3";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -2194,6 +2195,18 @@ async function activateMessageAction() {
         item.textContent = originalText;
       }, 1200);
     }
+    return;
+  }
+
+  if (action === "reply_talk") {
+    // Hand off to the AI Talk composer, seeded to reply to this sender, so he can
+    // build the reply with the D-pad instead of typing letter by letter.
+    logEvent("message_reply_talk", msg.subject || msg.id, { id: msg.id, to: msg.from_name || "" });
+    const params = new URLSearchParams();
+    params.set("reply", "1");
+    params.set("msgid", msg.id);
+    params.set("to", msg.from_name || "");
+    window.location.href = "communicator.html?" + params.toString();
     return;
   }
 
