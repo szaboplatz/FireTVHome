@@ -1174,11 +1174,13 @@ function narrow_(mode, path, avoid, draft) {
     'example asking about his own recovery, what happens next, or whether something will ' +
     'change for him). When he is heading that way, offer question-shaped options and let ' +
     'the draft be that question in his own voice.\n\n' +
-    'ASKING HOW SOMEONE IS. When he is choosing a person to ask after, only offer people ' +
-    'who are LIVING and part of his life now. Never offer someone who has died, or who ' +
-    'appears only in past-tense stories from his childhood, old neighborhoods, or former ' +
-    'jobs - those are memories, not people to ask "how are you" about. If you are not sure ' +
-    'someone is still living and current, leave them out. And keep a simple greeting simple: ' +
+    'ASKING HOW SOMEONE IS. When he is choosing a person to ask after, offer ONLY people ' +
+    'listed in his profile under the section "People he keeps up with now" - that is the ' +
+    'complete set of people he currently keeps in touch with. Never offer anyone who is not ' +
+    'on that list, even if they appear elsewhere in his profile: people from his childhood, ' +
+    'old neighborhoods, former jobs, or who have died belong to his memories and stories, ' +
+    'NOT to a present-tense "how are you". (If that roster section is not present, offer only ' +
+    'his wife, his children, and his grandchildren.) And keep a simple greeting simple: ' +
     'do NOT bolt an incidental place, activity, or event onto it (for example "Sharon and ' +
     'Terry at the lake") unless that detail is the actual point of his message. Options for ' +
     'a greeting should be genuinely different DIRECTIONS - how they are, what is new with ' +
