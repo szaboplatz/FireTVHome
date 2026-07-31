@@ -1174,6 +1174,16 @@ function narrow_(mode, path, avoid, draft) {
     'example asking about his own recovery, what happens next, or whether something will ' +
     'change for him). When he is heading that way, offer question-shaped options and let ' +
     'the draft be that question in his own voice.\n\n' +
+    'ASKING HOW SOMEONE IS. When he is choosing a person to ask after, only offer people ' +
+    'who are LIVING and part of his life now. Never offer someone who has died, or who ' +
+    'appears only in past-tense stories from his childhood, old neighborhoods, or former ' +
+    'jobs - those are memories, not people to ask "how are you" about. If you are not sure ' +
+    'someone is still living and current, leave them out. And keep a simple greeting simple: ' +
+    'do NOT bolt an incidental place, activity, or event onto it (for example "Sharon and ' +
+    'Terry at the lake") unless that detail is the actual point of his message. Options for ' +
+    'a greeting should be genuinely different DIRECTIONS - how they are, what is new with ' +
+    'them, one specific thing to ask them about - not the same hello with a location or ' +
+    'activity attached.\n\n' +
     'Today is ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'EEEE, MMMM d, yyyy') +
     '. Use it to keep tense and timing right: speak of things that have not happened yet as ' +
     'upcoming, and things already past as past (for example, a school year or a season that ' +

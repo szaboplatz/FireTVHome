@@ -448,7 +448,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.20</div>
+    <div class="version-label">Talk v0.21</div>
   </div>
 
   <!-- START -->
@@ -569,7 +569,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.20";
+const PAGE_VERSION = "v0.21";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -754,7 +754,7 @@ const SAY_TREE = {
             right: { label: "Sharon", to: "Sharon", seed: "Ask his daughter Sharon how she is doing", say: "How are you doing, Sharon? I'm thinking of you." }
           }
         },
-        down: { label: "A friend or someone else", seed: "He wants to ask how a friend or someone outside his household is doing. From his profile, offer several SPECIFIC named people as the options to choose from - his friends (such as Bill Gordon, Andy Zaharchuk, Bob Nedbalski, Gil Smith), his sister Pat, cousins, former colleagues, or anyone else he keeps in touch with; you may also offer the whole family. Keep the draft a plain greeting with no name until he picks who, then make it about that person.", say: "How are you doing? I'm thinking of you." }
+        down: { label: "A friend or someone else", seed: "He wants to ask how a friend or someone outside his household is doing. From his profile, offer several SPECIFIC named people who are LIVING and part of his life now - friends like Bill Gordon, Andy Zaharchuk, or Bob Nedbalski, his sister Pat, or others he currently keeps in touch with. Do NOT offer anyone who has died or who appears only in old stories from his past. Keep the draft a plain greeting with no name until he picks who, then make it about that person.", say: "How are you doing? I'm thinking of you." }
       }
     },
     up: {
