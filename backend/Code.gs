@@ -4,7 +4,7 @@
 //  app returns at  <web-app URL>?action=version  — so you can confirm the TV is
 //  running this exact version. Bump it on every deploy-worthy change.
 // ============================================================================
-const BACKEND_VERSION = '2026-07-31-p17 (inbound email -> Home Messages)';
+const BACKEND_VERSION = '2026-07-31-p18 (Phase 2: replies email back to sender)';
 // ============================================================================
 
 const SHEET_NAME = 'FireTVHomeMessages';
@@ -576,13 +576,24 @@ function quickResponse_(id, response) {
   responseAtCell.setValue(now);
   responseCell.setValue(response);
 
+  // Phase 2: send the YES/NO back to a known sender, quoting their note so the
+  // bare answer makes sense on its own.
+  const fromName = String(row.sheet.getRange(row.rowNumber, headers.from_name).getValue() || '');
+  const origBody = String(row.sheet.getRange(row.rowNumber, headers.body).getValue() || '');
+  const replyText = (origBody ? ('In reply to your note:\n"' + snippet_(origBody, 200) + '"\n\n') : '') +
+    'Dad\'s answer: ' + response;
+  const sent = emailReplyToSender_(fromName, replyText, 'quick');
+
   return {
     ok: true,
     id,
     opened_at: formatDate_(openedCell.getValue()),
     read_at: formatDate_(readCell.getValue()),
     quick_response_at: formatDate_(responseAtCell.getValue()),
-    quick_response: response
+    quick_response: response,
+    to_name: fromName,
+    emailed: sent.emailed,
+    matched: sent.matched
   };
 }
 
@@ -620,14 +631,65 @@ function addReply_(id, replyBody) {
   repliedCell.setValue(now);
   replyBodyCell.setValue(replyBody);
 
+  // Phase 2: send his reply back to whoever the message came from, if that
+  // person is a known contact. The sheet write above is the record either way.
+  const fromName = String(row.sheet.getRange(row.rowNumber, headers.from_name).getValue() || '');
+  const sent = emailReplyToSender_(fromName, replyBody, 'reply');
+
   return {
     ok: true,
     id,
     opened_at: formatDate_(openedCell.getValue()),
     read_at: formatDate_(readCell.getValue()),
     replied_at: formatDate_(repliedCell.getValue()),
-    reply_body: replyBody
+    reply_body: replyBody,
+    to_name: fromName,
+    emailed: sent.emailed,
+    matched: sent.matched
   };
+}
+
+// Send Dad's reply back out to the person a Home message came from, when that
+// person is a known contact (contacts-only). Reuses the mail path; best-effort,
+// and never blocks the sheet record. Returns { emailed, matched, target }.
+function emailReplyToSender_(fromName, replyText, kind) {
+  const who = String(fromName || '').trim();
+  const email = who ? firstAddress_(getContactEmail_(who)) : '';
+  let emailed = false, error = '';
+
+  if (email) {
+    try {
+      MailApp.sendEmail(
+        email,
+        'A reply from Dad (via his Fire TV)',
+        String(replyText || '') + '\n\n—\nSent from Dad\'s Fire TV communicator.'
+      );
+      emailed = true;
+    } catch (e) {
+      error = String((e && e.message) || e);
+    }
+  } else {
+    error = who ? ('No contact email for "' + who + '"') : 'No sender name on the message';
+  }
+
+  try {
+    logEvent_({
+      event_type: 'reply_email',
+      event_label: (emailed
+        ? 'REPLY SENT to ' + who + ' <' + email + '>'
+        : 'REPLY NOT EMAILED to ' + (who || '(unknown)') + ' — ' + error) + (kind ? ' [' + kind + ']' : ''),
+      page_version: 'backend ' + BACKEND_VERSION,
+      extra: JSON.stringify({ to: who, matched: !!email, emailed: emailed, kind: kind || '', error: error })
+    });
+  } catch (e) { /* logging is best-effort */ }
+
+  return { emailed: emailed, matched: !!email, target: email, error: error };
+}
+
+// Collapse whitespace and cap a string for use as a short quoted reference.
+function snippet_(s, n) {
+  const t = String(s || '').replace(/\s+/g, ' ').trim();
+  return t.length > n ? (t.slice(0, n).trim() + '…') : t;
 }
 
 function addMessage_(fromName, subject, body) {
@@ -881,7 +943,12 @@ function importGmailReplies() {
       const body = cleanIncomingBody_(m.getPlainBody());
       m.markRead();                                    // don't reconsider this message
       if (!body) return;                               // nothing but quotes/signature
-      const subject = tidySubject_(m.getSubject());
+      // Friendly title: keep a real subject if the sender wrote one; otherwise
+      // say who it's from and whether it's a reply or a fresh note.
+      const rawSubject = m.getSubject();
+      const isReply = /^\s*(re|fwd|fw)\s*:/i.test(String(rawSubject || ''));
+      let subject = tidySubject_(rawSubject);
+      if (subject === 'A note for you') subject = name + (isReply ? ' wrote back' : ' sent a note');
       addMessage_(name, subject, body);
       importedFromThread++;
       imported++;

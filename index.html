@@ -1072,7 +1072,7 @@ textarea:focus {
 <div class="app">
   <div class="top-status-bar">
     <div class="datetime-bar" id="datetimeBar">Loading time…</div>
-    <div class="version-label">Fire TV Home v1.6.1 spatial</div>
+    <div class="version-label">Fire TV Home v1.6.2 spatial</div>
   </div>
 
   <!-- HOME VIEW -->
@@ -1317,7 +1317,7 @@ const VIDEO_PLAYLISTS = {
 };
 const WATCHED_STORAGE_KEY = "watchedYoutubeVideosDadFireTv";
 const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afCBaLfiy2k5jljwkiOvKziPdUGWPTOFSqtDOFkTuUdL7j0Kc3BHNUWS0g/exec";
-const PAGE_VERSION = "v1.6.1";
+const PAGE_VERSION = "v1.6.2";
 const ENABLE_MONITORING_LOGS = true;
 const PUBLIC_IP_STORAGE_KEY = "fireTvHomePublicIp";
 
@@ -2172,7 +2172,11 @@ async function activateMessageAction() {
           cached.opened_at = msg.opened_at;
         }
 
-        item.textContent = `${response} SAVED ✓`;
+        // If it emailed the answer back to a known sender, name them.
+        const answerTo = result.to_name || msg.from_name || "";
+        item.textContent = result.emailed
+          ? `${response} SENT TO ${answerTo.toUpperCase()} ✓`
+          : `${response} SAVED ✓`;
 
         setTimeout(() => {
           renderMessageDetail();
@@ -2701,8 +2705,15 @@ async function submitReply() {
       cached.reply_body = body;
     }
 
-    showReplyStatus("REPLY SENT ✓", "sent");
-    logEvent("message_reply_success", currentMessage.subject || currentMessage.id, { id: currentMessage.id });
+    // If the backend emailed the reply to a known contact, say so by name;
+    // otherwise it was recorded but not sent to anyone.
+    const replyTo = result.to_name || currentMessage.from_name || "";
+    showReplyStatus(
+      result.emailed ? ("REPLY SENT TO " + replyTo.toUpperCase() + " ✓") : "REPLY SAVED ✓",
+      "sent"
+    );
+    logEvent("message_reply_success", currentMessage.subject || currentMessage.id,
+      { id: currentMessage.id, emailed: !!result.emailed, matched: !!result.matched, to: replyTo });
 
     setTimeout(() => {
       clearGroupSelection("reply");
