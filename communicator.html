@@ -451,7 +451,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.29</div>
+    <div class="version-label">Talk v0.30</div>
   </div>
 
   <!-- START -->
@@ -572,7 +572,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.29";
+const PAGE_VERSION = "v0.30";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -757,7 +757,7 @@ const SAY_TREE = {
             right: { label: "Sharon", to: "Sharon", seed: "Ask his daughter Sharon how she is doing", say: "How are you doing, Sharon? I'm thinking of you." }
           }
         },
-        down: { label: "A friend or someone else", seed: "He wants to ask how a friend or someone outside his immediate household is doing. Offer people ONLY from his profile's 'People he keeps up with now' list, and LEAD with his friends and extended family - Bill Gordon, Andy Zaharchuk, Bob Nedbalski, the Mannings, Gigg, Su, his sister Pat, Kal, Peggy, and Tu's parents Mai and Gio; his wife, children, and grandchildren already have their own buttons, so do not lead with them. Label each option with JUST the person's name - no parentheses, relationship, or location. Do NOT offer anyone not on that list. Keep the draft a plain greeting with no name until he picks who, then make it about that person.", say: "How are you doing? I'm thinking of you." }
+        down: { label: "A friend or someone else", recipientFromAi: true, seed: "He wants to ask how a friend or someone outside his immediate household is doing. Offer people ONLY from his profile's 'People he keeps up with now' list, and LEAD with his friends and extended family - Bill Gordon, Andy Zaharchuk, Bob Nedbalski, the Mannings, Gigg, Su, his sister Pat, Kal, Peggy, and Tu's parents Mai and Gio; his wife, children, and grandchildren already have their own buttons, so do not lead with them. Label each option with JUST the person's name - no parentheses, relationship, or location. Do NOT offer anyone not on that list. Keep the draft a plain greeting with no name until he picks who, then make it about that person.", say: "How are you doing? I'm thinking of you." }
       }
     },
     up: {
@@ -818,6 +818,7 @@ let currentDraft = "";       // the running AI draft he could send right now
 let aiAvoid = [];            // options already shown at this level (for "other options")
 let seedFallbackText = "";   // plain phrase to fall back on if a seed leaf's AI call fails
 let currentRecipient = "";   // who this message is for, inferred from the tree path (to_name)
+let aiPicksRecipient = false; // in this AI flow, the first option he picks is the recipient (friend path)
 let sayResultOk = false;     // did the last send succeed? (drives BACK on the result screen)
 let sayLogId = "";           // short id grouping one composition's trace events
 
@@ -1101,12 +1102,15 @@ function renderAiOptions(options, draft) {
   aiOptionsField.appendChild(center);
 }
 
-function beginAiSay(categoryLabel, staticCategoryNode) {
+function beginAiSay(categoryLabel, staticCategoryNode, picksRecipient) {
   aiPath = [categoryLabel];
   aiHistory = [];
   aiAvoid = [];
   aiFallbackNode = staticCategoryNode || null;
-  logSay("say_ai_start", categoryLabel, { seed: categoryLabel, to: currentRecipient || "" });
+  // On the friend path the AI's first-level options ARE people; the one he picks
+  // becomes the recipient so his message can be emailed to them.
+  aiPicksRecipient = !!picksRecipient;
+  logSay("say_ai_start", categoryLabel, { seed: categoryLabel, to: currentRecipient || "", picksRecipient: aiPicksRecipient });
   runNarrow();
 }
 
@@ -1273,6 +1277,13 @@ function chooseAiOption(index) {
   if (!current) return;
   const label = current.options[index];
   if (label == null) return;
+  // Friend path: his first pick is the person, so remember them as the recipient
+  // (later picks are message content and must not overwrite it). Re-picking at
+  // the first level — e.g. after BACK — replaces the recipient with the new name.
+  if (aiPicksRecipient && aiPath.length === 1) {
+    currentRecipient = String(label).trim();
+    logSay("say_ai_recipient", currentRecipient, { path: aiPath.join(" > ") });
+  }
   logSay("say_ai_choice", label, { index: index, path: aiPath.join(" > "), from: current.options.slice() });
   aiPath.push(label);
   aiAvoid = [];
@@ -1297,6 +1308,9 @@ function aiBack() {
   if (prev) {
     aiPath = prev.path.slice();
     aiAvoid = prev.options.slice();
+    // Backed out to the name list on the friend path: no person is chosen again
+    // yet, so drop the recipient until he picks one.
+    if (aiPicksRecipient && aiPath.length === 1) currentRecipient = "";
     updateBreadcrumb();
     renderAiOptions(prev.options, prev.draft);
     showScreen("aiOptions");
@@ -1312,6 +1326,8 @@ function goToSayRoot() {
   aiHistory = [];
   aiAvoid = [];
   aiFallbackNode = null;
+  aiPicksRecipient = false;
+  currentRecipient = "";
   sayFromAi = false;
   nodeStack = [SAY_TREE];
   pathLabels = [];
@@ -1513,6 +1529,7 @@ function startMode(m) {
   aiAvoid = [];
   seedFallbackText = "";
   currentRecipient = "";
+  aiPicksRecipient = false;
   narrowSeq++;
   newSayLogId();
   setModeClass();
@@ -1549,7 +1566,7 @@ function choose(dir) {
   if (mode === "say" && next.seed) {
     seedFallbackText = next.say || next.label;
     if (ENABLE_AI) {
-      beginAiSay(next.seed, null);
+      beginAiSay(next.seed, null, next.recipientFromAi);
     } else {
       currentFinalText = seedFallbackText;
       sayFromAi = false;
