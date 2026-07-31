@@ -4,7 +4,7 @@
 //  app returns at  <web-app URL>?action=version  — so you can confirm the TV is
 //  running this exact version. Bump it on every deploy-worthy change.
 // ============================================================================
-const BACKEND_VERSION = '2026-07-31-p16 (testEmail sends to a real contact)';
+const BACKEND_VERSION = '2026-07-31-p17 (inbound email -> Home Messages)';
 // ============================================================================
 
 const SHEET_NAME = 'FireTVHomeMessages';
@@ -31,6 +31,12 @@ const CONTACTS_HEADERS = ['Name', 'Email'];
 // If a message has no known recipient email, it falls back to this address.
 // Leave '' to use the account that owns/deploys the script.
 const FALLBACK_EMAIL = '';
+// Inbound email -> Home Messages. A time trigger runs importGmailReplies(),
+// which pulls notes sent to the dedicated Gmail from anyone in Contacts (a reply
+// to one of his messages OR a fresh note) onto his Home screen. Imported threads
+// get this Gmail label so nothing is pulled in twice; long notes are trimmed.
+const IMPORT_LABEL = 'FireTVImported';
+const INBOUND_MAX_CHARS = 1500;
 // Default reminder window: show an occasion from a day before through this many
 // days ahead. Overridable per request with ?lead=NN.
 const OCCASION_LEAD_DAYS = 5;
@@ -842,6 +848,122 @@ function getContactsSheet_() {
     sheet.setFrozenRows(1);
   }
   return sheet;
+}
+
+/* ---------- INBOUND EMAIL -> HOME MESSAGES (Phase 1) ----------
+   People reply to (or freshly email) the dedicated Gmail; this pulls those notes
+   onto his Home screen as ordinary Messages. Safety rail: ONLY addresses in the
+   Contacts tab are ever ingested — spam, marketing, and strangers are ignored.
+   Run manually from the editor to test, and on a time trigger (every ~10 min)
+   in production. Needs the Gmail scope https://mail.google.com/ in the manifest. */
+function importGmailReplies() {
+  const emailToName = contactEmailToName_();
+  if (!Object.keys(emailToName).length) {
+    Logger.log('No contacts with emails on file — nothing can be matched yet.');
+    return { ok: true, imported: 0 };
+  }
+
+  let label = GmailApp.getUserLabelByName(IMPORT_LABEL);
+  if (!label) label = GmailApp.createLabel(IMPORT_LABEL);
+
+  // Unread = not yet imported. Scope to the last two weeks so old mail is left
+  // alone. Marking each imported message read is the per-message dedup.
+  const threads = GmailApp.search('is:unread in:inbox newer_than:14d', 0, 50);
+  let imported = 0;
+
+  threads.forEach(function (thread) {
+    let importedFromThread = 0;
+    thread.getMessages().forEach(function (m) {
+      if (!m.isUnread()) return;                       // already handled
+      const addr = extractEmailAddress_(m.getFrom());
+      const name = emailToName[addr];
+      if (!name) return;                               // not a known contact -> leave it
+      const body = cleanIncomingBody_(m.getPlainBody());
+      m.markRead();                                    // don't reconsider this message
+      if (!body) return;                               // nothing but quotes/signature
+      const subject = tidySubject_(m.getSubject());
+      addMessage_(name, subject, body);
+      importedFromThread++;
+      imported++;
+      try {
+        logEvent_({
+          event_type: 'inbound_email',
+          event_label: 'From ' + name + (subject ? (': ' + subject) : ''),
+          page_version: 'backend ' + BACKEND_VERSION,
+          extra: JSON.stringify({ from: name, address: addr })
+        });
+      } catch (e) { /* logging is best-effort */ }
+    });
+    if (importedFromThread) { try { thread.addLabel(label); } catch (e) {} }
+  });
+
+  Logger.log('Imported ' + imported + ' message(s) onto the Home screen.');
+  return { ok: true, imported: imported };
+}
+
+// Reverse of the Contacts tab: every address (a row may list several) -> its
+// display Name, lowercased for matching. First name wins on a duplicate address.
+function contactEmailToName_() {
+  const out = {};
+  let sheet;
+  try { sheet = getContactsSheet_(); } catch (e) { return out; }
+  const lastRow = sheet.getLastRow();
+  const lastCol = Math.max(sheet.getLastColumn(), CONTACTS_HEADERS.length);
+  if (lastRow < 2) return out;
+
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+    .map(function (h) { return String(h || '').trim().toLowerCase(); });
+  let nameCol = headers.indexOf('name');
+  let emailCol = headers.indexOf('email');
+  if (nameCol === -1) nameCol = 0;
+  if (emailCol === -1) emailCol = 1;
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  rows.forEach(function (r) {
+    const name = String(r[nameCol] || '').trim();
+    if (!name) return;
+    String(r[emailCol] || '').replace(/;/g, ',').split(',').forEach(function (e) {
+      const a = e.trim().toLowerCase();
+      if (a && !out[a]) out[a] = name;
+    });
+  });
+  return out;
+}
+
+// "Betty Sabo <bettysabo@gmail.com>" -> "bettysabo@gmail.com" (lowercased).
+function extractEmailAddress_(from) {
+  const s = String(from || '');
+  const m = s.match(/<([^>]+)>/);
+  return (m ? m[1] : s).trim().toLowerCase();
+}
+
+// Drop the "Re:"/"Fwd:" noise, and our own outbound subject (meaningless as a
+// heading to him), so the card shows something friendly.
+function tidySubject_(subject) {
+  let s = String(subject || '').replace(/^\s*((re|fwd|fw)\s*:\s*)+/i, '').trim();
+  if (!s || /message from dad/i.test(s)) s = 'A note for you';
+  return s;
+}
+
+// Reduce a raw email to just the new text: stop at the quoted original / reply
+// headers, drop quoted (">") lines and our own footer, and cap the length.
+function cleanIncomingBody_(plain) {
+  const lines = String(plain || '').replace(/\r\n/g, '\n').split('\n');
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^\s*On .+wrote:\s*$/.test(line)) break;               // "On <date>, X wrote:"
+    if (/^\s*-{2,}\s*Original Message\s*-{2,}/i.test(line)) break;
+    if (/^\s*_{5,}\s*$/.test(line)) break;                     // Outlook divider
+    if (i > 0 && /^\s*From:\s.+/.test(line)) break;            // forwarded header block
+    if (/^\s*--\s*$/.test(line)) break;                        // signature delimiter
+    if (/^\s*>/.test(line)) continue;                          // quoted line
+    if (/Sent from Dad'?s Fire TV communicator/i.test(line)) continue;
+    out.push(line);
+  }
+  let cleaned = out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  if (cleaned.length > INBOUND_MAX_CHARS) cleaned = cleaned.slice(0, INBOUND_MAX_CHARS).trim() + '…';
+  return cleaned;
 }
 
 function listDadMessages_(params) {
