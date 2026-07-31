@@ -1,10 +1,15 @@
+// ============================================================================
+//  FireTVHome backend — DEPLOYED VERSION MARKER
+//  The string below is what you see here in the editor AND what the live web
+//  app returns at  <web-app URL>?action=version  — so you can confirm the TV is
+//  running this exact version. Bump it on every deploy-worthy change.
+// ============================================================================
+const BACKEND_VERSION = '2026-07-31-p11 (one-person + no-diet-coke + no-send-options + voice/date)';
+// ============================================================================
+
 const SHEET_NAME = 'FireTVHomeMessages';
 const EVENT_SHEET_NAME = 'FireTVHomeEvents';
 const DAD_MESSAGE_SHEET_NAME = 'FireTVHomeDadMessages';
-// Bump this whenever the deployed backend changes in a way worth verifying. Hit
-// the live web-app URL with ?action=version to see which version is actually
-// DEPLOYED (not just what is in the editor). See doGet's 'version' action.
-const BACKEND_VERSION = '2026-07-31-p11 (one-person + no-diet-coke + no-send-options + voice/date)';
 // Living personalization profile for "Something to say" mode (Say mode only).
 // A two-column tab: Section | Detail, one true note per row. Read fresh on every
 // AI call, so the family can add rows any time with no redeploy. Care mode never
