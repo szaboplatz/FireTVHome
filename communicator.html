@@ -480,7 +480,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.40</div>
+    <div class="version-label">Talk v0.41</div>
   </div>
 
   <!-- START -->
@@ -610,7 +610,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.40";
+const PAGE_VERSION = "v0.41";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -1255,7 +1255,7 @@ async function runNarrow() {
   if (seq !== narrowSeq) return;
   aiBusy = false;
 
-  const options = stripMetaOptions(result.options || []).slice(0, 3);
+  const options = relabelEscapes(stripMetaOptions(result.options || [])).slice(0, 3);
   const draft = result.draft || result.sentence || ""; // tolerate the older backend shape
 
   // He can always send the draft, so a round with a draft but no options is fine.
@@ -1264,7 +1264,7 @@ async function runNarrow() {
     return;
   }
 
-  aiAvoid = options.slice();
+  aiAvoid = options.filter(function (o) { return !isEscapeOption(o); });
   aiHistory.push({ path: aiPath.slice(), options: options, draft: draft });
   // Trace: the exact draft the AI produced and every option it offered this round.
   logSay("say_ai_round", draft, {
@@ -1318,14 +1318,30 @@ function stripMetaOptions(options) {
   return kept;
 }
 
-// A deterministic "Something else" escape, so he is never stuck once he has
-// asked for other options a couple of times (the AI offers it only sometimes).
+// A deterministic escape, so he is never stuck once he has asked for other
+// options a couple of times. It is a DEFINITIVE endpoint — "none of these, just
+// send the general note" — NOT another "give me more choices" (that's what OTHER
+// OPTIONS is). So it's worded to say so, and picking it finalizes and sends.
 let otherCount = 0;   // OTHER OPTIONS presses at the current level, reset on a new round
-const ESCAPE_LABEL = "Something else";
-function isEscapeOption(o) { return /\b(something else|something different|none of these)\b/i.test(String(o || "")); }
+function escapeLabel() {
+  return reportMode ? "It's something else — just tell Dan" : "None of these — just send this";
+}
+function isEscapeOption(o) {
+  return /\b(something else|something different|none of these|just tell dan|just send this)\b/i.test(String(o || ""));
+}
+// Reword any escape the AI offers to our clear, definitive label so it never
+// reads like "give me more choices".
+function relabelEscapes(options) {
+  const out = []; let has = false;
+  options.forEach(function (o) {
+    if (isEscapeOption(o)) { if (!has) { out.push(escapeLabel()); has = true; } }
+    else out.push(o);
+  });
+  return out;
+}
 function ensureEscapeOption(options) {
-  if (options.some(isEscapeOption)) return options.slice(0, 3);
-  return options.slice(0, 2).concat([ESCAPE_LABEL]);   // keep 2 real + the escape
+  if (options.some(isEscapeOption)) return relabelEscapes(options).slice(0, 3);
+  return options.slice(0, 2).concat([escapeLabel()]);   // keep 2 real + the escape
 }
 
 // DOWN / "OTHER OPTIONS": ask for a different set at the same level, keeping
@@ -1360,11 +1376,11 @@ async function refreshOptions() {
   // Drop anything already shown at this step, so pressing OTHER OPTIONS never
   // surfaces a repeat even if the model returns one.
   const seenNorm = aiAvoid.map(normalizeOption);
-  let options = stripMetaOptions(result.options || [])
-    .filter(function (o) { return seenNorm.indexOf(normalizeOption(o)) === -1; })
+  let options = relabelEscapes(stripMetaOptions(result.options || [])
+    .filter(function (o) { return seenNorm.indexOf(normalizeOption(o)) === -1; }))
     .slice(0, 3);
 
-  // After a couple of tries, GUARANTEE a "Something else" escape (the model only
+  // After a couple of tries, GUARANTEE the escape (the model only
   // offers it sometimes). Also covers the case where nothing new came back.
   if (otherCount >= 2) options = ensureEscapeOption(options);
   if (!options.length) {
@@ -1390,13 +1406,11 @@ function chooseAiOption(index) {
   const label = current.options[index];
   if (label == null) return;
 
-  // He picked the "Something else" escape: don't treat it as content — tell the
-  // AI none of these fit and to change tack toward a broader/different set.
+  // He picked the escape: this is definitive — finalize the general draft and go
+  // straight to the send screen, NOT another round of options.
   if (isEscapeOption(label)) {
-    logSay("say_ai_escape", label, { path: aiPath.join(" > ") });
-    aiPath.push("None of these fit — offer a broader or completely different kind of option than anything shown so far, or a plain general version he can send as-is.");
-    aiAvoid = [];
-    runNarrow();
+    logSay("say_ai_escape", label, { path: aiPath.join(" > "), draft: currentDraft });
+    chooseAiSay();
     return;
   }
 
