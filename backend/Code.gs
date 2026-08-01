@@ -4,7 +4,7 @@
 //  app returns at  <web-app URL>?action=version  — so you can confirm the TV is
 //  running this exact version. Bump it on every deploy-worthy change.
 // ============================================================================
-const BACKEND_VERSION = '2026-07-31-p20 (reply seed offers options; always-offer nudge)';
+const BACKEND_VERSION = '2026-07-31-p21 (list_contacts for recipient picker; Category column)';
 // ============================================================================
 
 const SHEET_NAME = 'FireTVHomeMessages';
@@ -27,7 +27,9 @@ const DATES_HEADERS = ['Date', 'Who', 'Occasion', 'Canned'];
 // (e.g. "Sharon", "Betty"). Email may hold several comma-separated addresses
 // (e.g. a couple). "SEND BY EMAIL" looks the recipient up here.
 const CONTACTS_SHEET_NAME = 'FireTVHomeContacts';
-const CONTACTS_HEADERS = ['Name', 'Email'];
+// Optional third column "Category" (Family / Friend) groups people in the Talk
+// recipient picker. Blank is fine — the picker falls back to sensible defaults.
+const CONTACTS_HEADERS = ['Name', 'Email', 'Category'];
 // If a message has no known recipient email, it falls back to this address.
 // Leave '' to use the account that owns/deploys the script.
 const FALLBACK_EMAIL = '';
@@ -171,6 +173,10 @@ function doGet(e) {
     const id = (e.parameter.id || '').trim();
     if (!id) return output_({ ok: false, error: 'Missing id' }, callback);
     return output_(getMessage_(id), callback);
+  }
+
+  if (action === 'list_contacts') {
+    return output_(listContacts_(), callback);
   }
 
   return output_({ ok: false, error: 'Unknown action' }, callback);
@@ -923,6 +929,33 @@ function getContactEmail_(name) {
     }
   }
   return '';
+}
+
+// The recipient picker's people, drawn from the Contacts tab. Only rows with an
+// email are returned (you can't send to someone without one). Category (Family /
+// Friend) is passed through if the column exists; blank otherwise.
+function listContacts_() {
+  let sheet;
+  try { sheet = getContactsSheet_(); } catch (e) { return { ok: true, contacts: [] }; }
+  const lastRow = sheet.getLastRow();
+  const lastCol = Math.max(sheet.getLastColumn(), CONTACTS_HEADERS.length);
+  if (lastRow < 2) return { ok: true, contacts: [] };
+
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+    .map(function (h) { return String(h || '').trim().toLowerCase(); });
+  let nameCol = headers.indexOf('name'); if (nameCol === -1) nameCol = 0;
+  let emailCol = headers.indexOf('email'); if (emailCol === -1) emailCol = 1;
+  const catCol = headers.indexOf('category');
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  const contacts = [];
+  rows.forEach(function (r) {
+    const name = String(r[nameCol] || '').trim();
+    const email = String(r[emailCol] || '').trim();
+    if (!name || !email) return;   // must be reachable to be a recipient
+    contacts.push({ name: name, category: catCol !== -1 ? String(r[catCol] || '').trim() : '' });
+  });
+  return { ok: true, contacts: contacts };
 }
 
 function getContactsSheet_() {
