@@ -455,7 +455,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.33</div>
+    <div class="version-label">Talk v0.34</div>
   </div>
 
   <!-- START -->
@@ -551,6 +551,15 @@ body {
     <div class="screen-hint">LEFT / UP / RIGHT go deeper &middot; DOWN for other options &middot; OK (center) sends &middot; BACK goes back</div>
   </section>
 
+  <!-- SAY: WHO IS THIS FOR? (recipient picker, shown at send time) -->
+  <section id="recipientScreen" class="screen dpad">
+    <div class="ai-draft-panel">
+      <span class="ai-draft-text" id="recipientPrompt">Who should get this?</span>
+    </div>
+    <div class="field grid-field" id="recipientField"></div>
+    <div class="screen-hint" id="recipientHint">Pick a person &middot; OK sends to everyone (the family page) &middot; BACK goes back</div>
+  </section>
+
   <!-- AI ERROR -->
   <section id="aiErrorScreen" class="screen">
     <div class="screen-title">Couldn't reach the helper</div>
@@ -576,7 +585,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.33";
+const PAGE_VERSION = "v0.34";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -851,8 +860,11 @@ const screens = {
   sayResult: document.getElementById("sayResultScreen"),
   aiThinking: document.getElementById("aiThinkingScreen"),
   aiOptions: document.getElementById("aiOptionsScreen"),
-  aiError: document.getElementById("aiErrorScreen")
+  aiError: document.getElementById("aiErrorScreen"),
+  recipient: document.getElementById("recipientScreen")
 };
+const recipientField = document.getElementById("recipientField");
+const recipientPrompt = document.getElementById("recipientPrompt");
 const optionsTitle = document.getElementById("optionsTitle");
 const optionsField = document.getElementById("optionsField");
 const occasionTitle = document.getElementById("occasionTitle");
@@ -946,6 +958,7 @@ function showScreen(name) {
   Object.keys(screens).forEach(key => {
     screens[key].classList.toggle("active", key === name);
   });
+  if (name === "sayConfirm") updateConfirmTiles();
   if (name === "aiOptions" || name === "sayConfirm" || name === "sayBanner") {
     // Wait for the now-visible screen to lay out, then size the message to fit.
     requestAnimationFrame(fitCurrentScreen);
@@ -1526,7 +1539,6 @@ async function initReply() {
   mode = "say";
   setModeClass();
   newSayLogId();
-  applyReplyLabels();
   showScreen("aiThinking");
 
   let ctx = null;
@@ -1562,16 +1574,140 @@ function restartReply() {
   beginAiSay(replySeed, null, false);
 }
 
-// In reply mode there's just one place a reply can go — back to the sender — so
-// show a SINGLE "SEND REPLY" tile (on the right, where SEND BY EMAIL normally is)
-// and hide the left send tile, rather than two identical buttons.
-function applyReplyLabels() {
+// The confirm screen now has a SINGLE send tile on the right (the left one is
+// hidden). Its label depends on where the message will go: a reply back to the
+// sender, straight to a known person, or "SEND" that opens the "who is this
+// for?" picker. Called every time the confirm screen is shown.
+function updateConfirmTiles() {
   const famTile = document.querySelector('[data-choose="say-send-family"]');
-  const eml = document.querySelector('[data-choose="say-send-email"] .tile-label');
-  if (famTile) famTile.style.display = "none";
-  if (eml) eml.textContent = "SEND REPLY";
+  const emlLabel = document.querySelector('[data-choose="say-send-email"] .tile-label');
   const hint = document.querySelector('#sayConfirmScreen .screen-hint');
-  if (hint) hint.textContent = "RIGHT sends your reply · UP shows it on screen · DOWN starts over · BACK edits";
+  if (famTile) famTile.style.display = "none";
+  if (replyMode) {
+    if (emlLabel) emlLabel.textContent = "SEND REPLY";
+    if (hint) hint.textContent = "RIGHT sends your reply · UP shows it on screen · DOWN starts over · BACK edits";
+  } else if (currentRecipient) {
+    if (emlLabel) emlLabel.textContent = "SEND TO " + currentRecipient.toUpperCase();
+    if (hint) hint.textContent = "RIGHT sends it to " + currentRecipient + " · UP shows it on screen · DOWN starts over · BACK edits";
+  } else {
+    if (emlLabel) emlLabel.textContent = "SEND";
+    if (hint) hint.textContent = "RIGHT to choose who gets it · UP shows it on screen · DOWN starts over · BACK edits";
+  }
+}
+
+// The one send button: a reply goes back to the sender; a message that already
+// has a recipient (a person path, an occasion) goes straight to them; anything
+// else opens the "who is this for?" picker.
+function doSend() {
+  if (replyMode) { handleSay("reply"); return; }
+  if (currentRecipient) { handleSay("email"); return; }
+  showRecipientPicker();
+}
+
+/* ---------- WHO IS THIS FOR? (recipient picker) ----------
+   Shown at send time for any message that didn't already capture a person, so he
+   can send ANY message (loving note, memory, question) to a specific person or to
+   everyone — decoupled from how the message was built. Close family + Everyone;
+   friends still reachable by composing down the "ask how a friend is" path. */
+const RECIPIENT_LEVELS = {
+  root: {
+    prompt: "Who should get this?",
+    everyone: true,
+    tiles: {
+      left:  { label: "Betty (Mom)", to: "Betty" },
+      up:    { label: "A grandchild", go: "grandkids" },
+      right: { label: "One of my kids", go: "kids" }
+    }
+  },
+  grandkids: {
+    prompt: "Which grandchild?",
+    tiles: {
+      left:  { label: "Patrick", to: "Patrick" },
+      up:    { label: "Teagan", to: "Teagan" },
+      right: { label: "Lucy", to: "Lucy" },
+      down:  { label: "Jamie", to: "Jamie" }
+    }
+  },
+  kids: {
+    prompt: "Which of your children?",
+    tiles: {
+      left:  { label: "Michael", to: "Michael" },
+      up:    { label: "Dan", to: "Dan" },
+      right: { label: "Sharon", to: "Sharon" }
+    }
+  }
+};
+let recipientLevel = "root";
+let recipientStack = [];
+
+function renderRecipient() {
+  const lvl = RECIPIENT_LEVELS[recipientLevel];
+  recipientPrompt.textContent = lvl.prompt;
+  recipientField.innerHTML = "";
+  ["up", "left", "right", "down"].forEach(function (dir) {
+    const t = lvl.tiles[dir];
+    if (!t) return;
+    const tile = document.createElement("div");
+    tile.className = "tile dir-" + dir;
+    tile.dataset.choose = "recipient";
+    tile.dataset.dir = dir;
+    tile.innerHTML = '<span class="arrow">' + arrowGlyph(dir) + '</span>' +
+      '<span class="tile-label">' + escapeHtml(t.label) + '</span>';
+    recipientField.appendChild(tile);
+  });
+  if (lvl.everyone) {
+    const center = document.createElement("div");
+    center.className = "ai-center";
+    center.dataset.choose = "recipient-everyone";
+    center.innerHTML = '<span class="ai-center-main">EVERYONE</span>';
+    recipientField.appendChild(center);
+  }
+  const hint = document.getElementById("recipientHint");
+  if (hint) hint.textContent = lvl.everyone
+    ? "Pick a person · OK sends to everyone (the family page) · BACK goes back"
+    : "Pick a person · BACK goes back";
+}
+
+function showRecipientPicker() {
+  recipientLevel = "root";
+  recipientStack = [];
+  logSay("say_recipient_open", currentFinalText || "", {});
+  renderRecipient();
+  showScreen("recipient");
+}
+
+function chooseRecipient(dir) {
+  const lvl = RECIPIENT_LEVELS[recipientLevel];
+  const t = lvl.tiles[dir];
+  if (!t) return;
+  if (t.go) {
+    recipientStack.push(recipientLevel);
+    recipientLevel = t.go;
+    renderRecipient();
+    return;
+  }
+  if (t.to) selectRecipient(t.to);
+}
+
+function chooseRecipientEveryone() {
+  if (!RECIPIENT_LEVELS[recipientLevel].everyone) return;
+  selectRecipient("");
+}
+
+function selectRecipient(name) {
+  currentRecipient = name || "";
+  logSay("say_recipient_chosen", name || "(everyone)", { to: currentRecipient });
+  if (currentRecipient) handleSay("email");   // email that person + record on the family page
+  else handleSay("family");                    // everyone -> the family page
+}
+
+function recipientBack() {
+  if (recipientStack.length) {
+    recipientLevel = recipientStack.pop();
+    renderRecipient();
+  } else {
+    showScreen("sayConfirm");   // back to review / edit the message
+  }
 }
 
 function chooseOccasionCanned(index) {
@@ -1758,6 +1894,11 @@ function stepBack() {
     return;
   }
 
+  if (currentScreen === "recipient") {
+    recipientBack();
+    return;
+  }
+
   if (currentScreen === "aiOptions") {
     aiBack();
     return;
@@ -1936,7 +2077,7 @@ async function handleSay(channel) {
       sending = false;
       if (occasionMode) markOccasionDone(occasionData);
       logSay("say_message_sent", text, { channel: "family_page" });
-      showSayResult("SENT ✓", "sent", "Press OK to say something else · Press BACK for the Home screen.");
+      showSayResult("SENT TO EVERYONE ✓", "sent", "Press OK to say something else · Press BACK for the Home screen.");
     } catch (e) {
       // Do not lose his words: fall back to email so the message still goes out.
       try {
@@ -1962,12 +2103,14 @@ async function handleSay(channel) {
     sending = false;
     if (occasionMode) markOccasionDone(occasionData);
     logSay("say_message_sent", text, { channel: "email", emailed: !!res.emailed, matched: !!res.matched, to: currentRecipient || "" });
+    const toName = (currentRecipient || "").toUpperCase();
     if (res.emailed && res.matched) {
-      showSayResult("EMAIL SENT ✓", "sent", hint);
+      showSayResult(toName ? ("SENT TO " + toName + " ✓") : "EMAIL SENT ✓", "sent", hint);
     } else if (res.emailed) {
       showSayResult("SENT ✓", "sent", hint);   // emailed the fallback (no contact on file)
     } else {
-      showSayResult("SAVED TO FAMILY PAGE ✓", "sent", "It's on the family page; email couldn't be sent right now. " + hint);
+      showSayResult(toName ? ("SAVED FOR " + toName + " ✓") : "SAVED TO FAMILY PAGE ✓",
+        "sent", "It's on the family page; email couldn't be sent right now. " + hint);
     }
   } catch (e) {
     // Backend unreachable: fall back to the old email so his words aren't lost.
@@ -2065,9 +2208,14 @@ document.addEventListener("keydown", function(event) {
 
   if (currentScreen === "sayConfirm") {
     if (dir === "up") showSayBanner();
-    if (dir === "left" && !replyMode) handleSay("family");   // left send tile is hidden in reply mode
-    if (dir === "right") handleSay(replyMode ? "reply" : "email");
+    if (dir === "right") doSend();   // left send tile is hidden; one send button
     if (dir === "down") { if (replyMode) restartReply(); else if (occasionMode) showOccasion(occasionData); else startMode("say"); }
+    return;
+  }
+
+  if (currentScreen === "recipient") {
+    if (isActivationKey(key)) { chooseRecipientEveryone(); return; }  // center OK = Everyone
+    if (dir) chooseRecipient(dir);
     return;
   }
 
@@ -2121,8 +2269,10 @@ document.addEventListener("click", function(event) {
   if (choose === "occasion-canned") { chooseOccasionCanned(Number(tile.dataset.index || "0")); return; }
   if (choose === "occasion-own") { occasionOwnWay(); return; }
   if (choose === "say-show") { showSayBanner(); return; }
-  if (choose === "say-send-family") { handleSay(replyMode ? "reply" : "family"); return; }
-  if (choose === "say-send-email") { handleSay(replyMode ? "reply" : "email"); return; }
+  if (choose === "say-send-family") { doSend(); return; }   // hidden tile, kept harmless
+  if (choose === "say-send-email") { doSend(); return; }
+  if (choose === "recipient") { chooseRecipient(dir); return; }
+  if (choose === "recipient-everyone") { chooseRecipientEveryone(); return; }
   if (choose === "say-again") { if (replyMode) restartReply(); else if (occasionMode) showOccasion(occasionData); else startMode("say"); return; }
   if (choose === "ai-option") { chooseAiOption(Number(tile.dataset.index || "0")); return; }
   if (choose === "ai-other") { refreshOptions(); return; }
