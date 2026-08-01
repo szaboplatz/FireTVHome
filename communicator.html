@@ -455,7 +455,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.37</div>
+    <div class="version-label">Talk v0.38</div>
   </div>
 
   <!-- START -->
@@ -585,7 +585,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.37";
+const PAGE_VERSION = "v0.38";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -770,7 +770,7 @@ const SAY_TREE = {
             right: { label: "Sharon", to: "Sharon", seed: "Ask his daughter Sharon how she is doing", say: "How are you doing, Sharon? I'm thinking of you." }
           }
         },
-        down: { label: "A friend or someone else", recipientFromAi: true, seed: "He wants to ask how a friend or someone outside his immediate household is doing. Offer people ONLY from his profile's 'People he keeps up with now' list, and LEAD with his friends and extended family - Bill Gordon, Andy Zaharchuk, Bob Nedbalski, the Mannings, Gigg, Su, his sister Pat, Kal, Peggy, and Tu's parents Mai and Gio; his wife, children, and grandchildren already have their own buttons, so do not lead with them. Label each option with JUST the person's name - no parentheses, relationship, or location. Do NOT offer anyone not on that list. Keep the draft a plain greeting with no name until he picks who, then make it about that person.", say: "How are you doing? I'm thinking of you." }
+        down: { label: "A friend or someone else", friendPicker: true, say: "How are you doing? I'm thinking of you." }
       }
     },
     up: {
@@ -1627,6 +1627,9 @@ const LIST_DIRS = ["up", "left", "right"];
 let recipientLevel = "root"; // "root" | "family" | "friends"
 let recipientStack = [];
 let listPage = 0;
+// The same person-list screen serves two jobs: "send" (pick who a finished
+// message goes to) and "askfriend" (pick which friend to compose a greeting to).
+let pickerPurpose = "send";
 
 function contactGroup(name, category) {
   const c = String(category || "").toLowerCase();
@@ -1702,12 +1705,46 @@ function renderRecipient() {
 }
 
 function showRecipientPicker() {
+  pickerPurpose = "send";
   recipientLevel = "root";
   recipientStack = [];
   listPage = 0;
   logSay("say_recipient_open", currentFinalText || "", {});
   renderRecipient();
   showScreen("recipient");
+}
+
+// "Ask how a friend is": open the Contacts friend list straight away (no root),
+// and when he picks someone, compose a greeting to them instead of sending.
+function openAskFriendPicker() {
+  pickerPurpose = "askfriend";
+  recipientLevel = "friends";
+  recipientStack = [];
+  listPage = 0;
+  logSay("say_askfriend_open", "", {});
+  renderRecipient();
+  showScreen("recipient");
+}
+
+// A friend was chosen to ask after: remember them as the recipient and hand to
+// the AI, which uses his profile for specifics if it knows the person and keeps
+// it to plain warm greetings if it doesn't.
+function startAskFriend(name) {
+  pickerPurpose = "send";
+  currentRecipient = name;
+  seedFallbackText = "How are you doing, " + name + "? I'm thinking of you.";
+  const seed = "Help him ask his friend " + name + " how they are doing. If his profile has " +
+    "facts about " + name + ", use them to offer specific, personal things he could ask or " +
+    "mention. If there is nothing about " + name + " in his profile, offer plain, warm greetings " +
+    "instead of inventing any details. Keep it first person and addressed to " + name + " by name.";
+  logSay("say_askfriend_chosen", name, { to: name });
+  beginAiSay(seed, null, false);
+}
+
+// A person tile was pressed: send to them, or (on the ask-friend path) compose to them.
+function pickPerson(name) {
+  if (pickerPurpose === "askfriend") startAskFriend(name);
+  else selectRecipient(name);
 }
 
 function chooseRecipient(dir) {
@@ -1729,7 +1766,7 @@ function chooseRecipient(dir) {
   const idx = LIST_DIRS.indexOf(dir);
   if (idx === -1) return;
   const name = rosterFor(recipientLevel)[listPage * LIST_PER_PAGE + idx];
-  if (name) selectRecipient(name);
+  if (name) pickPerson(name);
 }
 
 // Center OK is always "select" — never navigation. At the root it selects
@@ -1750,9 +1787,18 @@ function recipientBack() {
     recipientLevel = recipientStack.pop();
     listPage = 0;
     renderRecipient();
-  } else {
-    showScreen("sayConfirm");   // back to review / edit the message
+    return;
   }
+  if (pickerPurpose === "askfriend") {
+    // Leaving the friend list without picking: back to the "ask how someone is" menu.
+    pickerPurpose = "send";
+    if (nodeStack.length > 1) { nodeStack.pop(); pathLabels.pop(); }
+    updateBreadcrumb();
+    renderOptions();
+    showScreen("options");
+    return;
+  }
+  showScreen("sayConfirm");   // send purpose -> back to review / edit the message
 }
 
 function chooseOccasionCanned(index) {
@@ -1799,6 +1845,7 @@ function occasionOwnWay() {
 function startMode(m) {
   occasionMode = false;
   replyMode = false;
+  pickerPurpose = "send";
   mode = m;
   nodeStack = [m === "care" ? CARE_TREE : SAY_TREE];
   pathLabels = [];
@@ -1840,6 +1887,13 @@ function choose(dir) {
   if (next.children) {
     renderOptions();
     showScreen("options");
+    return;
+  }
+
+  // "Ask how a friend is" -> pick the friend from the Contacts list, then compose.
+  if (mode === "say" && next.friendPicker) {
+    seedFallbackText = next.say || "How are you doing? I'm thinking of you.";
+    openAskFriendPicker();
     return;
   }
 
