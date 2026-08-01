@@ -455,7 +455,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.35</div>
+    <div class="version-label">Talk v0.36</div>
   </div>
 
   <!-- START -->
@@ -585,7 +585,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.35";
+const PAGE_VERSION = "v0.36";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -1645,8 +1645,8 @@ const FRIEND_RECIPIENTS = [
   "Bill Gordon", "Andy Zaharchuk", "Bob Nedbalski", "The Mannings",
   "Gigg", "Su", "Pat", "Kal", "Peggy", "Mai", "Gio"
 ];
-const FRIENDS_PER_PAGE = 4;
-const FRIEND_DIRS = ["up", "left", "right", "down"];
+const FRIENDS_PER_PAGE = 3;              // up / left / right; DOWN is reserved for "more"
+const FRIEND_DIRS = ["up", "left", "right"];
 let recipientLevel = "root";
 let recipientStack = [];
 let friendPage = 0;
@@ -1684,9 +1684,10 @@ function renderRecipient() {
       recipientField.appendChild(makeTile(FRIEND_DIRS[i], name, "recipient"));
     });
     const multi = friendPageCount() > 1;
-    if (multi) recipientField.appendChild(makeCenter("MORE PEOPLE", "recipient-more"));
+    // "More people" lives on DOWN (never the center OK), matching the rest of the app.
+    if (multi) recipientField.appendChild(makeTile("down", "MORE PEOPLE", "recipient"));
     if (hint) hint.textContent = multi
-      ? "Pick a person · OK for more names · BACK goes back"
+      ? "Pick a person · DOWN for more names · BACK goes back"
       : "Pick a person · BACK goes back";
     return;
   }
@@ -1713,6 +1714,10 @@ function showRecipientPicker() {
 
 function chooseRecipient(dir) {
   if (recipientLevel === "friends") {
+    if (dir === "down") {   // "MORE PEOPLE" — next page
+      if (friendPageCount() > 1) { friendPage = (friendPage + 1) % friendPageCount(); renderRecipient(); }
+      return;
+    }
     const idx = FRIEND_DIRS.indexOf(dir);
     if (idx === -1) return;
     const name = FRIEND_RECIPIENTS[friendPage * FRIENDS_PER_PAGE + idx];
@@ -1732,13 +1737,9 @@ function chooseRecipient(dir) {
   if (t.to) selectRecipient(t.to);
 }
 
-// Center OK: at the root it sends to Everyone; on the friends list it pages to
-// the next set of names.
+// Center OK is always "select" — never navigation. At the root it selects
+// Everyone (the family page). On a person list it does nothing (paging is DOWN).
 function chooseRecipientCenter() {
-  if (recipientLevel === "friends") {
-    if (friendPageCount() > 1) { friendPage = (friendPage + 1) % friendPageCount(); renderRecipient(); }
-    return;
-  }
   if (RECIPIENT_LEVELS[recipientLevel] && RECIPIENT_LEVELS[recipientLevel].everyone) selectRecipient("");
 }
 
@@ -2320,7 +2321,7 @@ document.addEventListener("click", function(event) {
   if (choose === "say-send-family") { doSend(); return; }   // hidden tile, kept harmless
   if (choose === "say-send-email") { doSend(); return; }
   if (choose === "recipient") { chooseRecipient(dir); return; }
-  if (choose === "recipient-everyone" || choose === "recipient-more") { chooseRecipientCenter(); return; }
+  if (choose === "recipient-everyone") { chooseRecipientCenter(); return; }
   if (choose === "say-again") { if (replyMode) restartReply(); else if (occasionMode) showOccasion(occasionData); else startMode("say"); return; }
   if (choose === "ai-option") { chooseAiOption(Number(tile.dataset.index || "0")); return; }
   if (choose === "ai-other") { refreshOptions(); return; }
