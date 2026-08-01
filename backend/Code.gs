@@ -4,7 +4,7 @@
 //  app returns at  <web-app URL>?action=version  — so you can confirm the TV is
 //  running this exact version. Bump it on every deploy-worthy change.
 // ============================================================================
-const BACKEND_VERSION = '2026-07-31-p21 (list_contacts for recipient picker; Category column)';
+const BACKEND_VERSION = '2026-07-31-p22 (friend emails say Mike Sabo, not Dad)';
 // ============================================================================
 
 const SHEET_NAME = 'FireTVHomeMessages';
@@ -689,10 +689,11 @@ function emailReplyToSender_(fromName, replyText, kind) {
 
   if (email) {
     try {
+      const n = senderNames_(who);
       MailApp.sendEmail(
         email,
-        'A reply from Dad (via his Fire TV)',
-        String(replyText || '') + '\n\n—\nSent from Dad\'s Fire TV communicator.'
+        'A reply from ' + n.subject + ' (via his Fire TV)',
+        String(replyText || '') + '\n\n—\nSent from ' + n.footer + '\'s Fire TV communicator.'
       );
       emailed = true;
     } catch (e) {
@@ -855,10 +856,11 @@ function sendDadEmail_(fromName, body, toName) {
 
   if (target) {
     try {
+      const n = senderNames_(toName);
       MailApp.sendEmail(
         target,
-        'A message from Dad (via his Fire TV)',
-        body + '\n\n—\nSent from Dad\'s Fire TV communicator.'
+        'A message from ' + n.subject + ' (via his Fire TV)',
+        body + '\n\n—\nSent from ' + n.footer + '\'s Fire TV communicator.'
       );
       emailed = true;
     } catch (e) {
@@ -929,6 +931,36 @@ function getContactEmail_(name) {
     }
   }
   return '';
+}
+
+// A recipient's Category (lowercased), or '' if not found / no column.
+function getContactCategory_(name) {
+  const want = String(name || '').trim().toLowerCase();
+  if (!want) return '';
+  let sheet;
+  try { sheet = getContactsSheet_(); } catch (e) { return ''; }
+  const lastRow = sheet.getLastRow();
+  const lastCol = Math.max(sheet.getLastColumn(), CONTACTS_HEADERS.length);
+  if (lastRow < 2) return '';
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+    .map(function (h) { return String(h || '').trim().toLowerCase(); });
+  let nameCol = headers.indexOf('name'); if (nameCol === -1) nameCol = 0;
+  const catCol = headers.indexOf('category');
+  if (catCol === -1) return '';
+  const rows = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  for (let i = 0; i < rows.length; i++) {
+    if (String(rows[i][nameCol] || '').trim().toLowerCase() === want) {
+      return String(rows[i][catCol] || '').trim().toLowerCase();
+    }
+  }
+  return '';
+}
+
+// Friends know him as Mike, not "Dad". Build the subject + footer name from the
+// recipient's Category: Friend -> "Mike Sabo" / "Mike", everyone else -> "Dad".
+function senderNames_(toName) {
+  const friend = getContactCategory_(toName).indexOf('friend') === 0;
+  return { subject: friend ? 'Mike Sabo' : 'Dad', footer: friend ? 'Mike' : 'Dad' };
 }
 
 // The recipient picker's people, drawn from the Contacts tab. Only rows with an
@@ -1082,7 +1114,7 @@ function cleanIncomingBody_(plain) {
     if (i > 0 && /^\s*From:\s.+/.test(line)) break;            // forwarded header block
     if (/^\s*--\s*$/.test(line)) break;                        // signature delimiter
     if (/^\s*>/.test(line)) continue;                          // quoted line
-    if (/Sent from Dad'?s Fire TV communicator/i.test(line)) continue;
+    if (/Sent from (Dad|Mike)'?s Fire TV communicator/i.test(line)) continue;
     out.push(line);
   }
   let cleaned = out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
