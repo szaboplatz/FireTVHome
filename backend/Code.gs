@@ -4,7 +4,7 @@
 //  app returns at  <web-app URL>?action=version  — so you can confirm the TV is
 //  running this exact version. Bump it on every deploy-worthy change.
 // ============================================================================
-const BACKEND_VERSION = '2026-07-31-p23 (report a problem to Dan)';
+const BACKEND_VERSION = '2026-07-31-p24 (AI always offers a "something else" escape)';
 // ============================================================================
 
 const SHEET_NAME = 'FireTVHomeMessages';
@@ -1649,6 +1649,13 @@ function narrow_(mode, path, avoid, draft) {
     'the meaning is the rule, not keeping the exact earlier words). He can send now or keep ' +
     'going deeper at any time, so do not pad - keep the message tight and honest to his ' +
     'actual choices.\n\n' +
+    'ALWAYS GIVE HIM A WAY OUT. He can only pick from what you show, so he must never be ' +
+    'stuck with options that all miss what he means. Once he has already been shown several ' +
+    'options without settling (a longer "avoid" list means he keeps asking for others), ' +
+    'INCLUDE one option worded plainly as "Something else" or "None of these fit". If he picks ' +
+    'that, treat it as "none of these are right": do NOT just reword what you had - change ' +
+    'tack and offer a genuinely different or broader direction, or step back toward the more ' +
+    'general version of his intent. Picking it never adds any words to the draft.\n\n' +
     'PACING - broad to specific. On his first choice or two, keep the options broad and ' +
     'structural (the general kind of thing he might mean), with no specific personal ' +
     'names, places, or private facts, and keep the draft correspondingly short and ' +
