@@ -455,7 +455,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.34</div>
+    <div class="version-label">Talk v0.35</div>
   </div>
 
   <!-- START -->
@@ -585,7 +585,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.34";
+const PAGE_VERSION = "v0.35";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -1616,7 +1616,8 @@ const RECIPIENT_LEVELS = {
     tiles: {
       left:  { label: "Betty (Mom)", to: "Betty" },
       up:    { label: "A grandchild", go: "grandkids" },
-      right: { label: "One of my kids", go: "kids" }
+      right: { label: "One of my kids", go: "kids" },
+      down:  { label: "A friend or someone else", go: "friends" }
     }
   },
   grandkids: {
@@ -1637,32 +1638,66 @@ const RECIPIENT_LEVELS = {
     }
   }
 };
+// Friends / others he might send to, beyond close family. These names must match
+// the Contacts tab (same roster the "ask how a friend is" path uses) so the
+// email lookup finds them. Shown a page at a time via the center "MORE PEOPLE".
+const FRIEND_RECIPIENTS = [
+  "Bill Gordon", "Andy Zaharchuk", "Bob Nedbalski", "The Mannings",
+  "Gigg", "Su", "Pat", "Kal", "Peggy", "Mai", "Gio"
+];
+const FRIENDS_PER_PAGE = 4;
+const FRIEND_DIRS = ["up", "left", "right", "down"];
 let recipientLevel = "root";
 let recipientStack = [];
+let friendPage = 0;
+
+function friendPageCount() {
+  return Math.ceil(FRIEND_RECIPIENTS.length / FRIENDS_PER_PAGE);
+}
+
+function makeTile(dir, label, choose) {
+  const tile = document.createElement("div");
+  tile.className = "tile dir-" + dir;
+  tile.dataset.choose = choose || "recipient";
+  tile.dataset.dir = dir;
+  tile.innerHTML = '<span class="arrow">' + arrowGlyph(dir) + '</span>' +
+    '<span class="tile-label">' + escapeHtml(label) + '</span>';
+  return tile;
+}
+
+function makeCenter(label, choose) {
+  const center = document.createElement("div");
+  center.className = "ai-center";
+  center.dataset.choose = choose;
+  center.innerHTML = '<span class="ai-center-main">' + escapeHtml(label) + '</span>';
+  return center;
+}
 
 function renderRecipient() {
+  recipientField.innerHTML = "";
+  const hint = document.getElementById("recipientHint");
+
+  if (recipientLevel === "friends") {
+    recipientPrompt.textContent = "Which friend?";
+    const start = friendPage * FRIENDS_PER_PAGE;
+    FRIEND_RECIPIENTS.slice(start, start + FRIENDS_PER_PAGE).forEach(function (name, i) {
+      recipientField.appendChild(makeTile(FRIEND_DIRS[i], name, "recipient"));
+    });
+    const multi = friendPageCount() > 1;
+    if (multi) recipientField.appendChild(makeCenter("MORE PEOPLE", "recipient-more"));
+    if (hint) hint.textContent = multi
+      ? "Pick a person · OK for more names · BACK goes back"
+      : "Pick a person · BACK goes back";
+    return;
+  }
+
   const lvl = RECIPIENT_LEVELS[recipientLevel];
   recipientPrompt.textContent = lvl.prompt;
-  recipientField.innerHTML = "";
   ["up", "left", "right", "down"].forEach(function (dir) {
     const t = lvl.tiles[dir];
-    if (!t) return;
-    const tile = document.createElement("div");
-    tile.className = "tile dir-" + dir;
-    tile.dataset.choose = "recipient";
-    tile.dataset.dir = dir;
-    tile.innerHTML = '<span class="arrow">' + arrowGlyph(dir) + '</span>' +
-      '<span class="tile-label">' + escapeHtml(t.label) + '</span>';
-    recipientField.appendChild(tile);
+    if (t) recipientField.appendChild(makeTile(dir, t.label, "recipient"));
   });
-  if (lvl.everyone) {
-    const center = document.createElement("div");
-    center.className = "ai-center";
-    center.dataset.choose = "recipient-everyone";
-    center.innerHTML = '<span class="ai-center-main">EVERYONE</span>';
-    recipientField.appendChild(center);
-  }
-  const hint = document.getElementById("recipientHint");
+  if (lvl.everyone) recipientField.appendChild(makeCenter("EVERYONE", "recipient-everyone"));
   if (hint) hint.textContent = lvl.everyone
     ? "Pick a person · OK sends to everyone (the family page) · BACK goes back"
     : "Pick a person · BACK goes back";
@@ -1677,21 +1712,34 @@ function showRecipientPicker() {
 }
 
 function chooseRecipient(dir) {
+  if (recipientLevel === "friends") {
+    const idx = FRIEND_DIRS.indexOf(dir);
+    if (idx === -1) return;
+    const name = FRIEND_RECIPIENTS[friendPage * FRIENDS_PER_PAGE + idx];
+    if (name) selectRecipient(name);
+    return;
+  }
   const lvl = RECIPIENT_LEVELS[recipientLevel];
   const t = lvl.tiles[dir];
   if (!t) return;
   if (t.go) {
     recipientStack.push(recipientLevel);
     recipientLevel = t.go;
+    if (t.go === "friends") friendPage = 0;
     renderRecipient();
     return;
   }
   if (t.to) selectRecipient(t.to);
 }
 
-function chooseRecipientEveryone() {
-  if (!RECIPIENT_LEVELS[recipientLevel].everyone) return;
-  selectRecipient("");
+// Center OK: at the root it sends to Everyone; on the friends list it pages to
+// the next set of names.
+function chooseRecipientCenter() {
+  if (recipientLevel === "friends") {
+    if (friendPageCount() > 1) { friendPage = (friendPage + 1) % friendPageCount(); renderRecipient(); }
+    return;
+  }
+  if (RECIPIENT_LEVELS[recipientLevel] && RECIPIENT_LEVELS[recipientLevel].everyone) selectRecipient("");
 }
 
 function selectRecipient(name) {
@@ -2214,7 +2262,7 @@ document.addEventListener("keydown", function(event) {
   }
 
   if (currentScreen === "recipient") {
-    if (isActivationKey(key)) { chooseRecipientEveryone(); return; }  // center OK = Everyone
+    if (isActivationKey(key)) { chooseRecipientCenter(); return; }  // center OK = Everyone / More
     if (dir) chooseRecipient(dir);
     return;
   }
@@ -2272,7 +2320,7 @@ document.addEventListener("click", function(event) {
   if (choose === "say-send-family") { doSend(); return; }   // hidden tile, kept harmless
   if (choose === "say-send-email") { doSend(); return; }
   if (choose === "recipient") { chooseRecipient(dir); return; }
-  if (choose === "recipient-everyone") { chooseRecipientEveryone(); return; }
+  if (choose === "recipient-everyone" || choose === "recipient-more") { chooseRecipientCenter(); return; }
   if (choose === "say-again") { if (replyMode) restartReply(); else if (occasionMode) showOccasion(occasionData); else startMode("say"); return; }
   if (choose === "ai-option") { chooseAiOption(Number(tile.dataset.index || "0")); return; }
   if (choose === "ai-other") { refreshOptions(); return; }
