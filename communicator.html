@@ -170,6 +170,14 @@ body {
 /* Say tiles keep the dark tile + teal edge (distinct from home's yellow focus). */
 .mode-say .tile { border-color: var(--say); box-shadow: 0 0 30px -8px var(--say); }
 .mode-say .tile .arrow { color: var(--say); }
+/* Report-a-problem flow: amber everything, so he can tell at a glance he's in the
+   special "note to Dan" path (not a normal message to family). Wins over mode-say
+   by coming later in the stylesheet. */
+.mode-report .tile { border-color: #ff9800; box-shadow: 0 0 30px -8px #ff9800; }
+.mode-report .tile .arrow { color: #ffb74d; }
+.mode-report .ai-center { background: #3a1e00; border-color: #ff9800; box-shadow: 0 0 26px -8px #ff9800; }
+.mode-report .ai-center .ai-center-main { color: #ffcc80; }
+.mode-report .say-panel { border-color: #ff9800; }
 /* Occasion tiles: warm gold, matching the celebratory Home reminder. Canned
    lines are full sentences, so their labels are smaller and clipped to the box. */
 .mode-occasion .tile { border-color: #e0a92e; box-shadow: 0 0 30px -8px #e0a92e; }
@@ -472,7 +480,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.39</div>
+    <div class="version-label">Talk v0.40</div>
   </div>
 
   <!-- START -->
@@ -602,7 +610,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.39";
+const PAGE_VERSION = "v0.40";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -765,6 +773,8 @@ const CARE_TREE = {
      wording from his profile. `seed` is the instruction sent to the AI; `say`
      is the plain fallback used verbatim if the AI can't be reached. */
 const SAY_TREE = {
+  // Special amber center (OK) action on the top Say menu — private note to Dan.
+  centerAction: { label: "⚠ Report a problem to Dan", choose: "report-problem" },
   children: {
     left: {
       label: "Ask how someone is",
@@ -810,7 +820,6 @@ const SAY_TREE = {
     },
     down: {
       label: "What's on my mind",
-      centerAction: { label: "⚠ Report a problem to Dan", choose: "report-problem" },
       children: {
         left: {
           label: "How I'm feeling",
@@ -1054,7 +1063,7 @@ function showSayBanner() {
 }
 
 function setModeClass() {
-  app.classList.remove("mode-care", "mode-say", "mode-occasion");
+  app.classList.remove("mode-care", "mode-say", "mode-occasion", "mode-report");
   if (mode === "care") app.classList.add("mode-care");
   if (mode === "say") app.classList.add("mode-say");
 }
@@ -1203,6 +1212,7 @@ function beginAiSay(categoryLabel, staticCategoryNode, picksRecipient) {
 async function runNarrow() {
   const seq = ++narrowSeq;
   aiBusy = true;
+  otherCount = 0;   // fresh round: reset the "other options" counter
   showScreen("aiThinking");
 
   // Carry the message so far into the next step so it builds up instead of
@@ -1308,12 +1318,23 @@ function stripMetaOptions(options) {
   return kept;
 }
 
+// A deterministic "Something else" escape, so he is never stuck once he has
+// asked for other options a couple of times (the AI offers it only sometimes).
+let otherCount = 0;   // OTHER OPTIONS presses at the current level, reset on a new round
+const ESCAPE_LABEL = "Something else";
+function isEscapeOption(o) { return /\b(something else|something different|none of these)\b/i.test(String(o || "")); }
+function ensureEscapeOption(options) {
+  if (options.some(isEscapeOption)) return options.slice(0, 3);
+  return options.slice(0, 2).concat([ESCAPE_LABEL]);   // keep 2 real + the escape
+}
+
 // DOWN / "OTHER OPTIONS": ask for a different set at the same level, keeping
 // the draft the same (the message so far hasn't changed, just the next choices).
 async function refreshOptions() {
   if (aiBusy) return;
   const top = aiHistory[aiHistory.length - 1];
   if (!top) return;
+  otherCount++;
 
   logSay("say_ai_other", "OTHER OPTIONS", { path: aiPath.join(" > "), avoided: aiAvoid.slice() });
 
@@ -1339,16 +1360,21 @@ async function refreshOptions() {
   // Drop anything already shown at this step, so pressing OTHER OPTIONS never
   // surfaces a repeat even if the model returns one.
   const seenNorm = aiAvoid.map(normalizeOption);
-  const options = stripMetaOptions(result.options || [])
+  let options = stripMetaOptions(result.options || [])
     .filter(function (o) { return seenNorm.indexOf(normalizeOption(o)) === -1; })
     .slice(0, 3);
+
+  // After a couple of tries, GUARANTEE a "Something else" escape (the model only
+  // offers it sometimes). Also covers the case where nothing new came back.
+  if (otherCount >= 2) options = ensureEscapeOption(options);
   if (!options.length) {
     renderAiOptions(top.options, top.draft); // nothing genuinely new; keep what he had
     showScreen("aiOptions");
     return;
   }
 
-  aiAvoid = aiAvoid.concat(options);
+  // Remember the real options as seen; never avoid the escape label so it persists.
+  aiAvoid = aiAvoid.concat(options.filter(function (o) { return !isEscapeOption(o); }));
   top.options = options; // replace the level's options; draft stays the same
   logSay("say_ai_round", top.draft, {
     round: aiHistory.length, path: aiPath.join(" > "), draft: top.draft, options: options, other: true
@@ -1363,6 +1389,17 @@ function chooseAiOption(index) {
   if (!current) return;
   const label = current.options[index];
   if (label == null) return;
+
+  // He picked the "Something else" escape: don't treat it as content — tell the
+  // AI none of these fit and to change tack toward a broader/different set.
+  if (isEscapeOption(label)) {
+    logSay("say_ai_escape", label, { path: aiPath.join(" > ") });
+    aiPath.push("None of these fit — offer a broader or completely different kind of option than anything shown so far, or a plain general version he can send as-is.");
+    aiAvoid = [];
+    runNarrow();
+    return;
+  }
+
   // Friend path: his first pick is the person, so remember them as the recipient
   // (later picks are message content and must not overwrite it). Re-picking at
   // the first level — e.g. after BACK — replaces the recipient with the new name.
@@ -1400,8 +1437,10 @@ function aiBack() {
     updateBreadcrumb();
     renderAiOptions(prev.options, prev.draft);
     showScreen("aiOptions");
-  } else if (replyMode || reportMode) {
-    goHome();   // backing out of a reply or a problem report leaves the composer
+  } else if (reportMode) {
+    goToSayRoot();   // back one step: to the Say menu (where the report button is)
+  } else if (replyMode) {
+    goHome();        // a reply is entered from a message; backing out leaves to Home
   } else if (occasionMode) {
     showOccasion(occasionData);
   } else {
@@ -1416,6 +1455,7 @@ function goToSayRoot() {
   aiFallbackNode = null;
   aiPicksRecipient = false;
   reportMode = false;
+  app.classList.remove("mode-report");   // drop the amber accent
   currentRecipient = "";
   sayFromAi = false;
   nodeStack = [SAY_TREE];
@@ -1622,6 +1662,7 @@ function startProblemReport() {
   currentRecipient = "";
   mode = "say";
   setModeClass();
+  app.classList.add("mode-report");   // amber accent throughout the report flow
   newSayLogId();
   seedFallbackText = "Something is not working right with the TV. Can you take a look?";
   const seed = "He wants to REPORT A PROBLEM with this Fire TV system to his son Dan, who takes care of it. " +
