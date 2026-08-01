@@ -4,7 +4,7 @@
 //  app returns at  <web-app URL>?action=version  — so you can confirm the TV is
 //  running this exact version. Bump it on every deploy-worthy change.
 // ============================================================================
-const BACKEND_VERSION = '2026-07-31-p19 (get_message for Reply with Talk)';
+const BACKEND_VERSION = '2026-07-31-p20 (reply seed offers options; always-offer nudge)';
 // ============================================================================
 
 const SHEET_NAME = 'FireTVHomeMessages';
@@ -1528,7 +1528,9 @@ function narrow_(mode, path, avoid, draft) {
     'DIFFERENT direction the message could go next - clearly distinct from one another ' +
     'AND from anything already shown - so that picking one truly narrows toward a single ' +
     'message. Never offer three rewordings of the same idea. Keep them concrete and easy ' +
-    'to read on a TV. Every option must be about the CONTENT of the message - what he could ' +
+    'to read on a TV. Aim to give 3 options EVERY round so he always has ways to continue the ' +
+    'message; return fewer, or an empty list, ONLY when the message is genuinely complete and ' +
+    'nothing distinct remains worth adding. Every option must be about the CONTENT of the message - what he could ' +
     'SAY next. NEVER offer an option that is an instruction about what to DO with the ' +
     'message: not sending it ("Send this now", "Send now", "Keep it as is and send", "Stop ' +
     'here and send"), not starting over ("Start a new message", "Never mind"), not editing ' +

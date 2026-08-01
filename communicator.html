@@ -455,7 +455,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.32</div>
+    <div class="version-label">Talk v0.33</div>
   </div>
 
   <!-- START -->
@@ -576,7 +576,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.32";
+const PAGE_VERSION = "v0.33";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -1522,6 +1522,13 @@ async function initReply() {
   replyMode = true;
   replyMsgId = mid;
 
+  // Leave the start screen at once (no Care-option flash) while we fetch the note.
+  mode = "say";
+  setModeClass();
+  newSayLogId();
+  applyReplyLabels();
+  showScreen("aiThinking");
+
   let ctx = null;
   try {
     const data = await loadJsonp(MESSAGES_API_URL, { action: "get_message", id: mid });
@@ -1529,18 +1536,18 @@ async function initReply() {
   } catch (e) {}
 
   const who = (ctx && ctx.from_name) || toParam || "";
-  const note = (ctx && ctx.body) ? ctx.body : "";
+  const note = (ctx && ctx.body) ? String(ctx.body).replace(/\s+/g, " ").trim() : "";
   currentRecipient = who;
 
-  mode = "say";
-  setModeClass();
-  newSayLogId();
-  applyReplyLabels();
-
-  replySeed = "He is replying to a message he just received from " + (who || "someone close to him") + ". " +
-    (note ? ("They wrote to him: \"" + String(note).slice(0, 600) + "\". ") : "") +
-    "Help him write a warm, personal reply in his own voice that answers what they said. " +
-    "Keep it first person and addressed to " + (who || "them") + " by name.";
+  // Frame it as the same build-with-choices flow, not "write the whole reply" —
+  // otherwise the AI returns one finished line and no options to pick from.
+  replySeed = "He just received this note from " + (who || "someone close to him") + ": " +
+    (note ? ("\"" + note.slice(0, 600) + "\". ") : "(no text). ") +
+    "He wants to reply. Make the draft a short, warm opening line in his own first-person " +
+    "voice, addressed to " + (who || "them") + " by name, that reacts to their note. Then OFFER 3 " +
+    "genuinely different options for what he could add next — for example reacting to their " +
+    "news, asking them a follow-up question, telling them how he is doing, or sending his love. " +
+    "Keep offering fresh, distinct options each round so he can build the reply his way.";
   seedFallbackText = "Thank you for your message. I love you.";
 
   logSay("reply_start", who, { msgid: mid, to: who });
@@ -1555,13 +1562,16 @@ function restartReply() {
   beginAiSay(replySeed, null, false);
 }
 
-// In reply mode the two send tiles both just send the reply back to the sender,
-// so relabel them and drop the family-page/email distinction that doesn't apply.
+// In reply mode there's just one place a reply can go — back to the sender — so
+// show a SINGLE "SEND REPLY" tile (on the right, where SEND BY EMAIL normally is)
+// and hide the left send tile, rather than two identical buttons.
 function applyReplyLabels() {
-  const fam = document.querySelector('[data-choose="say-send-family"] .tile-label');
+  const famTile = document.querySelector('[data-choose="say-send-family"]');
   const eml = document.querySelector('[data-choose="say-send-email"] .tile-label');
-  if (fam) fam.textContent = "SEND REPLY";
+  if (famTile) famTile.style.display = "none";
   if (eml) eml.textContent = "SEND REPLY";
+  const hint = document.querySelector('#sayConfirmScreen .screen-hint');
+  if (hint) hint.textContent = "RIGHT sends your reply · UP shows it on screen · DOWN starts over · BACK edits";
 }
 
 function chooseOccasionCanned(index) {
@@ -2055,7 +2065,7 @@ document.addEventListener("keydown", function(event) {
 
   if (currentScreen === "sayConfirm") {
     if (dir === "up") showSayBanner();
-    if (dir === "left") handleSay(replyMode ? "reply" : "family");
+    if (dir === "left" && !replyMode) handleSay("family");   // left send tile is hidden in reply mode
     if (dir === "right") handleSay(replyMode ? "reply" : "email");
     if (dir === "down") { if (replyMode) restartReply(); else if (occasionMode) showOccasion(occasionData); else startMode("say"); }
     return;
