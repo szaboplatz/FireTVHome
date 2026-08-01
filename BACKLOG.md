@@ -6,7 +6,7 @@ it's a memory aid.
 
 ---
 
-## Let him report that something's wrong
+## Let him report that something's wrong  — ✅ BUILT (Talk v0.39 / backend p23)
 
 **Idea:** give Dad a way to flag that something isn't working or feels off —
 kept general on purpose, and AI-assisted so he can *describe* it despite not

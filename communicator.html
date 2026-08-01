@@ -339,6 +339,23 @@ body {
    short; Care keeps UP and DOWN balanced with a thin empty middle row. */
 #aiOptionsScreen .grid-field { grid-template-rows: 2fr 0.8fr 0.6fr; }
 #optionsScreen .grid-field   { grid-template-rows: 1fr 0.22fr 1fr; }
+/* When this options screen carries a center action, give the middle row real
+   height so the center tile is readable. */
+#optionsScreen .grid-field.has-center { grid-template-rows: 1fr 0.95fr 1fr; }
+
+/* The special "Report a problem to Dan" center — amber, to read as different
+   from the normal blue choices. Uses .ai-center.report-center so it beats the
+   plain .ai-center rule regardless of source order. */
+.ai-center.report-center {
+  background: #3a1e00;
+  border: 5px solid #ff9800;
+  box-shadow: 0 0 26px -8px #ff9800;
+}
+.ai-center.report-center .ai-center-main {
+  font-size: 26px;
+  line-height: 1.1;
+  color: #ffcc80;
+}
 
 /* Confirm screen: the message sits in a bounded box on top (its font auto-fits
    so even a long message stays fully visible), the send options in the grid
@@ -455,7 +472,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.38</div>
+    <div class="version-label">Talk v0.39</div>
   </div>
 
   <!-- START -->
@@ -485,7 +502,7 @@ body {
   <section id="optionsScreen" class="screen dpad">
     <div class="screen-title" id="optionsTitle"></div>
     <div class="field grid-field" id="optionsField"></div>
-    <div class="screen-hint">Press the direction of your choice. Press BACK to go back one step.</div>
+    <div class="screen-hint" id="optionsHint">Press the direction of your choice. Press BACK to go back one step.</div>
   </section>
 
   <!-- CARE FINAL BANNER -->
@@ -585,7 +602,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.38";
+const PAGE_VERSION = "v0.39";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -793,6 +810,7 @@ const SAY_TREE = {
     },
     down: {
       label: "What's on my mind",
+      centerAction: { label: "⚠ Report a problem to Dan", choose: "report-problem" },
       children: {
         left: {
           label: "How I'm feeling",
@@ -840,6 +858,10 @@ let sayLogId = "";           // short id grouping one composition's trace events
 let replyMode = false;
 let replyMsgId = "";
 let replySeed = "";          // the AI seed, kept so "start over" can regenerate
+
+// Report-a-problem entry (the special center action on "What's on my mind"):
+// composed with the AI like anything else, but routed privately to Dan.
+let reportMode = false;
 
 // Family-occasion entry (reached from the Home reminder via ?occasion=...).
 let occasionMode = false;    // did he arrive here for a family occasion?
@@ -1073,6 +1095,22 @@ function renderOptions() {
       '<span class="tile-label">' + escapeHtml(child.label) + '</span>';
     optionsField.appendChild(tile);
   });
+
+  // A special, distinctly-coloured center (OK) action on this screen — e.g.
+  // "Report a problem to Dan" on the What's-on-my-mind menu.
+  const optHint = document.getElementById("optionsHint");
+  if (node.centerAction) {
+    optionsField.classList.add("has-center");
+    const center = document.createElement("div");
+    center.className = "ai-center report-center";
+    center.dataset.choose = node.centerAction.choose;
+    center.innerHTML = '<span class="ai-center-main">' + escapeHtml(node.centerAction.label) + '</span>';
+    optionsField.appendChild(center);
+    if (optHint) optHint.textContent = "Press a direction · Press OK for the orange button · BACK goes back";
+  } else {
+    optionsField.classList.remove("has-center");
+    if (optHint) optHint.textContent = "Press the direction of your choice. Press BACK to go back one step.";
+  }
 }
 
 function escapeHtml(value) {
@@ -1362,8 +1400,8 @@ function aiBack() {
     updateBreadcrumb();
     renderAiOptions(prev.options, prev.draft);
     showScreen("aiOptions");
-  } else if (replyMode) {
-    goHome();   // backing out of a reply leaves the composer
+  } else if (replyMode || reportMode) {
+    goHome();   // backing out of a reply or a problem report leaves the composer
   } else if (occasionMode) {
     showOccasion(occasionData);
   } else {
@@ -1377,6 +1415,7 @@ function goToSayRoot() {
   aiAvoid = [];
   aiFallbackNode = null;
   aiPicksRecipient = false;
+  reportMode = false;
   currentRecipient = "";
   sayFromAi = false;
   nodeStack = [SAY_TREE];
@@ -1574,6 +1613,27 @@ function restartReply() {
   beginAiSay(replySeed, null, false);
 }
 
+// "Report a problem to Dan": compose with the AI (which helps him describe what's
+// wrong), then route the result privately to Dan rather than the family page.
+function startProblemReport() {
+  reportMode = true;
+  replyMode = false;
+  occasionMode = false;
+  currentRecipient = "";
+  mode = "say";
+  setModeClass();
+  newSayLogId();
+  seedFallbackText = "Something is not working right with the TV. Can you take a look?";
+  const seed = "He wants to REPORT A PROBLEM with this Fire TV system to his son Dan, who takes care of it. " +
+    "Help him describe what is going wrong or bothering him about the system. Offer options for the KIND of " +
+    "problem — the screen or picture, a button that did not work, a message that would not send, something " +
+    "confusing, or that he is just frustrated with it — and build a short, clear first-person description Dan " +
+    "can act on. If he cannot pinpoint it, a general 'something is not working right' is fine. This is NOT a " +
+    "message to family; it is a private note to Dan about the system, so keep it practical.";
+  logSay("report_start", "", {});
+  beginAiSay(seed, null, false);
+}
+
 // The confirm screen now has a SINGLE send tile on the right (the left one is
 // hidden). Its label depends on where the message will go: a reply back to the
 // sender, straight to a known person, or "SEND" that opens the "who is this
@@ -1583,7 +1643,10 @@ function updateConfirmTiles() {
   const emlLabel = document.querySelector('[data-choose="say-send-email"] .tile-label');
   const hint = document.querySelector('#sayConfirmScreen .screen-hint');
   if (famTile) famTile.style.display = "none";
-  if (replyMode) {
+  if (reportMode) {
+    if (emlLabel) emlLabel.textContent = "REPORT TO DAN";
+    if (hint) hint.textContent = "RIGHT reports it to Dan · UP shows it on screen · DOWN starts over · BACK edits";
+  } else if (replyMode) {
     if (emlLabel) emlLabel.textContent = "SEND REPLY";
     if (hint) hint.textContent = "RIGHT sends your reply · UP shows it on screen · DOWN starts over · BACK edits";
   } else if (currentRecipient) {
@@ -1600,6 +1663,7 @@ function updateConfirmTiles() {
 // else opens the "who is this for?" picker.
 function doSend() {
   if (replyMode) { handleSay("reply"); return; }
+  if (reportMode) { handleSay("report"); return; }
   if (currentRecipient) { handleSay("email"); return; }
   showRecipientPicker();
 }
@@ -1845,6 +1909,7 @@ function occasionOwnWay() {
 function startMode(m) {
   occasionMode = false;
   replyMode = false;
+  reportMode = false;
   pickerPurpose = "send";
   mode = m;
   nodeStack = [m === "care" ? CARE_TREE : SAY_TREE];
@@ -2141,6 +2206,24 @@ async function sendTalkReply(text) {
   return result;
 }
 
+// Report-a-problem send: routes privately to Dan (flagged subject, no family
+// page), with the old email as a fallback so a report is never lost.
+async function sendProblemReport(text) {
+  const formData = new URLSearchParams();
+  formData.set("action", "report_problem");
+  formData.set("body", text);
+  const response = await fetch(MESSAGES_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+    body: formData.toString()
+  });
+  const result = await response.json();
+  if (!response.ok || !result.ok) {
+    throw new Error(result && result.error ? result.error : "Report failed");
+  }
+  return result;
+}
+
 async function handleSay(channel) {
   if (sending) return;
   const text = currentFinalText;
@@ -2148,6 +2231,30 @@ async function handleSay(channel) {
 
   sending = true;
   showSayResult("SENDING…", "sending", "");
+
+  if (channel === "report") {
+    const hint = "Press OK or BACK to return to the Home screen.";
+    logSay("say_message_send_attempt", text, { channel: "report" });
+    try {
+      const res = await sendProblemReport(text);
+      sending = false;
+      logSay("say_message_sent", text, { channel: "report", emailed: !!res.emailed });
+      showSayResult(res.emailed ? "REPORTED TO DAN ✓" : "SAVED ✓", "sent", hint);
+    } catch (e) {
+      // Don't lose a problem report — fall back to the old email path.
+      try {
+        await sendToEmail("PROBLEM REPORT from Dad's Fire TV:\n\n" + text);
+        sending = false;
+        logSay("say_message_sent", text, { channel: "report_fallback" });
+        showSayResult("REPORTED BY EMAIL ✓", "sent", hint);
+      } catch (e2) {
+        sending = false;
+        logSay("say_message_error", text, { channel: "report" });
+        showSayResult("COULD NOT SEND", "error", "Please try again — press BACK to go back and resend.");
+      }
+    }
+    return;
+  }
 
   if (channel === "reply") {
     const hint = "Press OK or BACK to return to the Home screen.";
@@ -2294,6 +2401,11 @@ document.addEventListener("keydown", function(event) {
   }
 
   if (currentScreen === "options") {
+    if (isActivationKey(key)) {   // center OK: trigger this screen's special action if any
+      const n = currentNode();
+      if (n && n.centerAction && n.centerAction.choose === "report-problem") startProblemReport();
+      return;
+    }
     if (dir) choose(dir);
     return;
   }
@@ -2308,7 +2420,7 @@ document.addEventListener("keydown", function(event) {
   if (currentScreen === "sayConfirm") {
     if (dir === "up") showSayBanner();
     if (dir === "right") doSend();   // left send tile is hidden; one send button
-    if (dir === "down") { if (replyMode) restartReply(); else if (occasionMode) showOccasion(occasionData); else startMode("say"); }
+    if (dir === "down") { if (reportMode) startProblemReport(); else if (replyMode) restartReply(); else if (occasionMode) showOccasion(occasionData); else startMode("say"); }
     return;
   }
 
@@ -2329,7 +2441,7 @@ document.addEventListener("keydown", function(event) {
   if (currentScreen === "sayResult") {
     // Once the send has settled: OK says something new; BACK goes Home (handled
     // in stepBack). On a failure, BACK instead returns to the send options.
-    if (isActivationKey(key) && !sending && sayResultOk) { if (replyMode) goHome(); else startMode("say"); }
+    if (isActivationKey(key) && !sending && sayResultOk) { if (replyMode || reportMode) goHome(); else startMode("say"); }
     return;
   }
 
@@ -2370,9 +2482,10 @@ document.addEventListener("click", function(event) {
   if (choose === "say-show") { showSayBanner(); return; }
   if (choose === "say-send-family") { doSend(); return; }   // hidden tile, kept harmless
   if (choose === "say-send-email") { doSend(); return; }
+  if (choose === "report-problem") { startProblemReport(); return; }
   if (choose === "recipient") { chooseRecipient(dir); return; }
   if (choose === "recipient-everyone") { chooseRecipientCenter(); return; }
-  if (choose === "say-again") { if (replyMode) restartReply(); else if (occasionMode) showOccasion(occasionData); else startMode("say"); return; }
+  if (choose === "say-again") { if (reportMode) startProblemReport(); else if (replyMode) restartReply(); else if (occasionMode) showOccasion(occasionData); else startMode("say"); return; }
   if (choose === "ai-option") { chooseAiOption(Number(tile.dataset.index || "0")); return; }
   if (choose === "ai-other") { refreshOptions(); return; }
   if (choose === "ai-say") { chooseAiSay(); return; }

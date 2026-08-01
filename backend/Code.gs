@@ -4,7 +4,7 @@
 //  app returns at  <web-app URL>?action=version  — so you can confirm the TV is
 //  running this exact version. Bump it on every deploy-worthy change.
 // ============================================================================
-const BACKEND_VERSION = '2026-07-31-p22 (friend emails say Mike Sabo, not Dad)';
+const BACKEND_VERSION = '2026-07-31-p23 (report a problem to Dan)';
 // ============================================================================
 
 const SHEET_NAME = 'FireTVHomeMessages';
@@ -269,6 +269,12 @@ function doPost(e) {
     }
 
     return json_(sendDadEmail_(fromName, body, toName));
+  }
+
+  if (action === 'report_problem') {
+    const body = (e.parameter.body || '').trim();
+    if (!body) return json_({ ok: false, error: 'Missing body' });
+    return json_(reportProblem_(body));
   }
 
   if (action === 'narrow') {
@@ -897,6 +903,37 @@ function sendDadEmail_(fromName, body, toName) {
     matched: !!email,
     error: error
   };
+}
+
+// "Report a problem to Dan": emails the report to Dan with a clearly flagged
+// subject and logs a distinct event. Deliberately does NOT touch the family page
+// — this is a private note to the person who maintains the system.
+function reportProblem_(body) {
+  const to = firstAddress_(getContactEmail_('Dan')) || fallbackEmail_();
+  let emailed = false, error = '';
+  if (to) {
+    try {
+      MailApp.sendEmail(
+        to,
+        '⚠ Problem report from Dad\'s Fire TV',
+        String(body || '') + '\n\n—\nSent from Dad\'s Fire TV (problem report).'
+      );
+      emailed = true;
+    } catch (e) {
+      error = String((e && e.message) || e);
+    }
+  } else {
+    error = 'No address for Dan and no fallback';
+  }
+  try {
+    logEvent_({
+      event_type: 'problem_report',
+      event_label: snippet_(body, 140),
+      page_version: 'backend ' + BACKEND_VERSION,
+      extra: JSON.stringify({ emailed: emailed, to: to || '', error: error || '' })
+    });
+  } catch (e) { /* logging is best-effort */ }
+  return { ok: true, emailed: emailed, error: error };
 }
 
 function fallbackEmail_() {
