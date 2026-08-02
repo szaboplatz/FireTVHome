@@ -4,7 +4,7 @@
 //  app returns at  <web-app URL>?action=version  — so you can confirm the TV is
 //  running this exact version. Bump it on every deploy-worthy change.
 // ============================================================================
-const BACKEND_VERSION = '2026-07-31-p24 (AI always offers a "something else" escape)';
+const BACKEND_VERSION = '2026-08-02-p25 (AI options must be true and grounded; no cross-person mash-ups)';
 // ============================================================================
 
 const SHEET_NAME = 'FireTVHomeMessages';
@@ -1686,13 +1686,24 @@ function narrow_(mode, path, avoid, draft) {
     'a greeting should be genuinely different DIRECTIONS - how they are, what is new with ' +
     'them, one specific thing to ask them about - not the same hello with a location or ' +
     'activity attached.\n\n' +
-    'ONE PERSON AT A TIME. When the message is about one specific person, use ONLY what you ' +
-    'know about THAT person. Never borrow another person\'s facts, activities, interests, or ' +
-    'places and attach them to someone else. For instance, the Lake Temagami trips and the ' +
-    'monthly newsletters belong to Bill Gordon - do NOT offer them when he is writing to Andy ' +
-    'or anyone else. If you are running low on things specific to this person, offer plain ' +
-    'warm options ("I have been thinking of you", "I hope you are well") rather than inventing ' +
-    'details or pulling them from someone else.\n\n' +
+    'TRUE, GROUNDED OPTIONS - and how other people may appear. Every concrete detail in an ' +
+    'option must be TRUE and drawn from his profile, attached to the RIGHT person. Never ' +
+    'invent a fact, a name, a number, or a thing that is not there (there is no "RAV2" - the ' +
+    'car is a RAV4). Never take one person\'s fact and pin it on someone else: the golf ' +
+    'tournament near the lake is TERRY\'s - do NOT turn it into "Bob\'s tournament"; the Lake ' +
+    'Temagami trips and the monthly newsletters are Bill Gordon\'s - do NOT offer them when he ' +
+    'is writing to Andy. Never weld two unrelated facts into one option (a neighbor + someone ' +
+    'else\'s tournament + a car is not a thing to say). The test is NOT whether another person ' +
+    'is mentioned - you SHOULD bring another person into a message when his profile shows a ' +
+    'REAL tie between them and the person he is writing to, because those are often his ' +
+    'warmest, most specific options: asking Betty whether Bob is still doing her lawn (Bob ' +
+    'looks after Betty and mows it), or whether a grandchild has come to visit her, is exactly ' +
+    'right and welcome. What is forbidden is the UNGROUNDED mash-up - pulling in a person, ' +
+    'activity, or thing that has no real connection to the one he is writing to. When unsure, ' +
+    'prefer an honest QUESTION (which asserts nothing) over a statement, and never embed a ' +
+    'claim you are not sure is true. If you are running low on things specific to this person, ' +
+    'offer plain warm options ("I have been thinking of you", "I hope you are well") rather ' +
+    'than inventing details or borrowing them from someone unconnected.\n\n' +
     'THINGS HE CAN NO LONGER DO. He cannot eat or drink by mouth and is bedbound on a ' +
     'ventilator. Never offer an option or draft that treats a food, drink, trip, or physical ' +
     'activity he can no longer have as something current or possible - for example do NOT ' +
