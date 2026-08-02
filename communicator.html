@@ -610,7 +610,7 @@ const MESSAGES_API_URL = "https://script.google.com/macros/s/AKfycbx3SW-bEYi1afC
 // Same Formspree endpoint the in-app "Send Message" screen posts to.
 const FORMSPREE_URL = "https://formspree.io/f/xzdyznda";
 const HOME_URL = "index.html";
-const PAGE_VERSION = "v0.42";
+const PAGE_VERSION = "v0.43";
 const ENABLE_MONITORING_LOGS = true;
 
 // When true, "Something to say" narrows with AI (via the Apps Script `narrow`
@@ -777,27 +777,37 @@ const SAY_TREE = {
   centerAction: { label: "⚠ Report a problem to Dan", choose: "report-problem" },
   children: {
     left: {
-      label: "Ask how someone is",
+      label: "Reach out to someone",
       children: {
-        left: { label: "Betty (Mom)", to: "Betty", seed: "Ask his wife Betty (Mom) how she is doing", say: "How are you doing, Mom? I think about you." },
-        up: {
-          label: "A grandchild",
+        left: {
+          label: "Ask how someone is",
           children: {
-            left: { label: "Patrick", to: "Patrick", seed: "Ask his grandson Patrick how he is doing", say: "How are you doing, Patrick? I'm thinking of you." },
-            up: { label: "Teagan", to: "Teagan", seed: "Ask his granddaughter Teagan how she is doing", say: "How are you doing, Teagan? I'm so proud of you." },
-            right: { label: "Lucy", to: "Lucy", seed: "Ask his granddaughter Lucy how she is doing", say: "How are you doing, Lucy? PomPom loves you." },
-            down: { label: "Jamie", to: "Jamie", seed: "Ask his granddaughter Jamie how she is doing", say: "How are you doing, Jamie? PomPom loves you." }
+            left: { label: "Betty (Mom)", to: "Betty", seed: "Ask his wife Betty (Mom) how she is doing", say: "How are you doing, Mom? I think about you." },
+            up: {
+              label: "A grandchild",
+              children: {
+                left: { label: "Patrick", to: "Patrick", seed: "Ask his grandson Patrick how he is doing", say: "How are you doing, Patrick? I'm thinking of you." },
+                up: { label: "Teagan", to: "Teagan", seed: "Ask his granddaughter Teagan how she is doing", say: "How are you doing, Teagan? I'm so proud of you." },
+                right: { label: "Lucy", to: "Lucy", seed: "Ask his granddaughter Lucy how she is doing", say: "How are you doing, Lucy? PomPom loves you." },
+                down: { label: "Jamie", to: "Jamie", seed: "Ask his granddaughter Jamie how she is doing", say: "How are you doing, Jamie? PomPom loves you." }
+              }
+            },
+            right: {
+              label: "One of my kids",
+              children: {
+                left: { label: "Michael", to: "Michael", seed: "Ask his son Michael how he is doing", say: "How are you doing, Michael? I'm thinking of you." },
+                up: { label: "Dan", to: "Dan", seed: "Ask his son Dan how he is doing", say: "How are you doing, Dan? I'm thinking of you." },
+                right: { label: "Sharon", to: "Sharon", seed: "Ask his daughter Sharon how she is doing", say: "How are you doing, Sharon? I'm thinking of you." }
+              }
+            },
+            down: { label: "A friend or someone else", friendPicker: true, say: "How are you doing? I'm thinking of you." }
           }
         },
         right: {
-          label: "One of my kids",
-          children: {
-            left: { label: "Michael", to: "Michael", seed: "Ask his son Michael how he is doing", say: "How are you doing, Michael? I'm thinking of you." },
-            up: { label: "Dan", to: "Dan", seed: "Ask his son Dan how he is doing", say: "How are you doing, Dan? I'm thinking of you." },
-            right: { label: "Sharon", to: "Sharon", seed: "Ask his daughter Sharon how she is doing", say: "How are you doing, Sharon? I'm thinking of you." }
-          }
-        },
-        down: { label: "A friend or someone else", friendPicker: true, say: "How are you doing? I'm thinking of you." }
+          label: "Let them know how I'm doing",
+          seed: "Help him reach out to someone to share, at a HIGH LEVEL, how he himself is doing - a short, warm 'here is how I am doing' in his own plain voice. Keep it light and reassuring, never a detailed or worrying medical report, and never grim specifics about his prognosis or setbacks. Draw what is true right now from his current-status note in his profile. He will choose who it goes to when he sends.",
+          say: "I wanted to let you know how I'm doing. I'm hanging in there, and grateful for everyone thinking of me."
+        }
       }
     },
     up: {

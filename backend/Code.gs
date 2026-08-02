@@ -4,7 +4,7 @@
 //  app returns at  <web-app URL>?action=version  — so you can confirm the TV is
 //  running this exact version. Bump it on every deploy-worthy change.
 // ============================================================================
-const BACKEND_VERSION = '2026-08-02-p25 (AI options must be true and grounded; no cross-person mash-ups)';
+const BACKEND_VERSION = '2026-08-02-p26 (add "share how I\'m doing" guidance; keep his outward status high-level)';
 // ============================================================================
 
 const SHEET_NAME = 'FireTVHomeMessages';
@@ -1709,6 +1709,14 @@ function narrow_(mode, path, avoid, draft) {
     'activity he can no longer have as something current or possible - for example do NOT ' +
     'suggest thanking someone for "bringing me Diet Coke", or ask about doing such things now. ' +
     'These can be spoken of only as fond memories if HE steers there, never as the present.\n\n' +
+    'SHARING HOW HE HIMSELF IS DOING. Sometimes he wants to reach out to let someone know how ' +
+    'HE is doing, rather than ask about them. When he does, keep it HIGH-LEVEL, warm, and ' +
+    'reassuring - a brief "here is how I am" in his own voice (hanging in there, comfortable, ' +
+    'grateful for visits, thinking of them) - NEVER a detailed medical report and NEVER grim ' +
+    'specifics about his prognosis, his setbacks, or any decline. If his profile has a note ' +
+    'about his current status to share, draw the true, light details from it. Remember he will ' +
+    'SEE these options and the running draft on his own screen, so every one of them must stay ' +
+    'gentle and must never confront him with distressing detail.\n\n' +
     'MONEY AND HIS LEGACY - keep it in the background. Do NOT, on your own, offer options or ' +
     'a draft about his money running low, the cost of his care, or his savings or ' +
     'inheritance being eaten up by medical bills - not even when he is on a finances topic ' +
