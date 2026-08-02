@@ -480,7 +480,7 @@ body {
 <div class="app">
   <div class="top-bar">
     <div class="breadcrumb" id="breadcrumb">Talk</div>
-    <div class="version-label">Talk v0.42</div>
+    <div class="version-label">Talk v0.43</div>
   </div>
 
   <!-- START -->
@@ -2577,6 +2577,9 @@ function onViewportResize() {
 /* ---------- INIT ---------- */
 
 document.addEventListener("DOMContentLoaded", function() {
+  // Single-source the visible version label from PAGE_VERSION so they can't drift.
+  var vl = document.querySelector(".version-label");
+  if (vl) vl.textContent = "Talk " + PAGE_VERSION;
   setMeasuredAppHeight();
   window.scrollTo(0, 0);
   primeBackTrap();   // arm the hardware-BACK trap (see doBack / popstate above)
